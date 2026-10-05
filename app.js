@@ -119,26 +119,60 @@ const equipesFavorites = () => [...new Set(favorisObjets().map((j) => j.eq).filt
 function ajouter(id) { if (!favoris.includes(id)) favoris.push(id); sauverFavoris(); rafraichir(); }
 function retirer(id) { favoris = favoris.filter((f) => f !== id); sauverFavoris(); rafraichir(); }
 
-// ---- 4. Bandeau des scores ----------------------------------
+// ---- 4. Scores (bandeau du haut + page Scores) ----------------
 let jourScores = AUJ;
+function texteJour(t) {
+  const d = versDate(t);
+  if (t === AUJ) return "Aujourd'hui";
+  if (t === decaler(AUJ, -1)) return "Hier";
+  if (t === decaler(AUJ, 1)) return "Demain";
+  return `${JOURS[d.getDay()]} ${d.getDate()} ${MOIS_COURT[d.getMonth()]}`;
+}
 function rendreBandeau() {
-  const d = versDate(jourScores);
-  $("score-jour").textContent = jourScores === AUJ ? "Aujourd'hui" : `${JOURS[d.getDay()]} ${d.getDate()} ${MOIS_COURT[d.getMonth()]}`;
+  $("score-jour").textContent = texteJour(jourScores);
   const liste = D.cal.filter((m) => m.date === jourScores);
   const fav = equipesFavorites();
   if (!liste.length) { $("bandeau-matchs").innerHTML = `<span class="bandeau-vide">Aucun match dans la LNH ce jour-là.</span>`; return; }
   $("bandeau-matchs").innerHTML = liste.map((m) => {
     const joue = estFini(m) || estDirect(m);
     const gagneDom = joue && m.sd > m.se, gagneExt = joue && m.se > m.sd;
-    return `<div class="score-carte ${fav.includes(m.dom) || fav.includes(m.ext) ? "favori" : ""}">
+    return `<a class="score-carte ${fav.includes(m.dom) || fav.includes(m.ext) ? "favori" : ""}" href="#/scores">
       <span class="statut ${estDirect(m) ? "direct" : ""}">${estDirect(m) ? "● " : ""}${statutMatch(m)}</span>
       <span class="eq ${estFini(m) && !gagneExt ? "perd" : ""}"><span>${m.ext}</span><span>${joue ? m.se : ""}</span></span>
       <span class="eq ${estFini(m) && !gagneDom ? "perd" : ""}"><span>${m.dom}</span><span>${joue ? m.sd : ""}</span></span>
-    </div>`;
+    </a>`;
   }).join("");
 }
-$("score-prec").onclick = () => { jourScores = decaler(jourScores, -1); rendreBandeau(); };
-$("score-suiv").onclick = () => { jourScores = decaler(jourScores, 1); rendreBandeau(); };
+async function rendrePageScores() {
+  $("page-score-jour").textContent = jourScores === AUJ ? "Aujourd'hui" : dateLongue(jourScores);
+  const liste = D.cal.filter((m) => m.date === jourScores);
+  if (!liste.length) { $("grille-scores").innerHTML = `<p class="vide">Aucun match dans la LNH ce jour-là.</p>`; return; }
+  const favs = favorisObjets();
+  const eqs = equipesFavorites();
+  let h = "";
+  for (const m of liste) {
+    const joue = estFini(m) || estDirect(m);
+    const pts = joue ? { ...(await points(m.dom))[m.id], ...(await points(m.ext))[m.id] } : {};
+    const lesMiens = favs.filter((j) => j.eq === m.dom || j.eq === m.ext);
+    // Les 3 meilleurs pointeurs du match
+    const etoiles = Object.entries(pts).map(([id, [b, a]]) => ({ j: D.parId.get(id), b, a }))
+      .filter((x) => x.j).sort((x, y) => (y.b + y.a) - (x.b + x.a) || y.b - x.b).slice(0, 3);
+    const ligne = (eq, score, gagne) => `<div class="gs-eq ${estFini(m) && !gagne ? "perd" : ""}">
+      <span class="gs-abr">${eq}</span><span class="gs-nom">${echapper(nomEq(eq))}</span><span class="gs-score">${joue ? score : ""}</span></div>`;
+    h += `<article class="gs-carte ${eqs.includes(m.dom) || eqs.includes(m.ext) ? "favori" : ""}">
+      <div class="gs-statut">${estDirect(m) ? `<span class="badge-direct">EN DIRECT</span> ${m.periode || ""}` : statutMatch(m)}${m.series ? " · Séries" : ""}</div>
+      ${ligne(m.ext, m.se, m.se > m.sd)}${ligne(m.dom, m.sd, m.sd > m.se)}
+      ${etoiles.length ? `<div class="gs-etoiles">${etoiles.map((x) => `<button class="puce-joueur" data-fiche="${x.j.id}">${echapper(nomDeFamille(x.j))} (${x.j.eq}) ${x.b} B, ${x.a} A</button>`).join("")}</div>` : ""}
+      ${lesMiens.length ? `<div class="gs-favoris">⭐ ${lesMiens.map((j) => echapper(nomDeFamille(j))).join(", ")}</div>` : ""}
+    </article>`;
+  }
+  $("grille-scores").innerHTML = h;
+}
+function changerJourScores(n) { jourScores = decaler(jourScores, n); rendreBandeau(); rendrePageScores(); }
+$("score-prec").onclick = () => changerJourScores(-1);
+$("score-suiv").onclick = () => changerJourScores(1);
+$("page-score-prec").onclick = () => changerJourScores(-1);
+$("page-score-suiv").onclick = () => changerJourScores(1);
 
 // ---- 5. À la une (résumés générés à partir des stats) -------
 function titrePerformance(p) {
@@ -306,41 +340,89 @@ $("sem-prec").onclick = () => { debutSemaine = decaler(debutSemaine, -7); rendre
 $("sem-suiv").onclick = () => { debutSemaine = decaler(debutSemaine, 7); rendreCalendrier(); };
 
 // ---- 9. Classement et meneurs --------------------------------
-let conf = "Eastern", cat = "pts";
-function rendreClassement() {
+let vueClassement = "conf";
+const NOMS_CONF = { Eastern: "Association de l'Est", Western: "Association de l'Ouest" };
+const NOMS_DIV = { Atlantic: "Division Atlantique", Metropolitan: "Division Métropolitaine", Central: "Division Centrale", Pacific: "Division Pacifique" };
+const trierEquipes = (l) => [...l].sort((a, b) => b.pts - a.pts || a.pj - b.pj || b.v - a.v);
+function tableClassement(titre, liste) {
   const eqs = equipesFavorites();
-  const liste = D.classement.filter((t) => t.conf === conf).sort((a, b) => b.pts - a.pts || a.pj - b.pj || b.v - a.v);
-  if (!liste.length) { $("table-classement").innerHTML = `<p class="vide">Classement à venir.</p>`; return; }
-  $("table-classement").innerHTML = `<table class="tableau"><thead><tr><th>#</th><th>Équipe</th><th>PJ</th><th>V</th><th>D</th><th>DP</th><th>PTS</th></tr></thead><tbody>
-    ${liste.map((t, i) => `<tr class="${eqs.includes(t.eq) ? "favori" : ""}"><td>${i + 1}</td><td class="eq" title="${echapper(nomEq(t.eq))}">${t.eq}</td>
-      <td>${t.pj}</td><td>${t.v}</td><td>${t.d}</td><td>${t.dp}</td><td class="pts">${t.pts}</td></tr>`).join("")}
-  </tbody></table>`;
+  return `<div class="table-bloc"><h3>${titre}</h3><div class="defile"><table class="tableau">
+    <thead><tr><th>#</th><th>Équipe</th><th>PJ</th><th>V</th><th>D</th><th>DP</th><th>PTS</th><th class="large">BP</th><th class="large">BC</th><th class="large">Série</th></tr></thead><tbody>
+    ${trierEquipes(liste).map((t, i) => `<tr class="${eqs.includes(t.eq) ? "favori" : ""}"><td>${i + 1}</td>
+      <td class="eq"><span class="abr">${t.eq}</span> <span class="nom-long">${echapper(courtEq(t.eq))}</span></td>
+      <td>${t.pj}</td><td>${t.v}</td><td>${t.d}</td><td>${t.dp}</td><td class="pts">${t.pts}</td>
+      <td class="large">${t.bp}</td><td class="large">${t.bc}</td><td class="large">${t.serie || "–"}</td></tr>`).join("")}
+  </tbody></table></div></div>`;
 }
-function rendreMeneurs() {
-  const liste = D.joueurs.filter((j) => j.s && j.s.pj > 0).sort((a, b) => b.s[cat] - a.s[cat] || b.s.pts - a.s.pts || a.s.pj - b.s.pj).slice(0, 10);
-  $("liste-meneurs").innerHTML = liste.map((j) => `<li data-fiche="${j.id}">
-    <span class="nom">${echapper(j.nom)}<small>${echapper(courtEq(j.eq))} · ${pluriel(j.s.pj, "match")}</small></span><span class="val">${j.s[cat]}</span></li>`).join("");
+function rendreClassement() {
+  const c = D.classement;
+  if (!c.length) { $("tables-classement").innerHTML = `<p class="vide">Classement à venir.</p>`; return; }
+  let h = "";
+  if (vueClassement === "conf") for (const k of ["Eastern", "Western"]) h += tableClassement(NOMS_CONF[k], c.filter((t) => t.conf === k));
+  else if (vueClassement === "div") for (const k of ["Atlantic", "Metropolitan", "Central", "Pacific"]) h += tableClassement(NOMS_DIV[k], c.filter((t) => t.div === k));
+  else h += tableClassement("Toute la LNH", c);
+  $("tables-classement").innerHTML = h;
+  $("tables-classement").classList.toggle("une-col", vueClassement === "ligue");
 }
-document.querySelectorAll("[data-conf]").forEach((b) => b.onclick = () => {
-  conf = b.dataset.conf; document.querySelectorAll("[data-conf]").forEach((x) => x.classList.toggle("actif", x === b)); rendreClassement();
-});
-document.querySelectorAll("[data-cat]").forEach((b) => b.onclick = () => {
-  cat = b.dataset.cat; document.querySelectorAll("[data-cat]").forEach((x) => x.classList.toggle("actif", x === b)); rendreMeneurs();
+document.querySelectorAll("[data-vue]").forEach((b) => b.onclick = () => {
+  vueClassement = b.dataset.vue;
+  document.querySelectorAll("[data-vue]").forEach((x) => x.classList.toggle("actif", x === b));
+  rendreClassement();
 });
 
+function listeMeneurs(cle, n, filtre = (j) => j.s && j.s.pj > 0, val = (j) => j.s[cle]) {
+  return D.joueurs.filter(filtre).sort((a, b) => val(b) - val(a) || (b.s?.pts ?? 0) - (a.s?.pts ?? 0)).slice(0, n);
+}
+function htmlMeneurs(liste, val, suffixe = "") {
+  return liste.map((j) => `<li data-fiche="${j.id}">
+    <span class="nom">${echapper(j.nom)}${favoris.includes(j.id) ? " ⭐" : ""}<small>${echapper(courtEq(j.eq))} · ${pluriel((j.s || j.g).pj, "match")}</small></span>
+    <span class="val">${val(j)}${suffixe}</span></li>`).join("");
+}
+function rendreMeneurs() {
+  $("mini-meneurs").innerHTML = htmlMeneurs(listeMeneurs("pts", 5), (j) => j.s.pts);
+  const gardiens = (cle) => listeMeneurs(cle, 10, (j) => j.g && j.g.pj >= Math.max(1, Math.floor(maxPj() / 3)), (j) => cle === "moy" ? -j.g.moy : j.g[cle]);
+  const blocs = [
+    ["Points", htmlMeneurs(listeMeneurs("pts", 15), (j) => j.s.pts)],
+    ["Buts", htmlMeneurs(listeMeneurs("b", 15), (j) => j.s.b)],
+    ["Passes", htmlMeneurs(listeMeneurs("a", 15), (j) => j.s.a)],
+    ["Différentiel", htmlMeneurs(listeMeneurs("pm", 10), (j) => (j.s.pm > 0 ? "+" : "") + j.s.pm)],
+    ["Gardiens · Victoires", htmlMeneurs(gardiens("v"), (j) => j.g.v)],
+    ["Gardiens · % d'arrêts", htmlMeneurs(gardiens("pct"), (j) => j.g.pct != null ? j.g.pct.toFixed(3).replace(/^0/, "") : "–")],
+  ];
+  $("grille-meneurs").innerHTML = blocs.map(([t, l]) => `<section class="bloc"><div class="titre-section"><h2>${t}</h2></div><ol class="meneurs">${l}</ol></section>`).join("");
+}
+function maxPj() { return Math.max(1, ...D.classement.map((t) => t.pj)); }
+
 // ---- 10. Recherche --------------------------------------------
+let equipeChoisie = null;
 function rendreResultats() {
   const q = simplifier($("recherche").value.trim());
-  if (!q) { $("resultats").innerHTML = ""; return; }
+  $("equipes").hidden = !!q;
+  if (!q && !equipeChoisie) { $("resultats").innerHTML = ""; return; }
   const tous = [...D.joueurs, ...AUTRES_JOUEURS];
-  const trouves = tous.filter((j) => simplifier(j.nom).includes(q) || simplifier(nomEq(j.eq)).includes(q) || simplifier(j.eq) === q).slice(0, 12);
+  const trouves = q
+    ? tous.filter((j) => simplifier(j.nom).includes(q) || simplifier(nomEq(j.eq)).includes(q) || simplifier(j.eq) === q).slice(0, 30)
+    : D.joueurs.filter((j) => j.eq === equipeChoisie).sort((a, b) => "CAGADDG".indexOf(a.pos) - "CAGADDG".indexOf(b.pos) || (a.no ?? 99) - (b.no ?? 99));
   $("resultats").innerHTML = trouves.length ? trouves.map((j) => `
     <li>${pastille(j)}
       <div class="infos" data-fiche="${j.id}"><strong>${echapper(j.nom)}</strong><span>${NOMS_POS[j.pos] || j.pos} · ${echapper(courtEq(j.eq))}</span></div>
       ${favoris.includes(j.id) ? `<button class="btn leger" disabled aria-label="Déjà dans tes favoris">✓</button>` : `<button class="btn accent" data-ajouter="${j.id}" aria-label="Ajouter ${echapper(j.nom)}">+</button>`}
     </li>`).join("") : `<li class="vide">Aucun joueur trouvé.</li>`;
 }
-$("recherche").addEventListener("input", rendreResultats);
+$("recherche").addEventListener("input", () => { equipeChoisie = null; rendreResultats(); rendreEquipes(); });
+// Les 32 équipes, pour parcourir un effectif complet
+function rendreEquipes() {
+  const liste = Object.keys(D.equipes).sort((a, b) => nomEq(a).localeCompare(nomEq(b), "fr"));
+  $("equipes").innerHTML = `<p class="detail-titre">Ou choisis une équipe :</p><div class="equipes-liste">${liste.map((eq) =>
+    `<button class="btn-equipe ${eq === equipeChoisie ? "actif" : ""}" data-equipe="${eq}"><b>${eq}</b><span>${echapper(courtEq(eq))}</span></button>`).join("")}</div>`;
+}
+$("equipes").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-equipe]");
+  if (!b) return;
+  equipeChoisie = equipeChoisie === b.dataset.equipe ? null : b.dataset.equipe;
+  rendreEquipes(); rendreResultats();
+  if (equipeChoisie) $("resultats").scrollIntoView({ behavior: "smooth", block: "start" });
+});
 
 // ---- 11. Fiche d'un joueur ------------------------------------
 function caseJoueur(j, idChoisi, etiquette) {
@@ -500,7 +582,7 @@ async function tourDirect() {
     }
   }
   D.direct = D.cal.some(estDirect);
-  if (change) { rendreBandeau(); rendreSoir(); rendreFavoris(); rendreCalendrier(); }
+  if (change) { rendreBandeau(); rendrePageScores(); rendreSoir(); rendreFavoris(); rendreCalendrier(); }
   rendreMiseAJour();
 }
 function demarrerDirect() {
@@ -509,12 +591,47 @@ function demarrerDirect() {
   tourDirect();
 }
 
-// ---- 16. Démarrage --------------------------------------------
+// ---- 16. Les pages (onglets, glisser sur téléphone) -----------
+const PAGES = ["accueil", "scores", "favoris", "classement", "meneurs", "joueurs"];
+let pageActuelle = null;
+function allerA(page) {
+  if (!PAGES.includes(page)) page = "accueil";
+  const avant = PAGES.indexOf(pageActuelle), apres = PAGES.indexOf(page);
+  document.querySelectorAll(".page").forEach((p) => {
+    const active = p.dataset.page === page;
+    p.hidden = !active;
+    p.classList.remove("vers-gauche", "vers-droite");
+    if (active && avant >= 0 && avant !== apres) { void p.offsetWidth; p.classList.add(apres > avant ? "vers-gauche" : "vers-droite"); }
+  });
+  document.querySelectorAll("[data-lien]").forEach((a) => a.classList.toggle("actif", a.dataset.lien === page));
+  if (pageActuelle !== null && pageActuelle !== page) window.scrollTo({ top: 0 });
+  pageActuelle = page;
+  fermerFiche();
+}
+function pageDeLAdresse() { return (location.hash.match(/^#\/(\w+)/) || [])[1] || "accueil"; }
+window.addEventListener("hashchange", () => allerA(pageDeLAdresse()));
+// Glisser le doigt vers la gauche ou la droite pour changer de page
+let toucheDepart = null;
+$("pages").addEventListener("touchstart", (e) => {
+  const zoneDefilante = e.target.closest(".defile, .bandeau-matchs, .jours, input");
+  toucheDepart = zoneDefilante ? null : { x: e.touches[0].clientX, y: e.touches[0].clientY };
+}, { passive: true });
+$("pages").addEventListener("touchend", (e) => {
+  if (!toucheDepart) return;
+  const dx = e.changedTouches[0].clientX - toucheDepart.x, dy = e.changedTouches[0].clientY - toucheDepart.y;
+  toucheDepart = null;
+  if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+  const i = PAGES.indexOf(pageActuelle) + (dx < 0 ? 1 : -1);
+  if (i >= 0 && i < PAGES.length) location.hash = "#/" + PAGES[i];
+}, { passive: true });
+
+// ---- 17. Démarrage --------------------------------------------
 function rafraichir() {
-  rendreBandeau(); rendreSoir(); rendreFavoris(); rendreCalendrier();
-  rendreClassement(); rendreMeneurs(); rendreResultats();
+  rendreBandeau(); rendrePageScores(); rendreSoir(); rendreFavoris(); rendreCalendrier();
+  rendreClassement(); rendreMeneurs(); rendreResultats(); rendreEquipes();
 }
 async function demarrer() {
+  allerA(pageDeLAdresse());
   try {
     await chargerDonnees();
   } catch (e) {

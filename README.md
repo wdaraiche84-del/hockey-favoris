@@ -6,7 +6,7 @@ Scores, classement, meneurs et stats de toute la LNH, avec le suivi de tes joueu
 
 | Fichier | À quoi il sert |
 |---|---|
-| `index.html` | La structure de la page (les sections) |
+| `index.html` | La structure du site : 6 pages (À la une, Scores, Mes favoris, Classement, Meneurs, Joueurs) |
 | `style.css` | L'apparence (couleurs, thème sombre, version téléphone) |
 | `app.js` | Ce qui réagit aux clics et affiche les données |
 | `config.js` | Les réglages (adresse du relais pour le direct) |

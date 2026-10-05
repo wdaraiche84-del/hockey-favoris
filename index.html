@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <!-- =============================================================
      PAGE PRINCIPALE DU SITE
-     Ce fichier contient la structure de la page (les sections).
-     L'apparence est dans style.css, ce qui réagit aux clics dans
-     app.js, et les données viennent du dossier data/ (le robot).
+     Le site est découpé en plusieurs « pages » (À la une, Scores,
+     Mes favoris…). Une seule est affichée à la fois ; les onglets
+     en haut (ou la barre du bas sur téléphone) passent de l'une à
+     l'autre. L'apparence est dans style.css, ce qui réagit aux
+     clics dans app.js, et les données viennent du dossier data/.
      ============================================================= -->
 <html lang="fr">
 <head>
@@ -24,13 +26,14 @@
   <!-- ===== En-tête ===== -->
   <header class="entete">
     <div class="entete-int">
-      <a class="logo" href="#accueil"><span class="logo-pastille">MFH</span><span class="logo-texte">Mes Favoris <b>Hockey</b></span></a>
-      <nav class="nav-haut" aria-label="Sections">
-        <a href="#accueil">À la une</a>
-        <a href="#scores">Scores</a>
-        <a href="#favoris">Mes favoris</a>
-        <a href="#classement">Classement</a>
-        <a href="#meneurs">Meneurs</a>
+      <a class="logo" href="#/accueil"><span class="logo-pastille">MFH</span><span class="logo-texte">Mes Favoris <b>Hockey</b></span></a>
+      <nav class="nav-haut" aria-label="Pages">
+        <a href="#/accueil" data-lien="accueil">À la une</a>
+        <a href="#/scores" data-lien="scores">Scores</a>
+        <a href="#/favoris" data-lien="favoris">Mes favoris</a>
+        <a href="#/classement" data-lien="classement">Classement</a>
+        <a href="#/meneurs" data-lien="meneurs">Meneurs</a>
+        <a href="#/joueurs" data-lien="joueurs">Joueurs</a>
       </nav>
       <div class="entete-droite">
         <span id="maj-badge" class="maj-badge"></span>
@@ -39,8 +42,8 @@
     </div>
   </header>
 
-  <!-- ===== Bandeau des scores (comme sur les sites de sports) ===== -->
-  <section id="scores" class="bandeau" aria-label="Scores">
+  <!-- ===== Bandeau des scores (sur toutes les pages) ===== -->
+  <section class="bandeau" aria-label="Scores du jour">
     <div class="bandeau-int">
       <div class="bandeau-date">
         <button id="score-prec" class="mini" aria-label="Jour précédent">‹</button>
@@ -53,28 +56,53 @@
 
   <div id="erreur" class="erreur" hidden></div>
 
-  <main class="grille">
-    <!-- ===== Colonne principale ===== -->
-    <div class="col-principale">
+  <main id="pages" class="pages">
 
-      <section id="accueil" class="bloc une">
-        <div class="titre-section"><h2>À la une</h2><span id="une-date" class="sur-titre"></span></div>
-        <div id="une"></div>
-        <ul id="manchettes" class="manchettes"></ul>
-        <p class="petit-gris">Résumés générés automatiquement à partir des statistiques officielles des matchs.</p>
+    <!-- ========== PAGE 1 : À la une ========== -->
+    <div class="page" data-page="accueil">
+      <div class="grille-2">
+        <section class="bloc une">
+          <div class="titre-section"><h2>À la une</h2><span id="une-date" class="sur-titre"></span></div>
+          <div id="une"></div>
+          <ul id="manchettes" class="manchettes"></ul>
+          <p class="petit-gris">Résumés générés automatiquement à partir des statistiques officielles des matchs.</p>
+        </section>
+        <div class="pile">
+          <section class="bloc">
+            <div class="titre-section"><h2>Ce soir pour tes favoris</h2><a class="lien-plus" href="#/favoris">Mes favoris ›</a></div>
+            <div id="soir"></div>
+          </section>
+          <section class="bloc">
+            <div class="titre-section"><h2>Meneurs</h2><a class="lien-plus" href="#/meneurs">Voir tout ›</a></div>
+            <ol id="mini-meneurs" class="meneurs"></ol>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== PAGE 2 : Scores ========== -->
+    <div class="page" data-page="scores">
+      <section class="bloc">
+        <div class="titre-section">
+          <h2>Scores de la LNH</h2>
+          <div class="nav-semaine">
+            <button id="page-score-prec" class="mini" aria-label="Jour précédent">‹</button>
+            <span id="page-score-jour"></span>
+            <button id="page-score-suiv" class="mini" aria-label="Jour suivant">›</button>
+          </div>
+        </div>
+        <div id="grille-scores" class="grille-scores"></div>
       </section>
+    </div>
 
-      <section id="ce-soir" class="bloc">
-        <div class="titre-section"><h2>Ce soir pour tes favoris</h2></div>
-        <div id="soir"></div>
-      </section>
-
-      <section id="favoris" class="bloc">
+    <!-- ========== PAGE 3 : Mes favoris ========== -->
+    <div class="page" data-page="favoris">
+      <section class="bloc">
         <div class="titre-section"><h2>Mes favoris</h2><span id="nb-favoris" class="pastille"></span></div>
         <div id="cartes-favoris" class="cartes"></div>
+        <p class="petit-gris">Pour ajouter des joueurs, va dans l'onglet <a href="#/joueurs">Joueurs</a>.</p>
       </section>
-
-      <section id="section-calendrier" class="bloc">
+      <section class="bloc">
         <div class="titre-section">
           <h2>Calendrier de mes favoris</h2>
           <div class="nav-semaine">
@@ -88,33 +116,35 @@
       </section>
     </div>
 
-    <!-- ===== Colonne de droite ===== -->
-    <aside class="col-cote">
-      <section id="recherche-bloc" class="bloc">
+    <!-- ========== PAGE 4 : Classement ========== -->
+    <div class="page" data-page="classement">
+      <section class="bloc">
+        <div class="titre-section"><h2>Classement</h2>
+          <div class="onglets petits" role="tablist">
+            <button class="onglet actif" data-vue="conf">Associations</button>
+            <button class="onglet" data-vue="div">Divisions</button>
+            <button class="onglet" data-vue="ligue">Ligue</button>
+          </div>
+        </div>
+        <div id="tables-classement" class="grille-tables"></div>
+        <p class="petit-gris">PJ : parties jouées · V : victoires · D : défaites · DP : défaites en prolongation · BP/BC : buts pour/contre · Série : séquence en cours (W = victoires, L = défaites).</p>
+      </section>
+    </div>
+
+    <!-- ========== PAGE 5 : Meneurs ========== -->
+    <div class="page" data-page="meneurs">
+      <div id="grille-meneurs" class="grille-meneurs"></div>
+    </div>
+
+    <!-- ========== PAGE 6 : Joueurs ========== -->
+    <div class="page" data-page="joueurs">
+      <section class="bloc">
         <div class="titre-section"><h2>Trouver un joueur</h2></div>
-        <input id="recherche" type="search" placeholder="Nom ou équipe… ex. Demidov, Oilers" autocomplete="off">
-        <ul id="resultats" class="resultats"></ul>
+        <input id="recherche" type="search" placeholder="Nom ou équipe… ex. Demidov, Oilers, TOR" autocomplete="off">
+        <ul id="resultats" class="resultats grand"></ul>
+        <div id="equipes" class="equipes"></div>
       </section>
-
-      <section id="classement" class="bloc">
-        <div class="titre-section"><h2>Classement</h2></div>
-        <div class="onglets" role="tablist">
-          <button class="onglet actif" data-conf="Eastern">Est</button>
-          <button class="onglet" data-conf="Western">Ouest</button>
-        </div>
-        <div id="table-classement"></div>
-      </section>
-
-      <section id="meneurs" class="bloc">
-        <div class="titre-section"><h2>Meneurs de la LNH</h2></div>
-        <div class="onglets" role="tablist">
-          <button class="onglet actif" data-cat="pts">Points</button>
-          <button class="onglet" data-cat="b">Buts</button>
-          <button class="onglet" data-cat="a">Passes</button>
-        </div>
-        <ol id="liste-meneurs" class="meneurs"></ol>
-      </section>
-    </aside>
+    </div>
   </main>
 
   <footer class="pied">
@@ -123,12 +153,13 @@
   </footer>
 
   <!-- ===== Barre de navigation (téléphone) ===== -->
-  <nav class="nav-bas" aria-label="Navigation">
-    <a href="#accueil"><span>📰</span>Une</a>
-    <a href="#scores"><span>🏒</span>Scores</a>
-    <a href="#favoris"><span>⭐</span>Favoris</a>
-    <a href="#classement"><span>🏆</span>Classement</a>
-    <a href="#recherche-bloc"><span>🔍</span>Chercher</a>
+  <nav class="nav-bas" aria-label="Pages">
+    <a href="#/accueil" data-lien="accueil"><span>📰</span>Une</a>
+    <a href="#/scores" data-lien="scores"><span>🏒</span>Scores</a>
+    <a href="#/favoris" data-lien="favoris"><span>⭐</span>Favoris</a>
+    <a href="#/classement" data-lien="classement"><span>🏆</span>Classement</a>
+    <a href="#/meneurs" data-lien="meneurs"><span>📊</span>Meneurs</a>
+    <a href="#/joueurs" data-lien="joueurs"><span>🔍</span>Joueurs</a>
   </nav>
 
   <!-- ===== Fiche d'un joueur (s'ouvre par-dessus la page) ===== -->

@@ -72,7 +72,7 @@ a { color: inherit; }
 .mini { width: 28px; height: 28px; border-radius: 50%; border: 0; background: var(--bandeau-carte); color: #fff; font-size: 1.1rem; line-height: 1; }
 .mini:hover { background: var(--accent); }
 .bandeau-matchs { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: thin; padding-bottom: 2px; flex: 1; }
-.score-carte { flex: 0 0 auto; width: 150px; background: var(--bandeau-carte); border-radius: 8px; padding: 7px 10px; border: 0; text-align: left; border-left: 3px solid transparent; }
+.score-carte { text-decoration: none; color: inherit; flex: 0 0 auto; width: 150px; background: var(--bandeau-carte); border-radius: 8px; padding: 7px 10px; border: 0; text-align: left; border-left: 3px solid transparent; }
 .score-carte.favori { border-left-color: var(--accent); }
 .score-carte .statut { font-size: .68rem; font-weight: 700; color: var(--bandeau-doux); text-transform: uppercase; letter-spacing: .04em; display: block; margin-bottom: 3px; }
 .score-carte .statut.direct { color: #FF8A8D; }
@@ -80,9 +80,56 @@ a { color: inherit; }
 .score-carte .eq.perd { color: var(--bandeau-doux); font-weight: 500; }
 .bandeau-vide { color: var(--bandeau-doux); font-size: .85rem; align-self: center; }
 
-/* ---- Grille principale ---- */
-.grille { max-width: 1200px; margin: 18px auto 0; padding: 0 16px 40px; display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; }
-.col-principale, .col-cote { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+/* ---- Les pages ---- */
+.pages { max-width: 1200px; margin: 18px auto 0; padding: 0 16px 40px; }
+.page { display: flex; flex-direction: column; gap: 18px; }
+.page[hidden] { display: none; }
+.vers-gauche { animation: glisse-g .28s ease-out; }
+.vers-droite { animation: glisse-d .28s ease-out; }
+@keyframes glisse-g { from { opacity: 0; transform: translateX(40px); } }
+@keyframes glisse-d { from { opacity: 0; transform: translateX(-40px); } }
+@media (prefers-reduced-motion: reduce) { .vers-gauche, .vers-droite { animation: none; } }
+.grille-2 { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.pile { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.lien-plus { font-size: .82rem; font-weight: 600; color: var(--accent); text-decoration: none; }
+.lien-plus:hover { text-decoration: underline; }
+.nav-haut a.actif { background: rgba(255, 255, 255, .1); color: #fff; box-shadow: inset 0 -2px 0 var(--accent); }
+
+/* ---- Page Scores ---- */
+.grille-scores { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.gs-carte { border: 1px solid var(--ligne); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.gs-carte.favori { border-left: 4px solid var(--accent); }
+.gs-statut { font-size: .75rem; font-weight: 700; color: var(--texte-doux); text-transform: uppercase; letter-spacing: .04em; }
+.gs-eq { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 8px; }
+.gs-eq.perd { color: var(--texte-doux); }
+.gs-abr { font-family: var(--titre); font-weight: 800; font-size: 1.15rem; }
+.gs-nom { font-size: .88rem; }
+.gs-score { font-family: var(--titre); font-weight: 800; font-size: 1.6rem; }
+.gs-etoiles { display: flex; flex-wrap: wrap; gap: 5px; border-top: 1px solid var(--ligne); padding-top: 8px; }
+.gs-etoiles .puce-joueur { font-size: .74rem; }
+.gs-favoris { font-size: .8rem; color: var(--texte-doux); }
+
+/* ---- Page Classement ---- */
+.grille-tables { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.grille-tables.une-col { grid-template-columns: 1fr; }
+.table-bloc h3 { font-size: 1.15rem; text-transform: uppercase; margin-bottom: 6px; color: var(--accent); }
+.defile { overflow-x: auto; }
+.onglets.petits { margin: 0; }
+.onglets.petits .onglet { padding: 5px 10px; }
+
+/* ---- Page Meneurs ---- */
+.grille-meneurs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+
+/* ---- Page Joueurs ---- */
+.resultats.grand { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px; }
+.equipes { margin-top: 16px; }
+.equipes-liste { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.btn-equipe { border: 1px solid var(--ligne); background: var(--carte-2); border-radius: 10px; padding: 10px; text-align: left; display: flex; gap: 8px; align-items: center; }
+.btn-equipe b { font-family: var(--titre); font-size: 1.1rem; }
+.btn-equipe span { font-size: .82rem; color: var(--texte-doux); }
+.btn-equipe:hover, .btn-equipe.actif { border-color: var(--accent); }
+.btn-equipe.actif { background: var(--accent-pale); }
+
 .bloc { background: var(--carte); border-radius: var(--rayon); padding: 18px; box-shadow: var(--ombre); }
 .titre-section { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; border-bottom: 2px solid var(--ligne); padding-bottom: 8px; }
 .titre-section h2 { font-size: 1.45rem; text-transform: uppercase; position: relative; }
@@ -242,8 +289,13 @@ table.tableau { width: 100%; border-collapse: collapse; font-size: .85rem; }
 .nav-bas { display: none; }
 
 /* ---- Tablette ---- */
+@media (max-width: 1100px) {
+  .nav-haut a { padding: 8px 8px; font-size: .85rem; }
+  .maj-badge { display: none; }
+}
 @media (max-width: 960px) {
-  .grille { grid-template-columns: 1fr; }
+  .grille-2, .grille-tables { grid-template-columns: 1fr; }
+  .grille-meneurs { grid-template-columns: 1fr 1fr; }
   .nav-haut { display: none; }
 }
 
@@ -255,8 +307,10 @@ table.tableau { width: 100%; border-collapse: collapse; font-size: .85rem; }
   .bandeau-int { padding: 8px 12px; gap: 8px; }
   .bandeau-date strong { width: 74px; font-size: .66rem; }
   .score-carte { width: 132px; }
-  .grille { padding: 0 10px 20px; margin-top: 12px; gap: 12px; }
-  .col-principale, .col-cote { gap: 12px; }
+  .pages { padding: 0 10px 20px; margin-top: 12px; }
+  .page, .pile, .grille-2, .grille-meneurs, .grille-tables { gap: 12px; }
+  .grille-meneurs { grid-template-columns: 1fr; }
+  .tableau .large, .tableau .nom-long { display: none; }
   .bloc { padding: 14px; }
   .une-hero { grid-template-columns: 1fr; gap: 12px; }
   .une-visuel { min-height: 120px; }
@@ -277,7 +331,8 @@ table.tableau { width: 100%; border-collapse: collapse; font-size: .85rem; }
     background: var(--carte); border-top: 1px solid var(--ligne); padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
     box-shadow: 0 -4px 14px rgba(0, 0, 0, .08);
   }
-  .nav-bas a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; text-decoration: none; font-size: .66rem; font-weight: 600; color: var(--texte-doux); }
+  .nav-bas a { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; text-decoration: none; font-size: .66rem; font-weight: 600; color: var(--texte-doux); }
   .nav-bas a span { font-size: 1.15rem; }
-  .nav-bas a:active { color: var(--accent); }
+  .nav-bas a:active, .nav-bas a.actif { color: var(--accent); }
+  .nav-bas a.actif span { transform: translateY(-1px); }
 }
