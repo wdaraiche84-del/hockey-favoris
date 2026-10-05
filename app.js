@@ -1,451 +1,537 @@
 // =============================================================
 // CE QUI REND LA PAGE VIVANTE
-// Ce fichier lit les données (donnees.js) et les affiche dans
-// les sections de la page (index.html). Il réagit aussi aux clics.
+// Ce fichier charge les données du robot (dossier data/), les
+// affiche dans les sections de la page (index.html) et réagit
+// aux clics. Il est découpé en parties numérotées.
 // =============================================================
 
-// ---- Petits outils ------------------------------------------
+// ---- 0. Petits outils ---------------------------------------
 const $ = (id) => document.getElementById(id);
-const JOURS_COURTS = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+const JOURS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
 const MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+const MOIS_COURT = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
 const NOMS_POS = { AG: "Ailier gauche", C: "Centre", AD: "Ailier droit", D: "Défenseur", G: "Gardien" };
 
-// Abréviations des adversaires (pour les petites cases du calendrier)
-const ABREV = {
-  "Toronto": "TOR", "Pittsburgh": "PIT", "Caroline": "CAR", "Nashville": "NSH", "Detroit": "DET",
-  "Buffalo": "BUF", "Washington": "WSH", "San Jose": "SJ", "Chicago": "CHI", "Winnipeg": "WPG",
-  "St. Louis": "STL", "Dallas": "DAL", "Utah": "UTA", "Minnesota": "MIN", "Boston": "BOS",
-  "Colorado": "COL", "New York": "NYR", "New Jersey": "NJ", "Philadelphie": "PHI", "Los Angeles": "LA",
-  "Vegas": "VGK", "Tampa Bay": "TB", "Floride": "FLA", "Ottawa": "OTT", "Anaheim": "ANA",
-  "Columbus": "CBJ", "Edmonton": "EDM",
-};
-function abrev(adv, m) {
-  if (m && m.advAbrev) return m.advAbrev;
-  for (const ville in ABREV) if (adv.includes(ville)) return ABREV[ville];
-  return adv.slice(0, 3).toUpperCase();
-}
-// Heure du match, dans le fuseau horaire du visiteur
-function heureDe(m) {
-  if (!m.debut) return m.heure || "";
-  return new Date(m.debut).toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" });
-}
-
-// Convertit une date en texte "AAAA-MM-JJ" (heure locale)
 function versTexte(d) {
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const j = String(d.getDate()).padStart(2, "0");
-  return `${d.getFullYear()}-${m}-${j}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
-function versDate(texte) {
-  const [a, m, j] = texte.split("-").map(Number);
-  return new Date(a, m - 1, j);
+function versDate(t) { const [a, m, j] = t.split("-").map(Number); return new Date(a, m - 1, j); }
+function dateLongue(t) { const d = versDate(t); return `${JOURS[d.getDay()]} ${d.getDate()} ${MOIS[d.getMonth()]}`; }
+function decaler(t, n) { const d = versDate(t); d.setDate(d.getDate() + n); return versTexte(d); }
+function simplifier(t) { return t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); }
+function slug(t) { return simplifier(t).replace(/[^a-z]+/g, "-").replace(/^-|-$/g, ""); }
+function echapper(t) { return String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]); }
+function pluriel(n, mot) { return `${n} ${mot}${n > 1 ? "s" : ""}`; }
+function heureDe(m) {
+  return m.debut ? new Date(m.debut).toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" }) : "";
 }
-function dateLongue(texte) {
-  const d = versDate(texte);
-  return `${JOURS_COURTS[d.getDay()]} ${d.getDate()} ${MOIS[d.getMonth()]}`;
+async function lireJson(url) {
+  const rep = await fetch(url, { cache: "no-store" });
+  if (!rep.ok) throw new Error(url + " : " + rep.status);
+  return rep.json();
 }
-// Enlève les accents pour que "slafkovsky" trouve "Slafkovský"
-function simplifier(t) {
-  return t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+let AUJ = versTexte(new Date());
+
+// ---- 1. Les données -----------------------------------------
+const D = {
+  joueurs: [], parId: new Map(), equipes: {}, cal: [], classement: [],
+  points: {}, misAJour: null, direct: false,
+};
+
+function nomEq(a) { return D.equipes[a] || AUTRES_EQUIPES[a] || a; }
+// "Maple Leafs de Toronto" → "Maple Leafs"
+function courtEq(a) { return nomEq(a).split(/\s(?:de|du|des)\s|\sd'/)[0]; }
+function nomDeFamille(j) { return j.nom.split(" ").slice(1).join(" ") || j.nom; }
+
+// Trouve un joueur par son identifiant LNH, ou par son nom simplifié
+// (ex. "slafkovsky" ou "arber-xhekaj"), de préférence dans l'équipe donnée.
+function joueur(id, eqPrefere = "MTL") {
+  if (!id) return null;
+  if (D.parId.has(id)) return D.parId.get(id);
+  const autre = AUTRES_JOUEURS.find((j) => j.id === id);
+  if (autre) return autre;
+  const s = slug(id);
+  const candidats = D.joueurs.filter((j) => slug(j.nom) === s || slug(nomDeFamille(j)) === s);
+  return candidats.find((j) => j.eq === eqPrefere) || candidats[0] || null;
+}
+function joueurDansEquipe(s, eq) {
+  return D.joueurs.find((j) => j.eq === eq && (slug(j.nom) === s || slug(nomDeFamille(j)) === s)) || null;
 }
 
-// Trouve un joueur par son identifiant. "arber-xhekaj" trouve aussi
-// "xhekaj" (et l'inverse), selon ce que le robot a produit.
-function joueur(id) {
-  return JOUEURS.find((j) => j.id === id)
-    || JOUEURS.find((j) => id.includes("-") && j.id === id.split("-").slice(-1)[0])
-    || JOUEURS.find((j) => j.id.endsWith("-" + id));
+async function chargerDonnees() {
+  const [j, cal, cl] = await Promise.all([
+    lireJson("data/joueurs.json"),
+    lireJson("data/calendrier.json"),
+    lireJson("data/classement.json").catch(() => []),
+  ]);
+  D.joueurs = j.joueurs;
+  D.equipes = j.equipes;
+  D.misAJour = new Date(j.misAJour);
+  D.cal = cal;
+  D.classement = cl;
+  D.parId = new Map(D.joueurs.map((x) => [x.id, x]));
+}
+async function points(eq) {
+  if (!D.equipes[eq]) return {};
+  if (!D.points[eq]) D.points[eq] = lireJson(`data/points/${eq}.json`).catch(() => ({}));
+  return D.points[eq];
 }
 
-// ---- Données automatiques du robot --------------------------
-// Si le fichier data/mtl.json existe, il remplace les données
-// écrites à la main (donnees.js), qui restent là en secours.
-let misAJourAuto = null;
-async function chargerDonneesAuto() {
-  try {
-    const rep = await fetch("data/mtl.json", { cache: "no-store" });
-    if (!rep.ok) return;
-    const d = await rep.json();
-    const capitaines = JOUEURS.filter((j) => j.capitaine).map((j) => j.id);
-    const autres = JOUEURS.filter((j) => j.equipe !== "MTL");
-    d.joueurs.forEach((j) => { if (capitaines.includes(j.id)) j.capitaine = true; });
-    JOUEURS.splice(0, JOUEURS.length, ...d.joueurs, ...autres);
-    CALENDRIER_MTL.splice(0, CALENDRIER_MTL.length, ...d.calendrier);
-    for (const k in STATS_MATCHS) delete STATS_MATCHS[k];
-    Object.assign(STATS_MATCHS, d.matchs || {});
-    misAJourAuto = new Date(d.misAJour);
-  } catch (e) { /* pas de fichier automatique : on garde les données manuelles */ }
+// ---- 2. Les matchs ------------------------------------------
+const estFini = (m) => m.etat === "fini";
+const estDirect = (m) => m.etat === "direct";
+const matchsDe = (eq) => D.cal.filter((m) => m.dom === eq || m.ext === eq);
+const adversaire = (m, eq) => (m.dom === eq ? m.ext : m.dom);
+function scorePour(m, eq) {
+  const nous = m.dom === eq ? m.sd : m.se, eux = m.dom === eq ? m.se : m.sd;
+  return { nous, eux };
 }
-function texteMiseAJour() {
-  if (!misAJourAuto) return `Données manuelles du ${MISE_A_JOUR}`;
-  const min = Math.round((Date.now() - misAJourAuto) / 60000);
-  if (min < 1) return "Stats mises à jour à l'instant";
-  if (min < 60) return `Stats mises à jour il y a ${min} min`;
-  const h = Math.round(min / 60);
-  if (h < 24) return `Stats mises à jour il y a ${h} h`;
-  return `Stats mises à jour le ${misAJourAuto.toLocaleDateString("fr-CA", { day: "numeric", month: "long" })}`;
+function resultatPour(m, eq) {
+  const { nous, eux } = scorePour(m, eq);
+  if (estDirect(m)) return { texte: `${nous}-${eux}`, classe: "direct" };
+  const fin = m.fin === "SO" ? " (TB)" : m.fin === "OT" ? " (P)" : "";
+  return { texte: `${nous > eux ? "V" : "D"} ${nous}-${eux}${fin}`, classe: nous > eux ? "v" : "d" };
 }
-const AUJOURDHUI = versTexte(new Date());
+function statutMatch(m) {
+  if (estDirect(m)) return m.periode || "En direct";
+  if (estFini(m)) return "Final" + (m.fin === "SO" ? " (TB)" : m.fin === "OT" ? " (P)" : "");
+  return heureDe(m);
+}
+function prochainMatch(eq) {
+  return D.cal.find((m) => (m.dom === eq || m.ext === eq) && !estFini(m) && m.date >= AUJ) || null;
+}
 
-// ---- La liste de favoris (gardée dans le navigateur) --------
-// Chaque visiteur a sa propre liste, enregistrée sur son appareil.
-const CLE = "mes-favoris-hockey";
-const FAVORIS_DE_DEPART = ["slafkovsky", "suzuki", "hutson", "hage"];
-
+// ---- 3. Les favoris (gardés dans le navigateur du visiteur) --
+let favoris = [];
 function lireFavoris() {
-  try {
-    const sauve = localStorage.getItem(CLE);
-    if (sauve) return JSON.parse(sauve);
-  } catch (e) { /* navigateur sans mémoire : on garde la liste de départ */ }
+  try { const s = localStorage.getItem("mes-favoris-hockey"); if (s) return JSON.parse(s); } catch (e) {}
   return [...FAVORIS_DE_DEPART];
 }
-let favoris = lireFavoris();
-// Garde seulement les joueurs qui existent, avec leur identifiant à jour
+function sauverFavoris() {
+  try { localStorage.setItem("mes-favoris-hockey", JSON.stringify(favoris)); } catch (e) {}
+}
 function nettoyerFavoris() {
+  // Convertit les anciens identifiants (ex. "suzuki") en identifiants LNH
   favoris = [...new Set(favoris.map((id) => joueur(id)?.id).filter(Boolean))];
 }
+const favorisObjets = () => favoris.map((id) => joueur(id)).filter(Boolean);
+const equipesFavorites = () => [...new Set(favorisObjets().map((j) => j.eq).filter((e) => D.equipes[e]))];
+function ajouter(id) { if (!favoris.includes(id)) favoris.push(id); sauverFavoris(); rafraichir(); }
+function retirer(id) { favoris = favoris.filter((f) => f !== id); sauverFavoris(); rafraichir(); }
 
-function sauverFavoris() {
-  try { localStorage.setItem(CLE, JSON.stringify(favoris)); } catch (e) {}
+// ---- 4. Bandeau des scores ----------------------------------
+let jourScores = AUJ;
+function rendreBandeau() {
+  const d = versDate(jourScores);
+  $("score-jour").textContent = jourScores === AUJ ? "Aujourd'hui" : `${JOURS[d.getDay()]} ${d.getDate()} ${MOIS_COURT[d.getMonth()]}`;
+  const liste = D.cal.filter((m) => m.date === jourScores);
+  const fav = equipesFavorites();
+  if (!liste.length) { $("bandeau-matchs").innerHTML = `<span class="bandeau-vide">Aucun match dans la LNH ce jour-là.</span>`; return; }
+  $("bandeau-matchs").innerHTML = liste.map((m) => {
+    const joue = estFini(m) || estDirect(m);
+    const gagneDom = joue && m.sd > m.se, gagneExt = joue && m.se > m.sd;
+    return `<div class="score-carte ${fav.includes(m.dom) || fav.includes(m.ext) ? "favori" : ""}">
+      <span class="statut ${estDirect(m) ? "direct" : ""}">${estDirect(m) ? "● " : ""}${statutMatch(m)}</span>
+      <span class="eq ${estFini(m) && !gagneExt ? "perd" : ""}"><span>${m.ext}</span><span>${joue ? m.se : ""}</span></span>
+      <span class="eq ${estFini(m) && !gagneDom ? "perd" : ""}"><span>${m.dom}</span><span>${joue ? m.sd : ""}</span></span>
+    </div>`;
+  }).join("");
 }
+$("score-prec").onclick = () => { jourScores = decaler(jourScores, -1); rendreBandeau(); };
+$("score-suiv").onclick = () => { jourScores = decaler(jourScores, 1); rendreBandeau(); };
 
-// ---- Statistiques -------------------------------------------
-function habille(id) {
-  // Le joueur a-t-il joué ? (tout le monde sauf les réservistes)
-  return !FORMATION_MTL.reserve.includes(id);
+// ---- 5. À la une (résumés générés à partir des stats) -------
+function titrePerformance(p) {
+  const nom = p.j.nom;
+  if (p.b >= 3) return `Tour du chapeau pour ${nom}`;
+  if (p.b + p.a >= 4) return `${nom} brille avec ${p.b + p.a} points`;
+  if (p.b === 2) return `${nom} marque deux fois`;
+  if (p.b + p.a === 3) return `${nom} récolte 3 points`;
+  if (p.a >= 2) return `${nom} distribue ${p.a} passes`;
+  return `${nom} se démarque`;
 }
-function statsDe(j) {
-  if (j.stats) return j.stats; // données du robot
-  if (j.equipe !== "MTL" || j.pos === "G") return null;
-  let pj = 0, b = 0, a = 0;
-  for (const m of CALENDRIER_MTL) {
-    if (!m.res) continue;
-    if (habille(j.id)) pj++;
-    const s = (STATS_MATCHS[m.date] || {})[j.id];
-    if (s) { b += s.b || 0; a += s.a || 0; }
-  }
-  return { pj, b, a, pts: b + a };
+function phraseMatch(p) {
+  const { nous, eux } = scorePour(p.m, p.j.eq);
+  const fin = p.m.fin === "SO" ? " en tirs de barrage" : p.m.fin === "OT" ? " en prolongation" : "";
+  const issue = nous > eux ? `l'emportent ${nous}-${eux}${fin}` : `s'inclinent ${eux}-${nous}${fin}`;
+  return `${pluriel(p.b, "but")} et ${pluriel(p.a, "passe")} pour le n° ${p.j.no ?? "–"}. Les ${courtEq(p.j.eq)} ${issue} face aux ${courtEq(adversaire(p.m, p.j.eq))}.`;
 }
-function prochainMatch(j) {
-  if (j.equipe !== "MTL") return null;
-  return CALENDRIER_MTL.find((m) => estAVenir(m) && m.date >= AUJOURDHUI) || null;
-}
-const estDirect = (m) => m.etat === "direct";
-const estFini = (m) => (m.etat ? m.etat === "fini" : !!m.res);
-const estAVenir = (m) => !estFini(m) && !estDirect(m);
-function texteResultat(m) {
-  if (estDirect(m)) return { texte: `${m.res.mtl}-${m.res.adv}`, classe: "direct" };
-  const victoire = m.res.mtl > m.res.adv;
-  const fin = m.res.tb ? " (TB)" : m.res.prol ? " (prol.)" : "";
-  return { texte: `${victoire ? "V" : "D"} ${m.res.mtl}-${m.res.adv}${fin}`, classe: victoire ? "v" : "d" };
-}
-
-// =============================================================
-// 1. CALENDRIER
-// =============================================================
-function lundiDe(d) {
-  const r = new Date(d);
-  const decalage = (r.getDay() + 6) % 7; // lundi = 0
-  r.setDate(r.getDate() - decalage);
-  return r;
-}
-let debutSemaine = lundiDe(new Date());
-let jourChoisi = AUJOURDHUI;
-
-function favorisQuiJouent() {
-  return favoris.map(joueur).filter((j) => j.equipe === "MTL");
-}
-
-function afficherCalendrier() {
-  const boite = $("calendrier");
-  boite.innerHTML = "";
-  const fin = new Date(debutSemaine);
-  fin.setDate(fin.getDate() + 6);
-  const COURT = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
-  $("sem-titre").textContent = `${debutSemaine.getDate()} ${COURT[debutSemaine.getMonth()]} – ${fin.getDate()} ${COURT[fin.getMonth()]}`;
-
-  const quiJouent = favorisQuiJouent();
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(debutSemaine);
-    d.setDate(d.getDate() + i);
-    const texte = versTexte(d);
-    const match = CALENDRIER_MTL.find((m) => m.date === texte);
-
-    const bouton = document.createElement("button");
-    bouton.className = "jour";
-    if (texte === AUJOURDHUI) bouton.classList.add("aujourdhui");
-    if (texte === jourChoisi) bouton.classList.add("choisi");
-    bouton.innerHTML = `<span class="nom-jour">${JOURS_COURTS[d.getDay()]}</span><span class="num-jour">${d.getDate()}</span>`;
-
-    if (match && quiJouent.length) {
-      let classe = match.dom ? "" : "ext";
-      let txt = (match.dom ? "vs " : "@ ") + abrev(match.adv, match);
-      if (estDirect(match)) { classe = "direct"; txt = `● ${match.res.mtl}-${match.res.adv}`; }
-      else if (estFini(match)) { const r = texteResultat(match); classe = r.classe; txt = r.texte.split(" ").slice(0, 2).join(" "); }
-      bouton.innerHTML += `<span class="puce ${classe}">${txt}</span>`;
+async function rendreUne() {
+  const finis = D.cal.filter((m) => estFini(m) && m.date <= AUJ);
+  if (!finis.length) { $("une").innerHTML = `<p class="vide">La saison n'est pas encore commencée.</p>`; return; }
+  const date = finis[finis.length - 1].date;
+  const duJour = finis.filter((m) => m.date === date);
+  $("une-date").textContent = `Matchs du ${dateLongue(date)}`;
+  const perfs = [];
+  for (const m of duJour) {
+    for (const eq of [m.dom, m.ext]) {
+      const ligne = (await points(eq))[m.id] || {};
+      for (const pid in ligne) {
+        const j = D.parId.get(pid);
+        if (j && j.eq === eq) perfs.push({ j, m, b: ligne[pid][0], a: ligne[pid][1] });
+      }
     }
-    bouton.onclick = () => { jourChoisi = texte; afficherCalendrier(); };
-    boite.appendChild(bouton);
   }
-  afficherDetailJour();
+  perfs.sort((x, y) => (y.b + y.a) - (x.b + x.a) || y.b - x.b);
+  const [h, ...reste] = perfs;
+  if (!h) { $("une").innerHTML = `<p class="vide">Résumés à venir.</p>`; return; }
+  $("une").innerHTML = `
+    <button class="une-hero" data-fiche="${h.j.id}">
+      <div class="une-visuel"><span class="gros-no">${h.j.no ?? ""}</span><span class="eq-tag">${h.j.eq}</span></div>
+      <div class="une-texte">
+        <span class="categorie">${echapper(nomEq(h.j.eq))}</span>
+        <h3>${echapper(titrePerformance(h))}</h3>
+        <p>${echapper(phraseMatch(h))}</p>
+      </div>
+    </button>`;
+  $("manchettes").innerHTML = reste.slice(0, 6).map((p) => `
+    <li><button data-fiche="${p.j.id}">
+      <span class="chiffre">${p.b + p.a}</span>
+      <span><strong>${echapper(titrePerformance(p))}</strong><small>${p.j.eq} vs ${adversaire(p.m, p.j.eq)} · ${p.b} B, ${p.a} A</small></span>
+    </button></li>`).join("");
 }
 
-function afficherDetailJour() {
-  const boite = $("detail-jour");
-  const match = CALENDRIER_MTL.find((m) => m.date === jourChoisi);
-  const quiJouent = favorisQuiJouent();
-  const titre = `<p class="vide" style="font-style:normal;font-weight:600;margin-bottom:8px">${dateLongue(jourChoisi)}${jourChoisi === AUJOURDHUI ? " · aujourd'hui" : ""}</p>`;
-
-  if (!match || !quiJouent.length) {
-    boite.innerHTML = titre + `<p class="vide">Aucun de tes favoris ne joue cette journée.</p>`;
+// ---- 6. Ce soir pour tes favoris -----------------------------
+async function rendreSoir() {
+  const favs = favorisObjets();
+  const eqs = equipesFavorites();
+  const ceSoir = D.cal.filter((m) => m.date === AUJ && (eqs.includes(m.dom) || eqs.includes(m.ext)));
+  if (!favs.length) { $("soir").innerHTML = `<p class="vide">Ajoute des joueurs à tes favoris pour suivre leurs matchs ici.</p>`; return; }
+  if (!ceSoir.length) {
+    const prochains = eqs.map(prochainMatch).filter(Boolean).sort((a, b) => a.debut.localeCompare(b.debut));
+    const p = prochains[0];
+    $("soir").innerHTML = `<p class="vide">Pas de match ce soir pour tes favoris. Repose-toi! 😄${p ? `<br>Prochain rendez-vous : <strong>${dateLongue(p.date)}</strong>, ${courtEq(p.ext)} @ ${courtEq(p.dom)} à ${heureDe(p)}.` : ""}</p>`;
     return;
   }
-  let score = `<span>${heureDe(match)}</span>`;
-  if (estDirect(match)) score = `<span class="badge-direct">EN DIRECT</span><span class="score">${match.res.mtl}-${match.res.adv}</span>`;
-  else if (estFini(match)) { const r = texteResultat(match); score = `<span class="score">${r.texte}</span>`; }
-  const noms = quiJouent.map((j) => j.nom.split(" ").slice(-1)[0]).join(", ");
-  boite.innerHTML = titre + `
-    <div class="match">
-      <span class="lieu ${match.dom ? "" : "ext"}">${match.dom ? "Domicile" : "Étranger"}</span>
-      <span class="titre-match">Canadiens ${match.dom ? "vs" : "@"} ${match.adv}${match.note ? " · " + match.note : ""}</span>
-      ${score}
-      <span class="qui">Tes favoris dans ce match : ${noms}</span>
+  let h = "";
+  for (const m of ceSoir) {
+    const lesMiens = favs.filter((j) => j.eq === m.dom || j.eq === m.ext);
+    const pts = { ...(await points(m.dom))[m.id], ...(await points(m.ext))[m.id] };
+    const statut = estDirect(m) ? `<span class="badge-direct">EN DIRECT</span> <strong>${m.se}-${m.sd}</strong>`
+      : estFini(m) ? `<strong>Final ${m.se}-${m.sd}${m.fin === "OT" ? " (P)" : m.fin === "SO" ? " (TB)" : ""}</strong>` : `<strong>${heureDe(m)}</strong>`;
+    h += `<div class="soir-match">
+      <div class="soir-tete"><strong>${courtEq(m.ext)} @ ${courtEq(m.dom)}</strong><span>${statut}</span></div>
+      <div class="soir-joueurs">${lesMiens.map((j) => {
+        const p = pts[j.id];
+        const txt = p ? `🔥 ${nomDeFamille(j)} : ${p[0]} B, ${p[1]} A` : nomDeFamille(j);
+        return `<button class="puce-joueur ${p ? "chaud" : ""}" data-fiche="${j.id}">${echapper(txt)}</button>`;
+      }).join("")}</div>
     </div>`;
+  }
+  $("soir").innerHTML = h;
 }
 
-$("sem-prec").onclick = () => { debutSemaine.setDate(debutSemaine.getDate() - 7); afficherCalendrier(); };
-$("sem-suiv").onclick = () => { debutSemaine.setDate(debutSemaine.getDate() + 7); afficherCalendrier(); };
-
-// =============================================================
-// 2. MES FAVORIS
-// =============================================================
-function pastilleNumero(j) {
-  return `<span class="numero">${j.no ?? "–"}</span>`;
-}
-
-function htmlStatsCourtes(j, s) {
-  if (j.gardien) {
-    const g = j.gardien;
+// ---- 7. Cartes des favoris -----------------------------------
+const pastille = (j) => `<span class="numero">${j.no ?? "–"}</span>`;
+function htmlStats(j) {
+  if (j.g) {
+    const g = j.g;
     return `<div class="stats">
-      <div><b>${g.pj}</b><small>PJ</small></div>
-      <div><b>${g.v}-${g.d}-${g.dp}</b><small>Fiche</small></div>
+      <div><b>${g.pj}</b><small>PJ</small></div><div><b>${g.v}-${g.d}-${g.dp}</b><small>Fiche</small></div>
       <div><b>${g.moy != null ? g.moy.toFixed(2) : "–"}</b><small>Moy.</small></div>
-      <div><b>${g.pct != null ? g.pct.toFixed(3).replace(/^0/, "") : "–"}</b><small>% arr.</small></div>
-    </div>`;
+      <div><b>${g.pct != null ? g.pct.toFixed(3).replace(/^0/, "") : "–"}</b><small>% arr.</small></div></div>`;
   }
-  if (!s) return `<div class="prochain">${j.pos === "G" ? "Stats de gardien à venir." : "Stats pas encore ajoutées."}</div>`;
-  return `<div class="stats">
-    <div><b>${s.pj}</b><small>PJ</small></div>
-    <div><b>${s.b}</b><small>B</small></div>
-    <div><b>${s.a}</b><small>A</small></div>
-    <div><b>${s.pts}</b><small>PTS</small></div>
-  </div>`;
+  if (j.s) {
+    const s = j.s;
+    return `<div class="stats"><div><b>${s.pj}</b><small>PJ</small></div><div><b>${s.b}</b><small>B</small></div>
+      <div><b>${s.a}</b><small>A</small></div><div><b>${s.pts}</b><small>PTS</small></div></div>`;
+  }
+  return `<div class="prochain">Stats à venir.</div>`;
 }
-function htmlProchain(j, p) {
-  const direct = j.equipe === "MTL" && CALENDRIER_MTL.find(estDirect);
-  if (direct) return `<span class="badge-direct">EN DIRECT</span> <strong>${direct.res.mtl}-${direct.res.adv}</strong> ${direct.dom ? "vs" : "@"} ${abrev(direct.adv, direct)}`;
-  if (p) return `Prochain match : <strong>${dateLongue(p.date)}</strong> ${p.dom ? "vs" : "@"} ${abrev(p.adv, p)} · ${heureDe(p)}`;
-  return EQUIPES[j.equipe].ligue;
+function htmlProchain(j) {
+  if (!D.equipes[j.eq]) return "Suivi des autres ligues : bientôt!";
+  const direct = D.cal.find((m) => estDirect(m) && (m.dom === j.eq || m.ext === j.eq));
+  if (direct) { const r = resultatPour(direct, j.eq); return `<span class="badge-direct">EN DIRECT</span> <strong>${r.texte}</strong> contre ${adversaire(direct, j.eq)}`; }
+  const p = prochainMatch(j.eq);
+  if (!p) return "Saison terminée";
+  return `Prochain : <strong>${p.date === AUJ ? "ce soir" : dateLongue(p.date)}</strong> ${p.dom === j.eq ? "vs" : "@"} ${adversaire(p, j.eq)} · ${heureDe(p)}`;
 }
-
-function afficherFavoris() {
-  const boite = $("favoris");
-  $("nb-favoris").textContent = favoris.length;
-  if (!favoris.length) {
-    boite.innerHTML = `<p class="vide">Ta liste est vide. Ajoute des joueurs avec la recherche plus bas.</p>`;
+function rendreFavoris() {
+  const favs = favorisObjets();
+  $("nb-favoris").textContent = favs.length;
+  if (!favs.length) {
+    const idees = [...D.joueurs].filter((j) => j.s).sort((a, b) => b.s.pts - a.s.pts).slice(0, 4);
+    $("cartes-favoris").innerHTML = `<div><p class="vide">Ta liste est vide. Pour commencer, essaie un de ces joueurs en feu :</p>
+      <div class="suggestions">${idees.map((j) => `<button class="btn leger" data-ajouter="${j.id}">+ ${echapper(j.nom)} (${j.eq})</button>`).join("")}</div></div>`;
     return;
   }
-  boite.innerHTML = "";
-  for (const id of favoris) {
-    const j = joueur(id);
-    const s = statsDe(j);
-    const p = prochainMatch(j);
-    const carte = document.createElement("div");
-    carte.className = "carte-joueur" + (j.equipe !== "MTL" ? " autre-ligue" : "");
-    carte.innerHTML = `
-      <div class="haut">
-        ${pastilleNumero(j)}
-        <div>
-          <h3>${j.nom}${j.capitaine ? " (C)" : ""}</h3>
-          <div class="equipe">${NOMS_POS[j.pos]} · ${EQUIPES[j.equipe].nom}</div>
+  $("cartes-favoris").innerHTML = favs.map((j) => `
+    <div class="carte-joueur">
+      <div class="haut">${pastille(j)}<div><h3>${echapper(j.nom)}</h3><div class="equipe">${NOMS_POS[j.pos] || j.pos} · ${echapper(nomEq(j.eq))}</div></div></div>
+      <div class="bas">
+        ${htmlStats(j)}
+        <div class="prochain">${htmlProchain(j)}</div>
+        <div class="actions">
+          <button class="btn" data-fiche="${j.id}">Voir la fiche</button>
+          <button class="btn leger" data-retirer="${j.id}" aria-label="Retirer ${echapper(j.nom)}">Retirer</button>
         </div>
       </div>
-      <div class="bas">
-        ${htmlStatsCourtes(j, s)}
-        <div class="prochain">${htmlProchain(j, p)}</div>
-        <div class="actions">
-          <button class="btn" data-voir="${j.id}">Voir la fiche</button>
-          <button class="btn leger" data-retirer="${j.id}" aria-label="Retirer ${j.nom}">Retirer</button>
-        </div>
-      </div>`;
-    boite.appendChild(carte);
+    </div>`).join("");
+}
+
+// ---- 8. Calendrier de la semaine -----------------------------
+function lundiDe(t) { const d = versDate(t); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return versTexte(d); }
+let debutSemaine = lundiDe(AUJ);
+let jourChoisi = AUJ;
+function rendreCalendrier() {
+  const eqs = equipesFavorites();
+  const fin = decaler(debutSemaine, 6);
+  const d0 = versDate(debutSemaine), d1 = versDate(fin);
+  $("sem-titre").textContent = `${d0.getDate()} ${MOIS_COURT[d0.getMonth()]} – ${d1.getDate()} ${MOIS_COURT[d1.getMonth()]}`;
+  let h = "";
+  for (let i = 0; i < 7; i++) {
+    const t = decaler(debutSemaine, i), d = versDate(t);
+    const ms = D.cal.filter((m) => m.date === t && (eqs.includes(m.dom) || eqs.includes(m.ext)));
+    let puces = "";
+    if (ms.length) {
+      const m = ms[0], eq = eqs.includes(m.dom) ? m.dom : m.ext;
+      let classe = "", txt = `${m.dom === eq ? "vs" : "@"} ${adversaire(m, eq)}`;
+      if (estDirect(m) || estFini(m)) { const r = resultatPour(m, eq); classe = r.classe; txt = estDirect(m) ? `● ${r.texte}` : r.texte.split(" ").slice(0, 2).join(" "); }
+      puces = `<span class="puce ${classe}">${txt}</span>${ms.length > 1 ? `<span class="puce">+${ms.length - 1}</span>` : ""}`;
+    }
+    h += `<button class="jour ${t === AUJ ? "aujourdhui" : ""} ${t === jourChoisi ? "choisi" : ""}" data-jour="${t}">
+      <span class="nom-jour">${JOURS[d.getDay()]}</span><span class="num-jour">${d.getDate()}</span>${puces}</button>`;
   }
-  boite.querySelectorAll("[data-voir]").forEach((b) => (b.onclick = () => ouvrirFiche(b.dataset.voir)));
-  boite.querySelectorAll("[data-retirer]").forEach((b) => (b.onclick = () => retirer(b.dataset.retirer)));
+  $("calendrier").innerHTML = h;
+  const ms = D.cal.filter((m) => m.date === jourChoisi && (eqs.includes(m.dom) || eqs.includes(m.ext)));
+  const titre = `<p class="detail-titre">${dateLongue(jourChoisi)}${jourChoisi === AUJ ? " · aujourd'hui" : ""}</p>`;
+  $("detail-jour").innerHTML = titre + (ms.length ? ms.map((m) => {
+    const qui = favorisObjets().filter((j) => j.eq === m.dom || j.eq === m.ext).map(nomDeFamille).join(", ");
+    return `<div class="soir-match"><div class="soir-tete"><strong>${courtEq(m.ext)} @ ${courtEq(m.dom)}</strong>
+      <span>${estDirect(m) ? '<span class="badge-direct">EN DIRECT</span> ' : ""}<strong>${estFini(m) || estDirect(m) ? `${m.se}-${m.sd}` : heureDe(m)}</strong></span></div>
+      <p class="petit-gris" style="margin-top:6px">Tes favoris : ${echapper(qui)}</p></div>`;
+  }).join("") : `<p class="vide">Aucun de tes favoris ne joue cette journée.</p>`);
 }
+$("sem-prec").onclick = () => { debutSemaine = decaler(debutSemaine, -7); rendreCalendrier(); };
+$("sem-suiv").onclick = () => { debutSemaine = decaler(debutSemaine, 7); rendreCalendrier(); };
 
-function ajouter(id) {
-  if (!favoris.includes(id)) favoris.push(id);
-  sauverFavoris(); toutAfficher();
+// ---- 9. Classement et meneurs --------------------------------
+let conf = "Eastern", cat = "pts";
+function rendreClassement() {
+  const eqs = equipesFavorites();
+  const liste = D.classement.filter((t) => t.conf === conf).sort((a, b) => b.pts - a.pts || a.pj - b.pj || b.v - a.v);
+  if (!liste.length) { $("table-classement").innerHTML = `<p class="vide">Classement à venir.</p>`; return; }
+  $("table-classement").innerHTML = `<table class="tableau"><thead><tr><th>#</th><th>Équipe</th><th>PJ</th><th>V</th><th>D</th><th>DP</th><th>PTS</th></tr></thead><tbody>
+    ${liste.map((t, i) => `<tr class="${eqs.includes(t.eq) ? "favori" : ""}"><td>${i + 1}</td><td class="eq" title="${echapper(nomEq(t.eq))}">${t.eq}</td>
+      <td>${t.pj}</td><td>${t.v}</td><td>${t.d}</td><td>${t.dp}</td><td class="pts">${t.pts}</td></tr>`).join("")}
+  </tbody></table>`;
 }
-function retirer(id) {
-  favoris = favoris.filter((f) => f !== id);
-  sauverFavoris(); toutAfficher();
+function rendreMeneurs() {
+  const liste = D.joueurs.filter((j) => j.s && j.s.pj > 0).sort((a, b) => b.s[cat] - a.s[cat] || b.s.pts - a.s.pts || a.s.pj - b.s.pj).slice(0, 10);
+  $("liste-meneurs").innerHTML = liste.map((j) => `<li data-fiche="${j.id}">
+    <span class="nom">${echapper(j.nom)}<small>${echapper(courtEq(j.eq))} · ${pluriel(j.s.pj, "match")}</small></span><span class="val">${j.s[cat]}</span></li>`).join("");
 }
+document.querySelectorAll("[data-conf]").forEach((b) => b.onclick = () => {
+  conf = b.dataset.conf; document.querySelectorAll("[data-conf]").forEach((x) => x.classList.toggle("actif", x === b)); rendreClassement();
+});
+document.querySelectorAll("[data-cat]").forEach((b) => b.onclick = () => {
+  cat = b.dataset.cat; document.querySelectorAll("[data-cat]").forEach((x) => x.classList.toggle("actif", x === b)); rendreMeneurs();
+});
 
-// =============================================================
-// 3. RECHERCHE
-// =============================================================
-function afficherResultats() {
+// ---- 10. Recherche --------------------------------------------
+function rendreResultats() {
   const q = simplifier($("recherche").value.trim());
-  const boite = $("resultats");
-  if (!q) { boite.innerHTML = ""; return; }
-  const trouves = JOUEURS.filter((j) => simplifier(j.nom).includes(q)).slice(0, 8);
-  if (!trouves.length) {
-    boite.innerHTML = `<li><span class="vide">Aucun joueur trouvé. Pour l'instant, le site contient l'équipe du Canadien et quelques espoirs.</span></li>`;
-    return;
-  }
-  boite.innerHTML = trouves.map((j) => `
-    <li>
-      ${pastilleNumero(j)}
-      <div class="infos"><strong>${j.nom}</strong><span>${NOMS_POS[j.pos]} · ${EQUIPES[j.equipe].nom}</span></div>
-      ${favoris.includes(j.id)
-        ? `<button class="btn leger" disabled>✓ Dans ta liste</button>`
-        : `<button class="btn rouge" data-ajouter="${j.id}">+ Ajouter</button>`}
-    </li>`).join("");
-  boite.querySelectorAll("[data-ajouter]").forEach((b) => (b.onclick = () => ajouter(b.dataset.ajouter)));
+  if (!q) { $("resultats").innerHTML = ""; return; }
+  const tous = [...D.joueurs, ...AUTRES_JOUEURS];
+  const trouves = tous.filter((j) => simplifier(j.nom).includes(q) || simplifier(nomEq(j.eq)).includes(q) || simplifier(j.eq) === q).slice(0, 12);
+  $("resultats").innerHTML = trouves.length ? trouves.map((j) => `
+    <li>${pastille(j)}
+      <div class="infos" data-fiche="${j.id}"><strong>${echapper(j.nom)}</strong><span>${NOMS_POS[j.pos] || j.pos} · ${echapper(courtEq(j.eq))}</span></div>
+      ${favoris.includes(j.id) ? `<button class="btn leger" disabled aria-label="Déjà dans tes favoris">✓</button>` : `<button class="btn accent" data-ajouter="${j.id}" aria-label="Ajouter ${echapper(j.nom)}">+</button>`}
+    </li>`).join("") : `<li class="vide">Aucun joueur trouvé.</li>`;
 }
-$("recherche").addEventListener("input", afficherResultats);
+$("recherche").addEventListener("input", rendreResultats);
 
-// =============================================================
-// FICHE D'UN JOUEUR
-// =============================================================
-function caseCoequipier(id, idChoisi, poste) {
-  const j = joueur(id);
-  if (!j) return `<div class="coequipier"><small>${poste}</small><span>—</span></div>`;
+// ---- 11. Fiche d'un joueur ------------------------------------
+function caseJoueur(j, idChoisi, etiquette) {
+  if (!j) return `<div class="coequipier"><small>${etiquette || ""}</small><span>—</span></div>`;
   return `<button class="coequipier ${j.id === idChoisi ? "lui" : ""}" data-fiche="${j.id}">
-    <small>${poste} · #${j.no ?? "–"}</small><span>${j.nom}</span></button>`;
+    <small>${etiquette || j.pos} · #${j.no ?? "–"}</small><span>${echapper(j.nom)}</span></button>`;
 }
-
-function htmlFormation(idChoisi) {
-  const f = FORMATION_MTL;
-  const nomsTrios = ["1er trio", "2e trio", "3e trio", "4e trio"];
-  const nomsPaires = ["1re paire", "2e paire", "3e paire"];
+function htmlEquipe(j) {
+  const effectif = D.joueurs.filter((x) => x.eq === j.eq);
+  const f = FORMATIONS[j.eq];
   let h = `<div class="formation">`;
-  f.trios.forEach((t, i) => {
-    h += `<div class="rangee"><span class="etiquette">${nomsTrios[i]}</span>
-      ${caseCoequipier(t[0], idChoisi, "AG")}${caseCoequipier(t[1], idChoisi, "C")}${caseCoequipier(t[2], idChoisi, "AD")}</div>`;
-  });
-  f.paires.forEach((p, i) => {
-    h += `<div class="rangee deux"><span class="etiquette">${nomsPaires[i]}</span>
-      ${caseCoequipier(p[0], idChoisi, "D")}${caseCoequipier(p[1], idChoisi, "D")}</div>`;
-  });
-  h += `<div class="rangee deux"><span class="etiquette">Gardiens</span>
-    ${caseCoequipier(f.gardiens[0], idChoisi, "Partant")}${caseCoequipier(f.gardiens[1], idChoisi, "Auxiliaire")}</div>`;
-  h += `<div class="rangee"><span class="etiquette">Réserve</span>
-    ${f.reserve.map((id) => caseCoequipier(id, idChoisi, joueur(id)?.pos || "")).join("")}</div>`;
+  const places = new Set();
+  if (f) {
+    const trouve = (s) => { const x = joueurDansEquipe(s, j.eq); if (x) places.add(x.id); return x; };
+    f.trios.forEach((t, i) => { h += `<div class="rangee"><span class="etiquette">${i + 1}${i ? "e" : "er"} trio</span>${t.map((s) => caseJoueur(trouve(s), j.id)).join("")}</div>`; });
+    f.paires.forEach((p, i) => { h += `<div class="rangee deux"><span class="etiquette">${i + 1}${i ? "e" : "re"} paire</span>${p.map((s) => caseJoueur(trouve(s), j.id)).join("")}</div>`; });
+    h += `<div class="rangee deux"><span class="etiquette">Gardiens</span>${f.gardiens.map((s) => caseJoueur(trouve(s), j.id)).join("")}</div>`;
+    const autres = effectif.filter((x) => !places.has(x.id));
+    if (autres.length) h += `<div class="rangee libre"><span class="etiquette">Autres</span><div class="groupe">${autres.map((x) => caseJoueur(x, j.id)).join("")}</div></div>`;
+  } else {
+    for (const [pos, nom] of [["C", "Centres"], ["AG", "Ailiers gauches"], ["AD", "Ailiers droits"], ["D", "Défenseurs"], ["G", "Gardiens"]]) {
+      const groupe = effectif.filter((x) => x.pos === pos);
+      if (groupe.length) h += `<div class="rangee libre"><span class="etiquette">${nom}</span><div class="groupe">${groupe.map((x) => caseJoueur(x, j.id)).join("")}</div></div>`;
+    }
+  }
+  return h + `</div>${f?.note ? `<p class="petit-gris">${f.note}. Les trios changent souvent.</p>` : `<p class="petit-gris">Effectif actuel, par position.</p>`}`;
+}
+async function htmlSaison(j) {
+  const pts = await points(j.eq);
+  let h = `<div class="saison">`, mois = -1;
+  for (const m of matchsDe(j.eq)) {
+    const d = versDate(m.date);
+    if (d.getMonth() !== mois) { mois = d.getMonth(); h += `<div class="mois">${MOIS[mois]} ${d.getFullYear()}</div>`; }
+    let res = `<span class="res">${heureDe(m)}</span>`;
+    if (estFini(m) || estDirect(m)) {
+      const r = resultatPour(m, j.eq);
+      const p = (pts[m.id] || {})[j.id];
+      res = `<span class="res ${r.classe}">${estDirect(m) ? '<span class="badge-direct">DIRECT</span> ' : ""}${r.texte}${p ? ` · ${p[0]} B, ${p[1]} A` : ""}</span>`;
+    }
+    const dom = m.dom === j.eq;
+    h += `<div class="ligne-match ${estFini(m) ? "passe" : ""}"><span>${dateLongue(m.date)}</span>
+      <span class="lieu ${dom ? "" : "ext"}">${dom ? "DOM" : "ÉTR"}</span><span>${echapper(nomEq(adversaire(m, j.eq)))}${m.series ? " · Séries" : ""}</span>${res}</div>`;
+  }
   return h + `</div>`;
 }
-
-function htmlSaison(j) {
-  let h = `<div class="saison">`;
-  let moisCourant = -1;
-  for (const m of CALENDRIER_MTL) {
-    const d = versDate(m.date);
-    if (d.getMonth() !== moisCourant) {
-      moisCourant = d.getMonth();
-      h += `<div class="mois">${MOIS[moisCourant]} ${d.getFullYear()}</div>`;
-    }
-    let res = `<span class="res">${heureDe(m)}</span>`;
-    if (estDirect(m)) res = `<span class="res"><span class="badge-direct">EN DIRECT</span> ${m.res.mtl}-${m.res.adv}</span>`;
-    else if (estFini(m)) {
-      const r = texteResultat(m);
-      const s = (STATS_MATCHS[m.date] || {})[j.id];
-      const pts = s ? ` · ${s.b || 0} B, ${s.a || 0} A` : "";
-      res = `<span class="res ${r.classe}">${r.texte}${pts}</span>`;
-    }
-    h += `<div class="ligne-match ${estFini(m) ? "passe" : ""}">
-      <span>${dateLongue(m.date)}</span>
-      <span class="lieu ${m.dom ? "" : "ext"}">${m.dom ? "DOM" : "ÉTR"}</span>
-      <span>${m.adv}${m.note ? " · " + m.note : ""}</span>
-      ${res}
-    </div>`;
-  }
-  const note = misAJourAuto ? "" : `<p class="vide" style="margin-top:8px">Le reste de la saison (janvier à avril) sera ajouté bientôt.</p>`;
-  return h + note + `</div>`;
-}
-
-function ouvrirFiche(idDemande) {
-  const j = joueur(idDemande);
+async function ouvrirFiche(id) {
+  const j = joueur(id);
   if (!j) return;
-  const id = j.id;
-  const s = statsDe(j);
-  const estFavori = favoris.includes(id);
+  const estFav = favoris.includes(j.id);
   let corps = "";
-  if (j.gardien) {
-    corps += `<h3>Saison 2026-27</h3>${htmlStatsCourtes(j, s)}`;
-  } else if (s) {
-    corps += `<h3>Saison 2026-27</h3><div class="stats">
-      <div><b>${s.pj}</b><small>Matchs</small></div><div><b>${s.b}</b><small>Buts</small></div>
-      <div><b>${s.a}</b><small>Passes</small></div><div><b>${s.pts}</b><small>Points</small></div></div>
-      ${s.pm != null ? `<p class="vide" style="text-align:center;margin-top:6px;font-style:normal">Différentiel : ${s.pm > 0 ? "+" : ""}${s.pm}</p>` : ""}`;
+  if (j.s || j.g) {
+    corps += `<h3>Saison 2026-27</h3>${htmlStats(j)}`;
+    if (j.s) corps += `<p class="petit-gris" style="text-align:center">Différentiel : ${j.s.pm > 0 ? "+" : ""}${j.s.pm}</p>`;
   }
-  if (j.equipe === "MTL") {
-    corps += `<h3>Son équipe : les Canadiens</h3>${htmlFormation(id)}`;
-    corps += `<h3>Calendrier de sa saison</h3>${htmlSaison(j)}`;
+  if (D.equipes[j.eq]) {
+    corps += `<h3>Son équipe : ${echapper(nomEq(j.eq))}</h3>${htmlEquipe(j)}`;
+    corps += `<h3>Calendrier de sa saison</h3><div id="fiche-saison"><p class="vide">Chargement…</p></div>`;
   } else {
-    corps += `<p class="note-fiche">${j.note || "Informations à venir."}</p>`;
+    corps += `<p class="note-fiche">${echapper(j.note || "Informations à venir.")}</p>`;
   }
   $("fiche").innerHTML = `
-    <div class="fiche-haut">
-      ${pastilleNumero(j)}
-      <div>
-        <h2>${j.nom}${j.capitaine ? " (C)" : ""}</h2>
-        <p>${NOMS_POS[j.pos]} · ${EQUIPES[j.equipe].nom} (${EQUIPES[j.equipe].ligue})</p>
-        <p style="margin-top:10px">${estFavori
-          ? `<button class="btn leger" data-retirer-fiche="${id}">Retirer de mes favoris</button>`
-          : `<button class="btn rouge" data-ajouter-fiche="${id}">+ Ajouter à mes favoris</button>`}</p>
-      </div>
+    <div class="fiche-haut">${pastille(j)}
+      <div><h2>${echapper(j.nom)}</h2><p>${NOMS_POS[j.pos] || j.pos} · ${echapper(nomEq(j.eq))}</p>
+        <p style="margin-top:10px">${estFav ? `<button class="btn leger" data-retirer="${j.id}" data-garder>Retirer de mes favoris</button>`
+          : `<button class="btn accent" data-ajouter="${j.id}" data-garder>+ Ajouter à mes favoris</button>`}</p></div>
       <button class="fermer" aria-label="Fermer">✕</button>
     </div>
     <div class="fiche-corps">${corps}</div>`;
   $("fiche-fond").hidden = false;
-  $("fiche").querySelector(".fermer").onclick = fermerFiche;
-  $("fiche").querySelectorAll("[data-fiche]").forEach((b) => (b.onclick = () => ouvrirFiche(b.dataset.fiche)));
-  const ajout = $("fiche").querySelector("[data-ajouter-fiche]");
-  if (ajout) ajout.onclick = () => { ajouter(id); ouvrirFiche(id); };
-  const retrait = $("fiche").querySelector("[data-retirer-fiche]");
-  if (retrait) retrait.onclick = () => { retirer(id); ouvrirFiche(id); };
   $("fiche-fond").scrollTop = 0;
+  if (D.equipes[j.eq]) $("fiche-saison").innerHTML = await htmlSaison(j);
 }
 function fermerFiche() { $("fiche-fond").hidden = true; }
-$("fiche-fond").addEventListener("click", (e) => { if (e.target.id === "fiche-fond") fermerFiche(); });
+$("fiche-fond").addEventListener("click", (e) => { if (e.target.id === "fiche-fond" || e.target.closest(".fermer")) fermerFiche(); });
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") fermerFiche(); });
 
-// =============================================================
-// DÉMARRAGE
-// =============================================================
-function toutAfficher() {
-  afficherCalendrier();
-  afficherFavoris();
-  afficherResultats();
-}
-function afficherMiseAJour() {
-  $("maj-badge").textContent = texteMiseAJour();
-  $("maj-badge").classList.toggle("auto", !!misAJourAuto);
-  $("maj").textContent = misAJourAuto
-    ? "Stats fournies automatiquement à partir des données publiques de la LNH."
-    : `Données saisies à la main, à jour au ${MISE_A_JOUR}. Les statistiques peuvent être incomplètes.`;
+// ---- 12. Un seul « écouteur » pour tous les boutons ------------
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-fiche],[data-ajouter],[data-retirer],[data-jour]");
+  if (!b) return;
+  if (b.dataset.ajouter) { ajouter(b.dataset.ajouter); if (b.hasAttribute("data-garder")) ouvrirFiche(b.dataset.ajouter); }
+  else if (b.dataset.retirer) { retirer(b.dataset.retirer); if (b.hasAttribute("data-garder")) ouvrirFiche(b.dataset.retirer); }
+  else if (b.dataset.fiche) ouvrirFiche(b.dataset.fiche);
+  else if (b.dataset.jour) { jourChoisi = b.dataset.jour; rendreCalendrier(); }
+});
+
+// ---- 13. Thème clair / sombre ---------------------------------
+$("theme").onclick = () => {
+  const sombre = document.documentElement.dataset.theme
+    ? document.documentElement.dataset.theme === "dark"
+    : matchMedia("(prefers-color-scheme: dark)").matches;
+  document.documentElement.dataset.theme = sombre ? "light" : "dark";
+  try { localStorage.setItem("theme", document.documentElement.dataset.theme); } catch (e) {}
+};
+
+// ---- 14. Indicateur de fraîcheur ------------------------------
+function rendreMiseAJour() {
+  let txt;
+  if (D.direct && sourceOk) txt = "Scores en direct";
+  else if (!D.misAJour) txt = "";
+  else {
+    const min = Math.round((Date.now() - D.misAJour) / 60000);
+    txt = min < 1 ? "Mis à jour à l'instant" : min < 60 ? `Mis à jour il y a ${min} min`
+      : min < 1440 ? `Mis à jour il y a ${Math.round(min / 60)} h` : `Mis à jour le ${D.misAJour.toLocaleDateString("fr-CA", { day: "numeric", month: "long" })}`;
+  }
+  $("maj-badge").textContent = txt;
+  $("maj-badge").classList.toggle("auto", !!txt);
+  $("maj").textContent = "Stats fournies automatiquement à partir des données publiques de la LNH." + (txt ? ` ${txt}.` : "");
 }
 
+// ---- 15. Le direct à la seconde -------------------------------
+// Pendant les matchs, on demande le score directement (au relais si
+// installé, sinon au service de la LNH s'il accepte la demande).
+const SOURCES_DIRECT = [RELAIS, "https://api-web.nhle.com"].filter(Boolean);
+let sourceOk = null, minuterieDirect = null;
+const PERIODES = { 1: "1re", 2: "2e", 3: "3e" };
+function matchsEnCours() {
+  const maintenant = Date.now();
+  return D.cal.filter((m) => m.date >= decaler(AUJ, -1) && m.date <= AUJ && !estFini(m) && m.debut && new Date(m.debut).getTime() - 5 * 60000 <= maintenant);
+}
+async function lireDirect(chemin) {
+  for (const base of sourceOk ? [sourceOk] : SOURCES_DIRECT) {
+    try { const r = await fetch(base + chemin, { cache: "no-store" }); if (r.ok) { sourceOk = base; return await r.json(); } } catch (e) {}
+  }
+  return null;
+}
+async function tourDirect() {
+  if (!matchsEnCours().length) { D.direct = false; return; }
+  const donnees = await lireDirect("/v1/score/now");
+  if (!donnees) return;
+  let change = false;
+  const eqs = equipesFavorites();
+  for (const g of donnees.games || []) {
+    const m = D.cal.find((x) => x.id === g.id);
+    if (!m) continue;
+    const etat = g.gameState === "LIVE" || g.gameState === "CRIT" ? "direct" : g.gameState === "FINAL" || g.gameState === "OFF" ? "fini" : m.etat;
+    if (etat !== m.etat || g.homeTeam?.score !== m.sd || g.awayTeam?.score !== m.se) change = true;
+    m.etat = etat;
+    if (etat !== "avenir") { m.sd = g.homeTeam?.score ?? 0; m.se = g.awayTeam?.score ?? 0; }
+    const per = g.periodDescriptor;
+    if (etat === "direct" && per) {
+      const nomP = per.periodType === "OT" ? "Prol." : per.periodType === "SO" ? "Tirs" : `${PERIODES[per.number] || per.number + "e"}`;
+      m.periode = g.clock?.inIntermission ? `Entracte ${nomP}` : `${nomP} · ${g.clock?.timeRemaining || ""}`;
+    }
+    if (etat === "fini" && per && per.periodType !== "REG") m.fin = per.periodType;
+    // Points des favoris en direct
+    if (etat === "direct" && (eqs.includes(m.dom) || eqs.includes(m.ext))) {
+      const box = await lireDirect(`/v1/gamecenter/${m.id}/boxscore`);
+      for (const [cote, eq] of [["homeTeam", m.dom], ["awayTeam", m.ext]]) {
+        const e = box?.playerByGameStats?.[cote];
+        if (!e) continue;
+        const ligne = {};
+        for (const p of [...(e.forwards || []), ...(e.defense || [])]) if (p.goals || p.assists) ligne[p.playerId] = [p.goals || 0, p.assists || 0];
+        (await points(eq))[m.id] = ligne;
+        change = true;
+      }
+    }
+  }
+  D.direct = D.cal.some(estDirect);
+  if (change) { rendreBandeau(); rendreSoir(); rendreFavoris(); rendreCalendrier(); }
+  rendreMiseAJour();
+}
+function demarrerDirect() {
+  clearInterval(minuterieDirect);
+  minuterieDirect = setInterval(tourDirect, SECONDES_DIRECT * 1000);
+  tourDirect();
+}
+
+// ---- 16. Démarrage --------------------------------------------
+function rafraichir() {
+  rendreBandeau(); rendreSoir(); rendreFavoris(); rendreCalendrier();
+  rendreClassement(); rendreMeneurs(); rendreResultats();
+}
 async function demarrer() {
+  try {
+    await chargerDonnees();
+  } catch (e) {
+    $("erreur").hidden = false;
+    $("erreur").textContent = "Les données n'ont pas pu être chargées pour l'instant. Réessaie dans quelques minutes.";
+    return;
+  }
+  favoris = lireFavoris();
   nettoyerFavoris();
-  toutAfficher();
-  afficherMiseAJour();
-  await chargerDonneesAuto();
-  nettoyerFavoris();
-  toutAfficher();
-  afficherMiseAJour();
-  setInterval(afficherMiseAJour, 60000); // le « il y a X min » avance tout seul
+  rafraichir();
+  rendreMiseAJour();
+  rendreUne();
+  demarrerDirect();
+  setInterval(() => {
+    const nouveauJour = versTexte(new Date());
+    if (nouveauJour !== AUJ) { AUJ = nouveauJour; rafraichir(); rendreUne(); }
+    rendreMiseAJour();
+  }, 60000);
 }
 demarrer();

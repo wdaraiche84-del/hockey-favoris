@@ -2,70 +2,141 @@
 <!-- =============================================================
      PAGE PRINCIPALE DU SITE
      Ce fichier contient la structure de la page (les sections).
-     L'apparence est dans style.css, les données dans donnees.js,
-     et ce qui réagit aux clics dans app.js.
+     L'apparence est dans style.css, ce qui réagit aux clics dans
+     app.js, et les données viennent du dossier data/ (le robot).
      ============================================================= -->
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Mes Favoris Hockey</title>
+  <meta name="description" content="Scores, classement et stats de la LNH, avec le suivi de tes joueurs préférés.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <script>
+    // Applique le thème (clair ou sombre) avant l'affichage, pour éviter un flash
+    try { const t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
 </head>
 <body>
 
+  <!-- ===== En-tête ===== -->
   <header class="entete">
     <div class="entete-int">
-      <h1>Mes Favoris <span>Hockey</span></h1>
-      <p class="sous-titre">Suis tes joueurs préférés, match par match.</p>
-      <p id="maj-badge" class="maj-badge"></p>
+      <a class="logo" href="#accueil"><span class="logo-pastille">MFH</span><span class="logo-texte">Mes Favoris <b>Hockey</b></span></a>
+      <nav class="nav-haut" aria-label="Sections">
+        <a href="#accueil">À la une</a>
+        <a href="#scores">Scores</a>
+        <a href="#favoris">Mes favoris</a>
+        <a href="#classement">Classement</a>
+        <a href="#meneurs">Meneurs</a>
+      </nav>
+      <div class="entete-droite">
+        <span id="maj-badge" class="maj-badge"></span>
+        <button id="theme" class="icone" aria-label="Changer de thème" title="Mode clair / sombre">◐</button>
+      </div>
     </div>
   </header>
 
-  <main>
-    <!-- 1. Calendrier jour par jour -->
-    <section class="bloc" id="section-calendrier">
-      <div class="bloc-titre">
-        <h2>Calendrier</h2>
-        <div class="nav-semaine">
-          <button id="sem-prec" aria-label="Semaine précédente">‹</button>
-          <span id="sem-titre"></span>
-          <button id="sem-suiv" aria-label="Semaine suivante">›</button>
+  <!-- ===== Bandeau des scores (comme sur les sites de sports) ===== -->
+  <section id="scores" class="bandeau" aria-label="Scores">
+    <div class="bandeau-int">
+      <div class="bandeau-date">
+        <button id="score-prec" class="mini" aria-label="Jour précédent">‹</button>
+        <strong id="score-jour"></strong>
+        <button id="score-suiv" class="mini" aria-label="Jour suivant">›</button>
+      </div>
+      <div id="bandeau-matchs" class="bandeau-matchs"></div>
+    </div>
+  </section>
+
+  <div id="erreur" class="erreur" hidden></div>
+
+  <main class="grille">
+    <!-- ===== Colonne principale ===== -->
+    <div class="col-principale">
+
+      <section id="accueil" class="bloc une">
+        <div class="titre-section"><h2>À la une</h2><span id="une-date" class="sur-titre"></span></div>
+        <div id="une"></div>
+        <ul id="manchettes" class="manchettes"></ul>
+        <p class="petit-gris">Résumés générés automatiquement à partir des statistiques officielles des matchs.</p>
+      </section>
+
+      <section id="ce-soir" class="bloc">
+        <div class="titre-section"><h2>Ce soir pour tes favoris</h2></div>
+        <div id="soir"></div>
+      </section>
+
+      <section id="favoris" class="bloc">
+        <div class="titre-section"><h2>Mes favoris</h2><span id="nb-favoris" class="pastille"></span></div>
+        <div id="cartes-favoris" class="cartes"></div>
+      </section>
+
+      <section id="section-calendrier" class="bloc">
+        <div class="titre-section">
+          <h2>Calendrier de mes favoris</h2>
+          <div class="nav-semaine">
+            <button id="sem-prec" class="mini" aria-label="Semaine précédente">‹</button>
+            <span id="sem-titre"></span>
+            <button id="sem-suiv" class="mini" aria-label="Semaine suivante">›</button>
+          </div>
         </div>
-      </div>
-      <div id="calendrier" class="jours"></div>
-      <div id="detail-jour" class="detail-jour"></div>
-    </section>
+        <div id="calendrier" class="jours"></div>
+        <div id="detail-jour" class="detail-jour"></div>
+      </section>
+    </div>
 
-    <!-- 2. Mes joueurs favoris -->
-    <section class="bloc" id="section-favoris">
-      <div class="bloc-titre">
-        <h2>Mes joueurs favoris</h2>
-        <span id="nb-favoris" class="pastille"></span>
-      </div>
-      <div id="favoris" class="cartes"></div>
-    </section>
+    <!-- ===== Colonne de droite ===== -->
+    <aside class="col-cote">
+      <section id="recherche-bloc" class="bloc">
+        <div class="titre-section"><h2>Trouver un joueur</h2></div>
+        <input id="recherche" type="search" placeholder="Nom ou équipe… ex. Demidov, Oilers" autocomplete="off">
+        <ul id="resultats" class="resultats"></ul>
+      </section>
 
-    <!-- 3. Recherche de joueurs -->
-    <section class="bloc" id="section-recherche">
-      <div class="bloc-titre"><h2>Ajouter un joueur</h2></div>
-      <input id="recherche" type="search" placeholder="Tape un nom… ex. Demidov" autocomplete="off">
-      <ul id="resultats" class="resultats"></ul>
-    </section>
+      <section id="classement" class="bloc">
+        <div class="titre-section"><h2>Classement</h2></div>
+        <div class="onglets" role="tablist">
+          <button class="onglet actif" data-conf="Eastern">Est</button>
+          <button class="onglet" data-conf="Western">Ouest</button>
+        </div>
+        <div id="table-classement"></div>
+      </section>
+
+      <section id="meneurs" class="bloc">
+        <div class="titre-section"><h2>Meneurs de la LNH</h2></div>
+        <div class="onglets" role="tablist">
+          <button class="onglet actif" data-cat="pts">Points</button>
+          <button class="onglet" data-cat="b">Buts</button>
+          <button class="onglet" data-cat="a">Passes</button>
+        </div>
+        <ol id="liste-meneurs" class="meneurs"></ol>
+      </section>
+    </aside>
   </main>
 
   <footer class="pied">
-    <span id="maj"></span>
-    Site non officiel, sans lien avec la LNH ni aucune de ses équipes.
+    <p id="maj"></p>
+    <p>Site non officiel, sans lien avec la LNH ni aucune de ses équipes.</p>
   </footer>
 
-  <!-- Fiche d'un joueur (s'ouvre par-dessus la page) -->
+  <!-- ===== Barre de navigation (téléphone) ===== -->
+  <nav class="nav-bas" aria-label="Navigation">
+    <a href="#accueil"><span>📰</span>Une</a>
+    <a href="#scores"><span>🏒</span>Scores</a>
+    <a href="#favoris"><span>⭐</span>Favoris</a>
+    <a href="#classement"><span>🏆</span>Classement</a>
+    <a href="#recherche-bloc"><span>🔍</span>Chercher</a>
+  </nav>
+
+  <!-- ===== Fiche d'un joueur (s'ouvre par-dessus la page) ===== -->
   <div id="fiche-fond" class="fiche-fond" hidden>
     <article id="fiche" class="fiche" role="dialog" aria-modal="true"></article>
   </div>
 
+  <script src="config.js"></script>
   <script src="donnees.js"></script>
   <script src="app.js"></script>
 </body>
