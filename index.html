@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<!-- =============================================================
+     PAGE PRINCIPALE DU SITE
+     Ce fichier contient la structure de la page (les sections).
+     L'apparence est dans style.css, les données dans donnees.js,
+     et ce qui réagit aux clics dans app.js.
+     ============================================================= -->
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mes Favoris Hockey</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="entete">
+    <div class="entete-int">
+      <h1>Mes Favoris <span>Hockey</span></h1>
+      <p class="sous-titre">Suis tes joueurs préférés, match par match.</p>
+    </div>
+  </header>
+
+  <main>
+    <!-- 1. Calendrier jour par jour -->
+    <section class="bloc" id="section-calendrier">
+      <div class="bloc-titre">
+        <h2>Calendrier</h2>
+        <div class="nav-semaine">
+          <button id="sem-prec" aria-label="Semaine précédente">‹</button>
+          <span id="sem-titre"></span>
+          <button id="sem-suiv" aria-label="Semaine suivante">›</button>
+        </div>
+      </div>
+      <div id="calendrier" class="jours"></div>
+      <div id="detail-jour" class="detail-jour"></div>
+    </section>
+
+    <!-- 2. Mes joueurs favoris -->
+    <section class="bloc" id="section-favoris">
+      <div class="bloc-titre">
+        <h2>Mes joueurs favoris</h2>
+        <span id="nb-favoris" class="pastille"></span>
+      </div>
+      <div id="favoris" class="cartes"></div>
+    </section>
+
+    <!-- 3. Recherche de joueurs -->
+    <section class="bloc" id="section-recherche">
+      <div class="bloc-titre"><h2>Ajouter un joueur</h2></div>
+      <input id="recherche" type="search" placeholder="Tape un nom… ex. Demidov" autocomplete="off">
+      <ul id="resultats" class="resultats"></ul>
+    </section>
+  </main>
+
+  <footer class="pied">
+    Données saisies à la main, à jour au <span id="maj"></span>. Les statistiques peuvent être incomplètes.
+    Site non officiel, sans lien avec la LNH ni le Club de hockey Canadien.
+  </footer>
+
+  <!-- Fiche d'un joueur (s'ouvre par-dessus la page) -->
+  <div id="fiche-fond" class="fiche-fond" hidden>
+    <article id="fiche" class="fiche" role="dialog" aria-modal="true"></article>
+  </div>
+
+  <script src="donnees.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
