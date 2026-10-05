@@ -33,8 +33,12 @@ jobs:
         with:
           node-version: 20
 
-      - name: Aller chercher les stats
+      - name: Aller chercher les stats de la LNH
         run: node scripts/maj-donnees.mjs
+
+      - name: Aller chercher les stats de la LAH et des juniors
+        run: node scripts/maj-autres-ligues.mjs
+        continue-on-error: true
 
       - name: Enregistrer les nouvelles données
         run: |
