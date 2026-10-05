@@ -1,0 +1,1269 @@
+{
+ "misAJour": "2026-10-05T21:38:08.521Z",
+ "saison": "20262027",
+ "joueurs": [
+  {
+   "id": "anderson",
+   "nhlId": 8476981,
+   "nom": "Josh Anderson",
+   "no": 17,
+   "pos": "AD",
+   "equipe": "MTL",
+   "stats": {
+    "pj": 2,
+    "b": 1,
+    "a": 1,
+    "pts": 2,
+    "pm": 2
+   }
+  },
+  {
+   "id": "bolduc",
+   "nhlId": 8482737,
+   "nom": "Zachary Bolduc",
+   "no": 76,
+   "pos": "AD",
+   "equipe": "MTL",
+   "stats": {
+    "pj": 2,
+    "b": 1,
+    "a": 0,
+    "pts": 1,
+    "pm": 1
+   }
+  },
+  {
+   "id": "caufield",
+   "nhlId": 8481540,
+   "nom": "Cole Caufield",
+   "no": 13,
+   "pos": "AD",
+   "equipe": "MTL",
+   "stats": {
+    "pj": 2,
+    "b": 2,
+    "a": 0,
+    "pts": 2,
+    "pm": 2
+   }
+  },
+  {
+   "id": "dach",
+   "nhlId": 8481523,
+   "nom": "Kirby Dach",
+   "no": 77,
+   "pos": "C",
+   "equipe": "MTL",
+   "stats": {
+    "pj": 2,
+    "b": 0,
+    "a": 1,
+    "pts": 1,
+    "pm": -1
+   }
+  },
+  {
+   "id": "danault",
+   "nhlId": 8476479,
+   "nom": "Phillip Danault",
+   "no": 24,
+   "pos": "C",
+   "equipe": "MTL",
+   "stats": {
+    "pj": 2,
+    "b": 0,
+    "a": 0,
+    "pts": 0,
+    "pm": 1
+   }
+  },
+  {
+   "id": "demidov",
+   "nhlId": 8484984,
+   "nom": "Ivan Demidov",
+   "no": 93,
+   "pos": "AD",
+   "equipe": "MTL",
+   "stats": {
+    "pj": 2,
+    "b": 1,
+    "a": 1,
+    "pts": 2,
+    "pm": 0
+   }
+  },
+  {
+   "id": "evans",
+   "nhlId": 8478133,
+   "nom": "Jake Evans",
+   "no": 71,
+   "pos": "C",
+   "equipe": "MTL",
+   "stats": {
+    "pj": 2,
+    "b": 0,
+    "a": 0,
+    "pts": 0,
+    "pm": 1
+   }
+  },
+  {
+   "id": "kapanen",
+   "nhlId": 8482775,
+   "nom": "Oliver Kapanen",
+   "no": 91,
+   "pos": "C",
+   "equipe": "MTL",
+   "stats": {
+    "pj": 0,
+    "b": 0,
+    "a": 0,
+    "pts": 0,
+    "pm": 0
+   }
+  },
+  {
+   "id": "kreider",
+   "nhlId": 8475184,
+   "nom": "Chris Kreider",
+   "no": 22,
+   "pos": "AG",
+   "equipe": "MTL",
+   "stats": {
+    "pj": 2,
+    "b": 1,
+    "a": 1,
+    "pts": 2,
+    "pm": 1
+   }
+  },
+  {
+   "id": "newhook",
+   "nhlId": 8481618,
+   "nom": "Alex Newhook",
+   "no": 15,
+   "pos": "C",
+   "equipe": "MTL",
+   "stats": {
+    "pj": 2,
+    "b": 0,
+    "a": 0,
+    "pts": 0,
+    "pm": -1
+   }
+  },
+  {
+   "id": "slafkovsky",
+   "nhlId": 8483515,
+   "nom": "Juraj Slafkovský",
+   "no": 20,
+   "pos": "AG",
+   "equipe": "MTL",
+   "stats": {
+    "pj": 2,
+    "b": 0,
+    "a": 0,
+    "pts": 0,
+    "pm": 2
+   }
+  },
+  {
+   "id": "suzuki",
+   "nhlId": 8480018,
+   "nom": "Nick Suzuki",
+   "no": 14,
+   "pos": "C",
+   "equipe": "MTL",
+   "stats": {
+    "pj": 2,
+    "b": 1,
+    "a": 3,
+    "pts": 4,
+    "pm": 3
+   }
+  },
+  {
+   "id": "texier",
+   "nhlId": 8480074,
+   "nom": "Alexandre Texier",
+   "no": 85,
+   "pos": "AG",
+   "equipe": "MTL",
+   "stats": {
+    "pj": 2,
+    "b": 0,
+    "a": 0,
+    "pts": 0,
+    "pm": -1
+   }
+  },
+  {
+   "id": "florian-xhekaj",
+   "nhlId": 8484403,
+   "nom": "Florian Xhekaj",
+   "no": 63,
+   "pos": "AG",
+   "equipe": "MTL",
+   "stats": {
+    "pj": 0,
+    "b": 0,
+    "a": 0,
+    "pts": 0,
+    "pm": 0
+   }
+  },
+  {
+   "id": "carrier",
+   "nhlId": 8478851,
+   "nom": "Alexandre Carrier",
+   "no": 45,
+   "pos": "D",
+   "equipe": "MTL",
+   "stats": {
+    "pj": 2,
+    "b": 1,
+    "a": 1,
+    "pts": 2,
+    "pm": 1
+   }
+  },
+  {
+   "id": "dobson",
+   "nhlId": 8480865,
+   "nom": "Noah Dobson",
+   "no": 53,
+   "pos": "D",
+   "equipe": "MTL",
+   "stats": {
+    "pj": 2,
+    "b": 0,
+    "a": 1,
+    "pts": 1,
+    "pm": -1
+   }
+  },
+  {
+   "id": "engstrom",
+   "nhlId": 8483686,
+   "nom": "Adam Engstrom",
+   "no": 42,
+   "pos": "D",
+   "equipe": "MTL",
+   "stats": {
+    "pj": 0,
+    "b": 0,
+    "a": 0,
+    "pts": 0,
+    "pm": 0
+   }
+  },
+  {
+   "id": "hutson",
+   "nhlId": 8483457,
+   "nom": "Lane Hutson",
+   "no": 48,
+   "pos": "D",
+   "equipe": "MTL",
+   "stats": {
+    "pj": 2,
+    "b": 0,
+    "a": 3,
+    "pts": 3,
+    "pm": 1
+   }
+  },
+  {
+   "id": "matheson",
+   "nhlId": 8476875,
+   "nom": "Mike Matheson",
+   "no": 8,
+   "pos": "D",
+   "equipe": "MTL",
+   "stats": {
+    "pj": 2,
+    "b": 0,
+    "a": 1,
+    "pts": 1,
+    "pm": -1
+   }
+  },
+  {
+   "id": "struble",
+   "nhlId": 8481593,
+   "nom": "Jayden Struble",
+   "no": 47,
+   "pos": "D",
+   "equipe": "MTL",
+   "stats": {
+    "pj": 2,
+    "b": 0,
+    "a": 0,
+    "pts": 0,
+    "pm": 2
+   }
+  },
+  {
+   "id": "arber-xhekaj",
+   "nhlId": 8482964,
+   "nom": "Arber Xhekaj",
+   "no": 72,
+   "pos": "D",
+   "equipe": "MTL",
+   "stats": {
+    "pj": 2,
+    "b": 0,
+    "a": 0,
+    "pts": 0,
+    "pm": 1
+   }
+  },
+  {
+   "id": "dobes",
+   "nhlId": 8482487,
+   "nom": "Jakub Dobes",
+   "no": 75,
+   "pos": "G",
+   "equipe": "MTL",
+   "gardien": {
+    "pj": 2,
+    "v": 1,
+    "d": 0,
+    "dp": 1,
+    "moy": 4.044944,
+    "pct": 0.862069
+   }
+  },
+  {
+   "id": "montembeault",
+   "nhlId": 8478470,
+   "nom": "Samuel Montembeault",
+   "no": 35,
+   "pos": "G",
+   "equipe": "MTL",
+   "stats": {
+    "pj": 0,
+    "b": 0,
+    "a": 0,
+    "pts": 0,
+    "pm": 0
+   }
+  }
+ ],
+ "calendrier": [
+  {
+   "id": 2026020002,
+   "date": "2026-09-29",
+   "debut": "2026-09-29T23:00:00Z",
+   "dom": false,
+   "adv": "Maple Leafs de Toronto",
+   "advAbrev": "TOR",
+   "etat": "fini",
+   "res": {
+    "mtl": 3,
+    "adv": 2
+   }
+  },
+  {
+   "id": 2026020026,
+   "date": "2026-10-03",
+   "debut": "2026-10-03T23:00:00Z",
+   "dom": false,
+   "adv": "Penguins de Pittsburgh",
+   "advAbrev": "PIT",
+   "etat": "fini",
+   "res": {
+    "mtl": 5,
+    "adv": 6,
+    "prol": true
+   }
+  },
+  {
+   "id": 2026020045,
+   "date": "2026-10-06",
+   "debut": "2026-10-06T23:00:00Z",
+   "dom": true,
+   "adv": "Hurricanes de la Caroline",
+   "advAbrev": "CAR",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020058,
+   "date": "2026-10-08",
+   "debut": "2026-10-08T23:00:00Z",
+   "dom": true,
+   "adv": "Predators de Nashville",
+   "advAbrev": "NSH",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020075,
+   "date": "2026-10-10",
+   "debut": "2026-10-10T23:00:00Z",
+   "dom": true,
+   "adv": "Red Wings de Detroit",
+   "advAbrev": "DET",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020092,
+   "date": "2026-10-13",
+   "debut": "2026-10-13T22:30:00Z",
+   "dom": true,
+   "adv": "Sabres de Buffalo",
+   "advAbrev": "BUF",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020106,
+   "date": "2026-10-14",
+   "debut": "2026-10-14T23:30:00Z",
+   "dom": false,
+   "adv": "Capitals de Washington",
+   "advAbrev": "WSH",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020126,
+   "date": "2026-10-17",
+   "debut": "2026-10-17T23:00:00Z",
+   "dom": true,
+   "adv": "Sabres de Buffalo",
+   "advAbrev": "BUF",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020141,
+   "date": "2026-10-20",
+   "debut": "2026-10-20T23:00:00Z",
+   "dom": true,
+   "adv": "Sharks de San Jose",
+   "advAbrev": "SJS",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020166,
+   "date": "2026-10-23",
+   "debut": "2026-10-24T00:00:00Z",
+   "dom": false,
+   "adv": "Blackhawks de Chicago",
+   "advAbrev": "CHI",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020182,
+   "date": "2026-10-25",
+   "debut": "2026-10-25T23:00:00Z",
+   "dom": false,
+   "adv": "Jets de Winnipeg",
+   "advAbrev": "WPG",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020191,
+   "date": "2026-10-27",
+   "debut": "2026-10-28T00:00:00Z",
+   "dom": false,
+   "adv": "Blues de St. Louis",
+   "advAbrev": "STL",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020209,
+   "date": "2026-10-29",
+   "debut": "2026-10-30T00:00:00Z",
+   "dom": false,
+   "adv": "Stars de Dallas",
+   "advAbrev": "DAL",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020223,
+   "date": "2026-10-31",
+   "debut": "2026-10-31T23:00:00Z",
+   "dom": true,
+   "adv": "Penguins de Pittsburgh",
+   "advAbrev": "PIT",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020237,
+   "date": "2026-11-03",
+   "debut": "2026-11-04T00:00:00Z",
+   "dom": true,
+   "adv": "Jets de Winnipeg",
+   "advAbrev": "WPG",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020251,
+   "date": "2026-11-05",
+   "debut": "2026-11-06T00:00:00Z",
+   "dom": true,
+   "adv": "Mammoth de l'Utah",
+   "advAbrev": "UTA",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020268,
+   "date": "2026-11-07",
+   "debut": "2026-11-08T00:00:00Z",
+   "dom": false,
+   "adv": "Maple Leafs de Toronto",
+   "advAbrev": "TOR",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020287,
+   "date": "2026-11-10",
+   "debut": "2026-11-11T00:00:00Z",
+   "dom": true,
+   "adv": "Wild du Minnesota",
+   "advAbrev": "MIN",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020299,
+   "date": "2026-11-12",
+   "debut": "2026-11-13T00:00:00Z",
+   "dom": false,
+   "adv": "Bruins de Boston",
+   "advAbrev": "BOS",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020315,
+   "date": "2026-11-14",
+   "debut": "2026-11-15T00:00:00Z",
+   "dom": true,
+   "adv": "Avalanche du Colorado",
+   "advAbrev": "COL",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020331,
+   "date": "2026-11-16",
+   "debut": "2026-11-17T00:30:00Z",
+   "dom": false,
+   "adv": "Rangers de New York",
+   "advAbrev": "NYR",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020345,
+   "date": "2026-11-18",
+   "debut": "2026-11-19T00:30:00Z",
+   "dom": false,
+   "adv": "Devils du New Jersey",
+   "advAbrev": "NJD",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020352,
+   "date": "2026-11-19",
+   "debut": "2026-11-20T00:00:00Z",
+   "dom": false,
+   "adv": "Hurricanes de la Caroline",
+   "advAbrev": "CAR",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020365,
+   "date": "2026-11-21",
+   "debut": "2026-11-22T00:00:00Z",
+   "dom": true,
+   "adv": "Flyers de Philadelphie",
+   "advAbrev": "PHI",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020379,
+   "date": "2026-11-23",
+   "debut": "2026-11-24T00:30:00Z",
+   "dom": true,
+   "adv": "Kings de Los Angeles",
+   "advAbrev": "LAK",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020397,
+   "date": "2026-11-25",
+   "debut": "2026-11-26T02:30:00Z",
+   "dom": false,
+   "adv": "Avalanche du Colorado",
+   "advAbrev": "COL",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020415,
+   "date": "2026-11-28",
+   "debut": "2026-11-28T21:00:00Z",
+   "dom": false,
+   "adv": "Golden Knights de Vegas",
+   "advAbrev": "VGK",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020435,
+   "date": "2026-11-30",
+   "debut": "2026-12-01T02:30:00Z",
+   "dom": false,
+   "adv": "Mammoth de l'Utah",
+   "advAbrev": "UTA",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020445,
+   "date": "2026-12-02",
+   "debut": "2026-12-03T00:30:00Z",
+   "dom": true,
+   "adv": "Lightning de Tampa Bay",
+   "advAbrev": "TBL",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020465,
+   "date": "2026-12-05",
+   "debut": "2026-12-05T18:00:00Z",
+   "dom": true,
+   "adv": "Panthers de la Floride",
+   "advAbrev": "FLA",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020478,
+   "date": "2026-12-06",
+   "debut": "2026-12-07T00:00:00Z",
+   "dom": true,
+   "adv": "Sénateurs d'Ottawa",
+   "advAbrev": "OTT",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020486,
+   "date": "2026-12-08",
+   "debut": "2026-12-09T00:00:00Z",
+   "dom": true,
+   "adv": "Golden Knights de Vegas",
+   "advAbrev": "VGK",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020500,
+   "date": "2026-12-10",
+   "debut": "2026-12-11T00:00:00Z",
+   "dom": true,
+   "adv": "Ducks d'Anaheim",
+   "advAbrev": "ANA",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020515,
+   "date": "2026-12-12",
+   "debut": "2026-12-12T18:00:00Z",
+   "dom": false,
+   "adv": "Blue Jackets de Columbus",
+   "advAbrev": "CBJ",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020533,
+   "date": "2026-12-14",
+   "debut": "2026-12-15T00:30:00Z",
+   "dom": true,
+   "adv": "Oilers d'Edmonton",
+   "advAbrev": "EDM",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020559,
+   "date": "2026-12-18",
+   "debut": "2026-12-19T00:30:00Z",
+   "dom": false,
+   "adv": "Sabres de Buffalo",
+   "advAbrev": "BUF",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020573,
+   "date": "2026-12-19",
+   "debut": "2026-12-20T00:00:00Z",
+   "dom": false,
+   "adv": "Wild du Minnesota",
+   "advAbrev": "MIN",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020594,
+   "date": "2026-12-22",
+   "debut": "2026-12-23T00:00:00Z",
+   "dom": false,
+   "adv": "Blue Jackets de Columbus",
+   "advAbrev": "CBJ",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020604,
+   "date": "2026-12-26",
+   "debut": "2026-12-27T00:00:00Z",
+   "dom": true,
+   "adv": "Maple Leafs de Toronto",
+   "advAbrev": "TOR",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020615,
+   "date": "2026-12-27",
+   "debut": "2026-12-28T00:00:00Z",
+   "dom": true,
+   "adv": "Stars de Dallas",
+   "advAbrev": "DAL",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020626,
+   "date": "2026-12-29",
+   "debut": "2026-12-30T00:00:00Z",
+   "dom": true,
+   "adv": "Blue Jackets de Columbus",
+   "advAbrev": "CBJ",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020644,
+   "date": "2026-12-31",
+   "debut": "2026-12-31T19:00:00Z",
+   "dom": false,
+   "adv": "Lightning de Tampa Bay",
+   "advAbrev": "TBL",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020656,
+   "date": "2027-01-02",
+   "debut": "2027-01-02T18:00:00Z",
+   "dom": false,
+   "adv": "Panthers de la Floride",
+   "advAbrev": "FLA",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020675,
+   "date": "2027-01-04",
+   "debut": "2027-01-05T00:30:00Z",
+   "dom": true,
+   "adv": "Blackhawks de Chicago",
+   "advAbrev": "CHI",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020690,
+   "date": "2027-01-06",
+   "debut": "2027-01-07T00:30:00Z",
+   "dom": true,
+   "adv": "Bruins de Boston",
+   "advAbrev": "BOS",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020714,
+   "date": "2027-01-09",
+   "debut": "2027-01-10T00:00:00Z",
+   "dom": true,
+   "adv": "Penguins de Pittsburgh",
+   "advAbrev": "PIT",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020738,
+   "date": "2027-01-13",
+   "debut": "2027-01-14T00:00:00Z",
+   "dom": true,
+   "adv": "Devils du New Jersey",
+   "advAbrev": "NJD",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020749,
+   "date": "2027-01-14",
+   "debut": "2027-01-15T01:00:00Z",
+   "dom": false,
+   "adv": "Predators de Nashville",
+   "advAbrev": "NSH",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020764,
+   "date": "2027-01-16",
+   "debut": "2027-01-17T00:00:00Z",
+   "dom": false,
+   "adv": "Flyers de Philadelphie",
+   "advAbrev": "PHI",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020776,
+   "date": "2027-01-18",
+   "debut": "2027-01-18T19:00:00Z",
+   "dom": false,
+   "adv": "Sabres de Buffalo",
+   "advAbrev": "BUF",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020789,
+   "date": "2027-01-19",
+   "debut": "2027-01-20T00:00:00Z",
+   "dom": false,
+   "adv": "Capitals de Washington",
+   "advAbrev": "WSH",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020799,
+   "date": "2027-01-21",
+   "debut": "2027-01-22T00:00:00Z",
+   "dom": true,
+   "adv": "Blues de St. Louis",
+   "advAbrev": "STL",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020815,
+   "date": "2027-01-23",
+   "debut": "2027-01-24T00:00:00Z",
+   "dom": true,
+   "adv": "Flames de Calgary",
+   "advAbrev": "CGY",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020836,
+   "date": "2027-01-26",
+   "debut": "2027-01-27T00:00:00Z",
+   "dom": true,
+   "adv": "Hurricanes de la Caroline",
+   "advAbrev": "CAR",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020855,
+   "date": "2027-01-28",
+   "debut": "2027-01-29T01:00:00Z",
+   "dom": false,
+   "adv": "Flames de Calgary",
+   "advAbrev": "CGY",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020874,
+   "date": "2027-01-30",
+   "debut": "2027-01-31T00:00:00Z",
+   "dom": false,
+   "adv": "Oilers d'Edmonton",
+   "advAbrev": "EDM",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020883,
+   "date": "2027-02-01",
+   "debut": "2027-02-02T01:30:00Z",
+   "dom": false,
+   "adv": "Canucks de Vancouver",
+   "advAbrev": "VAN",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020894,
+   "date": "2027-02-03",
+   "debut": "2027-02-04T02:40:00Z",
+   "dom": false,
+   "adv": "Kraken de Seattle",
+   "advAbrev": "SEA",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020912,
+   "date": "2027-02-13",
+   "debut": "2027-02-13T18:00:00Z",
+   "dom": true,
+   "adv": "Capitals de Washington",
+   "advAbrev": "WSH",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020927,
+   "date": "2027-02-14",
+   "debut": "2027-02-14T18:00:00Z",
+   "dom": true,
+   "adv": "Rangers de New York",
+   "advAbrev": "NYR",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020952,
+   "date": "2027-02-18",
+   "debut": "2027-02-19T00:00:00Z",
+   "dom": false,
+   "adv": "Red Wings de Detroit",
+   "advAbrev": "DET",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020972,
+   "date": "2027-02-20",
+   "debut": "2027-02-21T00:00:00Z",
+   "dom": true,
+   "adv": "Islanders de New York",
+   "advAbrev": "NYI",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026020986,
+   "date": "2027-02-22",
+   "debut": "2027-02-22T19:00:00Z",
+   "dom": false,
+   "adv": "Flyers de Philadelphie",
+   "advAbrev": "PHI",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026021003,
+   "date": "2027-02-24",
+   "debut": "2027-02-25T03:00:00Z",
+   "dom": false,
+   "adv": "Kings de Los Angeles",
+   "advAbrev": "LAK",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026021027,
+   "date": "2027-02-27",
+   "debut": "2027-02-28T00:00:00Z",
+   "dom": false,
+   "adv": "Ducks d'Anaheim",
+   "advAbrev": "ANA",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026021042,
+   "date": "2027-03-01",
+   "debut": "2027-03-02T03:00:00Z",
+   "dom": false,
+   "adv": "Sharks de San Jose",
+   "advAbrev": "SJS",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026021057,
+   "date": "2027-03-04",
+   "debut": "2027-03-05T00:00:00Z",
+   "dom": true,
+   "adv": "Kraken de Seattle",
+   "advAbrev": "SEA",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026021074,
+   "date": "2027-03-06",
+   "debut": "2027-03-07T00:00:00Z",
+   "dom": true,
+   "adv": "Canucks de Vancouver",
+   "advAbrev": "VAN",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026021094,
+   "date": "2027-03-09",
+   "debut": "2027-03-10T00:00:00Z",
+   "dom": false,
+   "adv": "Islanders de New York",
+   "advAbrev": "NYI",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026021104,
+   "date": "2027-03-10",
+   "debut": "2027-03-11T00:30:00Z",
+   "dom": true,
+   "adv": "Bruins de Boston",
+   "advAbrev": "BOS",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026021126,
+   "date": "2027-03-13",
+   "debut": "2027-03-14T00:00:00Z",
+   "dom": false,
+   "adv": "Sénateurs d'Ottawa",
+   "advAbrev": "OTT",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026021147,
+   "date": "2027-03-16",
+   "debut": "2027-03-16T23:00:00Z",
+   "dom": true,
+   "adv": "Panthers de la Floride",
+   "advAbrev": "FLA",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026021161,
+   "date": "2027-03-18",
+   "debut": "2027-03-18T23:00:00Z",
+   "dom": true,
+   "adv": "Lightning de Tampa Bay",
+   "advAbrev": "TBL",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026021175,
+   "date": "2027-03-20",
+   "debut": "2027-03-20T16:30:00Z",
+   "dom": false,
+   "adv": "Red Wings de Detroit",
+   "advAbrev": "DET",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026021194,
+   "date": "2027-03-22",
+   "debut": "2027-03-22T23:30:00Z",
+   "dom": true,
+   "adv": "Maple Leafs de Toronto",
+   "advAbrev": "TOR",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026021208,
+   "date": "2027-03-24",
+   "debut": "2027-03-24T23:30:00Z",
+   "dom": true,
+   "adv": "Sénateurs d'Ottawa",
+   "advAbrev": "OTT",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026021232,
+   "date": "2027-03-27",
+   "debut": "2027-03-27T23:00:00Z",
+   "dom": true,
+   "adv": "Devils du New Jersey",
+   "advAbrev": "NJD",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026021242,
+   "date": "2027-03-28",
+   "debut": "2027-03-28T22:00:00Z",
+   "dom": true,
+   "adv": "Red Wings de Detroit",
+   "advAbrev": "DET",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026021248,
+   "date": "2027-03-30",
+   "debut": "2027-03-30T23:00:00Z",
+   "dom": false,
+   "adv": "Bruins de Boston",
+   "advAbrev": "BOS",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026021263,
+   "date": "2027-04-01",
+   "debut": "2027-04-01T23:00:00Z",
+   "dom": true,
+   "adv": "Rangers de New York",
+   "advAbrev": "NYR",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026021294,
+   "date": "2027-04-04",
+   "debut": "2027-04-04T23:30:00Z",
+   "dom": false,
+   "adv": "Islanders de New York",
+   "advAbrev": "NYI",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026021302,
+   "date": "2027-04-06",
+   "debut": "2027-04-06T23:15:00Z",
+   "dom": false,
+   "adv": "Panthers de la Floride",
+   "advAbrev": "FLA",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026021317,
+   "date": "2027-04-08",
+   "debut": "2027-04-08T23:00:00Z",
+   "dom": false,
+   "adv": "Lightning de Tampa Bay",
+   "advAbrev": "TBL",
+   "etat": "avenir"
+  },
+  {
+   "id": 2026021338,
+   "date": "2027-04-10",
+   "debut": "2027-04-10T23:00:00Z",
+   "dom": false,
+   "adv": "Sénateurs d'Ottawa",
+   "advAbrev": "OTT",
+   "etat": "avenir"
+  }
+ ],
+ "matchs": {
+  "2026-09-29": {
+   "caufield": {
+    "b": 0,
+    "a": 0
+   },
+   "suzuki": {
+    "b": 0,
+    "a": 0
+   },
+   "newhook": {
+    "b": 0,
+    "a": 0
+   },
+   "anderson": {
+    "b": 1,
+    "a": 1
+   },
+   "slafkovsky": {
+    "b": 0,
+    "a": 0
+   },
+   "kreider": {
+    "b": 0,
+    "a": 0
+   },
+   "danault": {
+    "b": 0,
+    "a": 0
+   },
+   "evans": {
+    "b": 0,
+    "a": 0
+   },
+   "bolduc": {
+    "b": 1,
+    "a": 0
+   },
+   "dach": {
+    "b": 0,
+    "a": 1
+   },
+   "texier": {
+    "b": 0,
+    "a": 0
+   },
+   "demidov": {
+    "b": 0,
+    "a": 0
+   },
+   "matheson": {
+    "b": 0,
+    "a": 1
+   },
+   "carrier": {
+    "b": 1,
+    "a": 1
+   },
+   "struble": {
+    "b": 0,
+    "a": 0
+   },
+   "hutson": {
+    "b": 0,
+    "a": 0
+   },
+   "dobson": {
+    "b": 0,
+    "a": 0
+   },
+   "arber-xhekaj": {
+    "b": 0,
+    "a": 0
+   }
+  },
+  "2026-10-03": {
+   "caufield": {
+    "b": 2,
+    "a": 0
+   },
+   "suzuki": {
+    "b": 1,
+    "a": 3
+   },
+   "newhook": {
+    "b": 0,
+    "a": 0
+   },
+   "anderson": {
+    "b": 0,
+    "a": 0
+   },
+   "slafkovsky": {
+    "b": 0,
+    "a": 0
+   },
+   "kreider": {
+    "b": 1,
+    "a": 1
+   },
+   "danault": {
+    "b": 0,
+    "a": 0
+   },
+   "evans": {
+    "b": 0,
+    "a": 0
+   },
+   "bolduc": {
+    "b": 0,
+    "a": 0
+   },
+   "dach": {
+    "b": 0,
+    "a": 0
+   },
+   "texier": {
+    "b": 0,
+    "a": 0
+   },
+   "demidov": {
+    "b": 1,
+    "a": 1
+   },
+   "matheson": {
+    "b": 0,
+    "a": 0
+   },
+   "carrier": {
+    "b": 0,
+    "a": 0
+   },
+   "struble": {
+    "b": 0,
+    "a": 0
+   },
+   "hutson": {
+    "b": 0,
+    "a": 3
+   },
+   "dobson": {
+    "b": 0,
+    "a": 1
+   },
+   "arber-xhekaj": {
+    "b": 0,
+    "a": 0
+   }
+  }
+ }
+}
