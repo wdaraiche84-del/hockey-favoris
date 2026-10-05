@@ -64,6 +64,19 @@ a { color: inherit; }
 .icone { width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .2); background: transparent; color: #fff; font-size: 1.1rem; }
 .icone:hover { background: rgba(255, 255, 255, .1); }
 
+/* ---- Choix de la ligue ---- */
+.barre-ligues { background: var(--entete); border-bottom: 1px solid rgba(255, 255, 255, .08); }
+.barre-ligues-int { max-width: 1200px; margin: 0 auto; padding: 8px 16px; display: flex; align-items: center; gap: 12px; }
+.barre-titre { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #9CA3AF; }
+.choix-ligue { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.puce-ligue { border: 1px solid rgba(255, 255, 255, .18); background: transparent; color: #E5E7EB; border-radius: 99px; padding: 5px 14px; font-family: var(--titre); font-weight: 700; font-size: 1rem; letter-spacing: .04em; white-space: nowrap; }
+.puce-ligue:hover { border-color: var(--accent); color: #fff; }
+.puce-ligue.actif { background: var(--accent); border-color: var(--accent); color: #fff; }
+.ligue-long { font-size: .8rem; color: #9CA3AF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tag-ligue { display: inline-block; font-family: var(--titre); font-weight: 700; font-size: .85em; color: var(--accent); letter-spacing: .03em; }
+.tag-ligue.petit { font-size: .66rem; font-family: "Inter", sans-serif; background: var(--accent); color: #fff; border-radius: 4px; padding: 1px 5px; vertical-align: middle; letter-spacing: .02em; }
+.chargement .pages { opacity: .5; transition: opacity .2s; }
+
 /* ---- Bandeau des scores ---- */
 .bandeau { background: var(--bandeau); color: var(--bandeau-texte); }
 .bandeau-int { max-width: 1200px; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center; gap: 14px; }
@@ -305,6 +318,9 @@ table.tableau { width: 100%; border-collapse: collapse; font-size: .85rem; }
   .logo-texte { font-size: 1.2rem; }
   .maj-badge { display: none; }
   .bandeau-int { padding: 8px 12px; gap: 8px; }
+  .barre-ligues-int { padding: 6px 10px; gap: 8px; }
+  .ligue-long, .barre-titre { display: none; }
+  .puce-ligue { padding: 4px 11px; font-size: .92rem; }
   .bandeau-date strong { width: 74px; font-size: .66rem; }
   .score-carte { width: 132px; }
   .pages { padding: 0 10px 20px; margin-top: 12px; }
@@ -336,3 +352,5 @@ table.tableau { width: 100%; border-collapse: collapse; font-size: .85rem; }
   .nav-bas a:active, .nav-bas a.actif { color: var(--accent); }
   .nav-bas a.actif span { transform: translateY(-1px); }
 }
+/* L'étiquette de ligue reste lisible partout (ex. dans les résultats de recherche) */
+.resultats .infos span.tag-ligue, .tag-ligue.petit { color: #fff; font-size: .66rem; }

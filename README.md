@@ -1,6 +1,6 @@
 # Mes Favoris Hockey
 
-Scores, classement, meneurs et stats de toute la LNH, avec le suivi de tes joueurs préférés.
+Scores, classement, meneurs et stats de la LNH, de la LAH et des ligues junior (LHJMQ, OHL, WHL), avec le suivi de tes joueurs préférés.
 
 ## Les fichiers
 
@@ -12,7 +12,9 @@ Scores, classement, meneurs et stats de toute la LNH, avec le suivi de tes joueu
 | `config.js` | Les réglages (adresse du relais pour le direct) |
 | `donnees.js` | Ce que la LNH ne publie pas : les trios, les joueurs hors LNH |
 | `data/` | Les données de la LNH, mises à jour automatiquement par le robot |
-| `scripts/maj-donnees.mjs` | Le robot qui va chercher les données des 32 équipes |
+| `data/ligues/` | Les données de la LAH, de la LHJMQ, de l'OHL et de la WHL |
+| `scripts/maj-donnees.mjs` | Le robot qui va chercher les données des 32 équipes de la LNH |
+| `scripts/maj-autres-ligues.mjs` | Le robot de la LAH et des juniors |
 | `.github/workflows/maj-donnees.yml` | Dit à GitHub de lancer le robot toutes les 30 minutes environ |
 | `relais/` | Le relais optionnel pour le direct à la seconde (voir `relais/LISEZMOI.md`) |
 

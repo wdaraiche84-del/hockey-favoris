@@ -42,6 +42,15 @@
     </div>
   </header>
 
+  <!-- ===== Choix de la ligue (s'applique aux scores, à la une, classement, meneurs, joueurs) ===== -->
+  <div class="barre-ligues">
+    <div class="barre-ligues-int">
+      <span class="barre-titre">Ligue</span>
+      <div id="choix-ligue" class="choix-ligue" role="tablist" aria-label="Choisir la ligue"></div>
+      <span id="ligue-long" class="ligue-long"></span>
+    </div>
+  </div>
+
   <!-- ===== Bandeau des scores (sur toutes les pages) ===== -->
   <section class="bandeau" aria-label="Scores du jour">
     <div class="bandeau-int">
@@ -62,7 +71,7 @@
     <div class="page" data-page="accueil">
       <div class="grille-2">
         <section class="bloc une">
-          <div class="titre-section"><h2>À la une</h2><span id="une-date" class="sur-titre"></span></div>
+          <div class="titre-section"><h2>À la une <span class="tag-ligue" data-nom-ligue></span></h2><span id="une-date" class="sur-titre"></span></div>
           <div id="une"></div>
           <ul id="manchettes" class="manchettes"></ul>
           <p class="petit-gris">Résumés générés automatiquement à partir des statistiques officielles des matchs.</p>
@@ -73,7 +82,7 @@
             <div id="soir"></div>
           </section>
           <section class="bloc">
-            <div class="titre-section"><h2>Meneurs</h2><a class="lien-plus" href="#/meneurs">Voir tout ›</a></div>
+            <div class="titre-section"><h2>Meneurs <span class="tag-ligue" data-nom-ligue></span></h2><a class="lien-plus" href="#/meneurs">Voir tout ›</a></div>
             <ol id="mini-meneurs" class="meneurs"></ol>
           </section>
         </div>
@@ -84,7 +93,7 @@
     <div class="page" data-page="scores">
       <section class="bloc">
         <div class="titre-section">
-          <h2>Scores de la LNH</h2>
+          <h2>Scores <span class="tag-ligue" data-nom-ligue></span></h2>
           <div class="nav-semaine">
             <button id="page-score-prec" class="mini" aria-label="Jour précédent">‹</button>
             <span id="page-score-jour"></span>
@@ -100,7 +109,7 @@
       <section class="bloc">
         <div class="titre-section"><h2>Mes favoris</h2><span id="nb-favoris" class="pastille"></span></div>
         <div id="cartes-favoris" class="cartes"></div>
-        <p class="petit-gris">Pour ajouter des joueurs, va dans l'onglet <a href="#/joueurs">Joueurs</a>.</p>
+        <p class="petit-gris">Tes favoris peuvent venir de toutes les ligues. Pour en ajouter, va dans l'onglet <a href="#/joueurs">Joueurs</a>.</p>
       </section>
       <section class="bloc">
         <div class="titre-section">
@@ -119,7 +128,7 @@
     <!-- ========== PAGE 4 : Classement ========== -->
     <div class="page" data-page="classement">
       <section class="bloc">
-        <div class="titre-section"><h2>Classement</h2>
+        <div class="titre-section"><h2>Classement <span class="tag-ligue" data-nom-ligue></span></h2>
           <div class="onglets petits" role="tablist">
             <button class="onglet actif" data-vue="conf">Associations</button>
             <button class="onglet" data-vue="div">Divisions</button>
@@ -139,8 +148,8 @@
     <!-- ========== PAGE 6 : Joueurs ========== -->
     <div class="page" data-page="joueurs">
       <section class="bloc">
-        <div class="titre-section"><h2>Trouver un joueur</h2></div>
-        <input id="recherche" type="search" placeholder="Nom ou équipe… ex. Demidov, Oilers, TOR" autocomplete="off">
+        <div class="titre-section"><h2>Trouver un joueur</h2><span class="sur-titre">Toutes les ligues</span></div>
+        <input id="recherche" type="search" placeholder="Nom ou équipe… ex. Demidov, Oilers, Océanic" autocomplete="off">
         <ul id="resultats" class="resultats grand"></ul>
         <div id="equipes" class="equipes"></div>
       </section>
