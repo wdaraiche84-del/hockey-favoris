@@ -19,4 +19,4 @@ Un site pour suivre ses joueurs de hockey préférés : calendrier, statistiques
 - **Stats, résultats, calendrier, effectif** : automatiques. Pour forcer une mise à jour, va dans l'onglet **Actions**, choisis « Mise à jour des stats », puis « Run workflow ».
 - **Trios et paires** : à la main, dans `donnees.js` (la LNH ne les publie pas).
 
-Site non officiel, sans lien avec la LNH ni le Club de hockey Canadien.
+Site non officiel, sans lien avec la LNH ni aucune de ses équipes.
