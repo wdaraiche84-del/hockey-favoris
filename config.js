@@ -7,7 +7,7 @@
 // pas installé : le site utilise alors les données du robot,
 // mises à jour aux 30 minutes environ.
 // Exemple : const RELAIS = "https://hockey-relais.ton-nom.workers.dev";
-const RELAIS = "";
+const RELAIS = "https://empty-forest-740ehockey-relais.w-daraiche84.workers.dev";
 
 // Aux combien de secondes le score se rafraîchit pendant un match
 const SECONDES_DIRECT = 20;
