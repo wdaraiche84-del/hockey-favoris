@@ -9,10 +9,14 @@ Un site pour suivre ses joueurs de hockey préférés : calendrier, statistiques
 | `index.html` | La structure de la page (les sections) |
 | `style.css` | L'apparence (couleurs, tailles, mise en page) |
 | `app.js` | Ce qui réagit aux clics (favoris, recherche, fiche joueur) |
-| `donnees.js` | Les joueurs, le calendrier et les résultats, écrits à la main |
+| `donnees.js` | Les trios du Canadien, plus des données de secours écrites à la main |
+| `data/mtl.json` | Les stats et le calendrier, mis à jour automatiquement par le robot |
+| `scripts/maj-donnees.mjs` | Le robot qui va chercher les stats auprès de la LNH |
+| `.github/workflows/maj-donnees.yml` | Dit à GitHub de lancer le robot toutes les 30 minutes environ |
 
-## Mettre les données à jour
+## Les mises à jour
 
-Tout se trouve dans `donnees.js`. Les données sont à jour au 5 octobre 2026.
+- **Stats, résultats, calendrier, effectif** : automatiques. Pour forcer une mise à jour, va dans l'onglet **Actions**, choisis « Mise à jour des stats », puis « Run workflow ».
+- **Trios et paires** : à la main, dans `donnees.js` (la LNH ne les publie pas).
 
 Site non officiel, sans lien avec la LNH ni le Club de hockey Canadien.

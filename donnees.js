@@ -1,8 +1,9 @@
 // =============================================================
 // DONNÉES DU SITE
-// Toutes les infos (joueurs, calendrier, résultats) sont écrites
-// ici, à la main. Pour mettre le site à jour, c'est ce fichier
-// qu'on modifie. Dernière mise à jour : 5 octobre 2026.
+// Ces infos écrites à la main servent de SECOURS : le site utilise
+// d'abord les données automatiques du robot (data/mtl.json).
+// Les trios (FORMATION_MTL), eux, sont toujours écrits ici, car
+// la LNH ne les publie pas. Dernière mise à jour : 5 octobre 2026.
 // =============================================================
 
 const MISE_A_JOUR = "5 octobre 2026";
@@ -34,7 +35,7 @@ const JOUEURS = [
   { id: "carrier",     nom: "Alexandre Carrier",  no: 45,   pos: "D",  equipe: "MTL" },
   { id: "guhle",       nom: "Kaiden Guhle",       no: 21,   pos: "D",  equipe: "MTL" },
   { id: "reinbacher",  nom: "David Reinbacher",   no: null, pos: "D",  equipe: "MTL" },
-  { id: "xhekaj",      nom: "Arber Xhekaj",       no: 72,   pos: "D",  equipe: "MTL" },
+  { id: "arber-xhekaj",nom: "Arber Xhekaj",       no: 72,   pos: "D",  equipe: "MTL" },
   { id: "struble",     nom: "Jayden Struble",     no: 47,   pos: "D",  equipe: "MTL" },
   // Gardiens du Canadien
   { id: "dobes",       nom: "Jakub Dobeš",        no: 75,   pos: "G",  equipe: "MTL" },
@@ -65,7 +66,7 @@ const FORMATION_MTL = {
     ["guhle", "reinbacher"],
   ],
   gardiens: ["dobes", "montembeault"],
-  reserve: ["kapanen", "xhekaj", "struble"],
+  reserve: ["kapanen", "arber-xhekaj", "struble"],
 };
 
 // ---- Calendrier du Canadien (sept. à déc. 2026) -------------
