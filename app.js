@@ -323,7 +323,7 @@ function photoPour(titre, cat) {
 function rendreCredits() {
   const el = document.getElementById("credits-photos");
   if (!el || !PHOTOS.length) return;
-  el.innerHTML = `<summary>Crédits photos</summary><p>Photos libres de droits provenant de Wikimedia Commons, utilisées à titre d'illustration seulement : elles ne montrent pas les personnes ou les équipes dont parlent les articles.</p><ul>${
+  el.innerHTML = `<summary>Crédits photos</summary><p>Photos libres de droits provenant de Wikimedia Commons, utilisées seulement pour décorer : ce sont des images neutres (patinoires, bâtons, rondelles, patins) qui ne montrent aucune équipe ni aucun joueur.</p><ul>${
     PHOTOS.map((p) => `<li><a href="${echapper(p.page)}" target="_blank" rel="noopener">${echapper(p.auteur)}</a> · ${echapper(p.lic)}</li>`).join("")}</ul>`;
 }
 

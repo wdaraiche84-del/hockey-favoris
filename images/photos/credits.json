@@ -1,52 +1,24 @@
 [
  {
-  "f": "nouvelle-011.jpg",
+  "f": "nouvelle-061.jpg",
   "cat": "nouvelle",
-  "auteur": "TheAHL",
-  "lic": "CC BY 2.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Game-action_(50517137862).jpg"
- },
- {
-  "f": "nouvelle-045.jpg",
-  "cat": "nouvelle",
-  "auteur": "Trevor Cokley (U.S. Air Force Academy)",
-  "lic": "Public domain",
-  "page": "https://commons.wikimedia.org/wiki/File:Michigan_State_Spartans_at_Air_Force_Falcons_men%27s_ice_hockey_game_on_October_12,_2023_at_Cadet_Ice_Arena_in_Colorado_Springs_2012.jpg"
- },
- {
-  "f": "nouvelle-050.jpg",
-  "cat": "nouvelle",
-  "auteur": "Chris Waits",
-  "lic": "CC BY 2.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Festivus_Faceoff_(8371574667).jpg"
- },
- {
-  "f": "nouvelle-051.jpg",
-  "cat": "nouvelle",
-  "auteur": "Chris Waits",
-  "lic": "CC BY 2.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Clarkson_vs._St._Lawrence_game_at_Herb_Brooks_Arena_during_Festivus_Faceoff_2011_(8371577617).jpg"
- },
- {
-  "f": "nouvelle-097.jpg",
-  "cat": "nouvelle",
-  "auteur": "Trevor Cokley (U.S. Air Force Academy)",
-  "lic": "Public domain",
-  "page": "https://commons.wikimedia.org/wiki/File:Michigan_State_Spartans_at_Air_Force_Falcons_men%27s_ice_hockey_game_on_October_12,_2023_at_Cadet_Ice_Arena_in_Colorado_Springs_2002.jpg"
- },
- {
-  "f": "nouvelle-105.jpg",
-  "cat": "nouvelle",
-  "auteur": "Rick Dikeman",
+  "auteur": "John Phelan",
   "lic": "CC BY-SA 3.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Hockey_goal_cmd_2004.jpg"
+  "page": "https://commons.wikimedia.org/wiki/File:Rink_1,_New_England_Sports_Center,_Marlborough_MA.jpg"
  },
  {
-  "f": "nouvelle-126.jpg",
+  "f": "nouvelle-065.jpg",
   "cat": "nouvelle",
-  "auteur": "Chip Griffin",
-  "lic": "CC BY 2.0",
-  "page": "https://commons.wikimedia.org/wiki/File:UNH_Ice_Hockey_Players.jpg"
+  "auteur": "Wakuna99",
+  "lic": "CC BY-SA 4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Tsukisamu_Indoor_Skating_Rink_02.jpg"
+ },
+ {
+  "f": "nouvelle-067.jpg",
+  "cat": "nouvelle",
+  "auteur": "Wakuna99",
+  "lic": "CC BY-SA 4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Tsukisamu_Indoor_Skating_Rink_01.jpg"
  },
  {
   "f": "nouvelle-068.jpg",
@@ -56,18 +28,11 @@
   "page": "https://commons.wikimedia.org/wiki/File:Empire_Park_Hockey_(8581733524).jpg"
  },
  {
-  "f": "nouvelle-108.jpg",
+  "f": "nouvelle-069.jpg",
   "cat": "nouvelle",
-  "auteur": "Fabien Perissinotto",
+  "auteur": "Engo Ice Arena Equipment",
   "lic": "CC BY-SA 4.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Euro_Hockey_Challenge,_Switzerland_vs._Russia,_22nd_April_2017_77.JPG"
- },
- {
-  "f": "nouvelle-112.jpg",
-  "cat": "nouvelle",
-  "auteur": "mark6mauno",
-  "lic": "CC BY 2.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Empty_net_goal_(3376907373).jpg"
+  "page": "https://commons.wikimedia.org/wiki/File:Engo_Quick_Adapt_System_OYM.jpg"
  },
  {
   "f": "blessure-087.jpg",
@@ -77,11 +42,11 @@
   "page": "https://commons.wikimedia.org/wiki/File:Ice_hockey_skates_on_ice.jpg"
  },
  {
-  "f": "blessure-069.jpg",
+  "f": "blessure-088.jpg",
   "cat": "blessure",
-  "auteur": "Engo Ice Arena Equipment",
-  "lic": "CC BY-SA 4.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Engo_Quick_Adapt_System_OYM.jpg"
+  "auteur": "Oto Zapletal",
+  "lic": "CC BY 4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Ice_hockey_skate_01.jpg"
  },
  {
   "f": "transaction-080.jpg",
@@ -105,17 +70,17 @@
   "page": "https://commons.wikimedia.org/wiki/File:Ice-hockey-g75d2287fc_1920.jpg"
  },
  {
-  "f": "suspension-136.jpg",
+  "f": "suspension-062.jpg",
   "cat": "suspension",
-  "auteur": "TaraO",
-  "lic": "CC BY-SA 3.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Arbitres_de_hockey_-_Rouen_Angers.JPG"
+  "auteur": "Santeri Viinamäki",
+  "lic": "CC BY-SA 4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Ice_hockey_rink_board.jpg"
  },
  {
-  "f": "suspension-138.jpg",
+  "f": "suspension-112.jpg",
   "cat": "suspension",
-  "auteur": "Axel Pettersson",
-  "lic": "CC BY 4.0",
-  "page": "https://commons.wikimedia.org/wiki/File:AIK_Ishockey_Damer_-_Link%C3%B6pings_HC_Dam,_2015-03-11,_17.JPG"
+  "auteur": "mark6mauno",
+  "lic": "CC BY 2.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Empty_net_goal_(3376907373).jpg"
  }
 ]
