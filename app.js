@@ -311,11 +311,11 @@ function carteArticle(x, taille) {
 }
 // Même classement que le robot des nouvelles (on l'applique aussi aux articles déjà reçus)
 // Une vraie transaction : un geste concret, pas une rumeur ni une question
-const TRANSACTION = /(?<!\p{L})(échangé|échangés|échange \w+ (à|aux|contre)|acquiert|acquis|obtient|obtenu|cède|cédé|signe|a signé|paraphe|prolonge|prolongation de contrat|contrat (de|d'une durée)|soumis au ballottage|plac\w*\s.{0,40}?au ballottage|réclamé|rappelé|rappelle|retranché|libéré|congédié|embauché|nommé (entraîneur|directeur|capitaine))(?!\p{L})/iu;
-const SPECULATION = /\?|rumeur|pourrai(t|ent)|surprise|choix|intéress|cible|possible|spécul|envisag|aimerai(t|ent)|songe|candidat|serait|devrai(t|ent)|options?\b/i;
+const TRANSACTION = /(?<!\p{L})(traded|acquires?|acquired|signs?|signed|re-signs?|extension|claimed|waivers|recall(s|ed)?|reassign(s|ed)?|loan(s|ed)|releases?|released|fired|hired|named (head )?coach|échangé|échangés|échange \w+ (à|aux|contre)|acquiert|acquis|obtient|obtenu|cède|cédé|signe|a signé|paraphe|prolonge|prolongation de contrat|contrat (de|d'une durée)|soumis au ballottage|plac\w*\s.{0,40}?au ballottage|réclamé|rappelé|rappelle|retranché|libéré|congédié|embauché|nommé (entraîneur|directeur|capitaine))(?!\p{L})/iu;
+const SPECULATION = /\?|rumeur|rumou?r|could|might|should|would|interest|target|potential|possible|pourrai(t|ent)|surprise|choix|intéress|cible|possible|spécul|envisag|aimerai(t|ent)|songe|candidat|serait|devrai(t|ent)|options?\b/i;
 function categorieDe(titre, source = "") {
-  if (/bless|injur|\bIR\b|à l'écart|absen|opér[ée]|commotion|rétabli|retour au jeu|infirmerie/i.test(titre)) return "blessure";
-  if (/suspen|amende|sanction|audience disciplinaire/i.test(titre)) return "suspension";
+  if (/bless|injur|\bIR\b|à l'écart|absen|opér[ée]|commotion|rétabli|retour au jeu|infirmerie|concussion|week-to-week|day-to-day|out for/i.test(titre)) return "blessure";
+  if (/suspen|amende|sanction|audience disciplinaire|fined|hearing/i.test(titre)) return "suspension";
   if (TRANSACTION.test(titre) && !SPECULATION.test(titre) && !/rumeur/i.test(source)) return "transaction";
   return "nouvelle";
 }
@@ -356,10 +356,12 @@ async function rendreBuzz() {
   if (!D.nouvelles) D.nouvelles = lireJson("data/nouvelles.json").catch(() => []);
   const tout = [...(await D.nouvelles).filter((x) => x.cat !== "bagarre").map((x) => ({ ...x, cat: categorieDe(x.titre, x.source) })), ...(await bagarresSpectaculaires())];
   // La ligue choisie d'abord, puis le reste
-  const liste = tout.filter((x) => filtreBuzz === "tout" || x.cat === filtreBuzz)
-    .sort((a, b) => (b.lig === ligue) - (a.lig === ligue) || parleDuCH(b) - parleDuCH(a) || String(b.date).localeCompare(String(a.date)))
+  // Seulement les articles de la ligue choisie (les anciens articles sans ligue comptent pour la LNH)
+  const liste = tout.filter((x) => (x.lig || "lnh") === ligue)
+    .filter((x) => filtreBuzz === "tout" || x.cat === filtreBuzz)
+    .sort((a, b) => (ligue === "lnh" ? parleDuCH(b) - parleDuCH(a) : 0) || String(b.date).localeCompare(String(a.date)))
     .slice(0, 21);
-  if (!liste.length) { $("articles").innerHTML = `<p class="vide">Rien de ce côté pour l'instant.</p>`; return; }
+  if (!liste.length) { $("articles").innerHTML = `<p class="vide">Pas d'articles récents sur la ${LIGUES[ligue].nom}${filtreBuzz !== "tout" ? " dans cette catégorie" : ""} pour l'instant. Reviens un peu plus tard!</p>`; return; }
   // Mise en page de site de sports : 1 grande + 2 moyennes, une grille de cartes, puis « Plus de nouvelles »
   const [vedette, ...reste] = liste;
   const cotes = reste.slice(0, 2), grille = reste.slice(2, 8), plus = reste.slice(8);
