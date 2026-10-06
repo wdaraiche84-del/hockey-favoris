@@ -12,9 +12,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>MonTrio · Tes joueurs de hockey, toutes les ligues</title>
-  <meta name="description" content="MonTrio : scores, classements et stats de la LNH, de la LAH et des juniors, avec le suivi de tes joueurs préférés.">
-  <meta property="og:title" content="MonTrio">
-  <meta property="og:description" content="Tes joueurs de hockey préférés, toutes les ligues, au même endroit.">
+  <meta name="description" content="MonTrio : scores en direct, classements, meneurs et stats match par match de la LNH, de la LAH, de la LHJMQ, de l'OHL, de la WHL, de la KHL, de la SHL, de la Liiga et de la National League. En français, avec le suivi de tes joueurs préférés.">
+  <link rel="canonical" href="https://wdaraiche84-del.github.io/hockey-favoris/">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="fr_CA">
+  <meta property="og:site_name" content="MonTrio">
+  <meta property="og:title" content="MonTrio · Le hockey de toutes les ligues, en français">
+  <meta property="og:description" content="Scores, classements et stats de la LNH aux juniors et à l'Europe. Suis tes joueurs préférés au même endroit.">
+  <meta property="og:url" content="https://wdaraiche84-del.github.io/hockey-favoris/">
+  <meta property="og:image" content="https://wdaraiche84-del.github.io/hockey-favoris/icones/apercu.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"MonTrio","inLanguage":"fr-CA","url":"https://wdaraiche84-del.github.io/hockey-favoris/","description":"Scores, classements et stats de hockey de toutes les ligues, en français."}</script>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%230D9488%22/%3E%3Ctext x=%2232%22 y=%2243%22 font-family=%22Arial,sans-serif%22 font-weight=%22900%22 font-size=%2230%22 text-anchor=%22middle%22 fill=%22white%22%3EMT%3C/text%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -88,7 +98,7 @@
           <button id="fermer-bienvenue" class="btn leger">J'ai compris</button>
         </div>
         <ol class="etapes">
-          <li><b>1</b><div><strong>Choisis ta ligue</strong><span>LNH, LAH ou junior, juste sous le menu en haut.</span></div></li>
+          <li><b>1</b><div><strong>Choisis ta ligue</strong><span>LNH, LAH, junior ou Europe, juste sous le menu en haut.</span></div></li>
           <li><b>2</b><div><strong>Trouve tes joueurs</strong><span>Avec le bouton 🔍 en haut, ou par équipe dans l'onglet <a href="#/joueurs">Joueurs</a>.</span></div></li>
           <li><b>3</b><div><strong>Ajoute-les à tes favoris ⭐</strong><span>Leurs stats et leurs matchs t'attendront dans <a href="#/favoris">Mes favoris</a>.</span></div></li>
         </ol>
@@ -132,6 +142,10 @@
             <div class="titre-section"><h2>Meneurs <span class="tag-ligue" data-nom-ligue></span></h2><a class="lien-plus" href="#/meneurs">Voir tout ›</a></div>
             <ol id="mini-meneurs" class="meneurs"></ol>
           </section>
+          <section class="bloc">
+            <div class="titre-section"><h2>🔥 En feu <span class="tag-ligue" data-nom-ligue></span></h2><span class="sur-titre">5 derniers matchs</span></div>
+            <ol id="mini-chauds" class="meneurs"></ol>
+          </section>
         </div>
       </div>
     </div>
@@ -141,20 +155,26 @@
       <section class="bloc">
         <div class="titre-section">
           <h2>Scores <span class="tag-ligue" data-nom-ligue></span></h2>
+          <label class="interrupteur"><input type="checkbox" id="scores-tout"><span>Toutes les ligues</span></label>
           <div class="nav-semaine">
             <button id="page-score-prec" class="mini" aria-label="Jour précédent">‹</button>
             <span id="page-score-jour"></span>
             <button id="page-score-suiv" class="mini" aria-label="Jour suivant">›</button>
           </div>
         </div>
-        <div id="grille-scores" class="grille-scores"></div>
+        <div id="grille-scores"></div>
+        <p class="petit-gris">Touche un match pour voir son sommaire (marqueurs, gardiens, feuille de match) ou, avant le match, la comparaison des deux équipes.</p>
       </section>
     </div>
 
     <!-- ========== PAGE 3 : Mes favoris ========== -->
     <div class="page" data-page="favoris">
       <section class="bloc">
-        <div class="titre-section"><h2>Mes favoris</h2><span id="nb-favoris" class="pastille"></span></div>
+        <div class="titre-section"><h2>Mes favoris <span id="nb-favoris" class="pastille"></span></h2>
+          <div class="outils-favoris">
+            <button id="agenda-favoris" class="btn leger" title="Télécharge les prochains matchs de tes favoris pour ton calendrier (Google, Apple, Outlook)">📅 Ajouter à mon agenda</button>
+            <button id="alertes" class="btn leger" title="Un avis quand un de tes favoris marque, pendant que MonTrio est ouvert">🔔 Alertes de buts : non</button>
+          </div></div>
         <div id="cartes-favoris" class="cartes"></div>
         <p class="petit-gris">Tes favoris peuvent venir de toutes les ligues. Pour en ajouter, va dans l'onglet <a href="#/joueurs">Joueurs</a>.</p>
       </section>
@@ -209,7 +229,7 @@
 
   <footer class="pied">
     <p id="maj"></p>
-    <p>Site non officiel, sans lien avec la LNH ni aucune de ses équipes.</p>
+    <p>Site non officiel, sans lien avec la LNH ni aucune de ses équipes. · <button class="lien-pied" id="ouvrir-lexique">Lexique des abréviations</button></p>
     <details class="credits-photos" id="credits-photos"></details>
   </footer>
 
@@ -243,5 +263,7 @@
   <script src="config.js"></script>
   <script src="donnees.js"></script>
   <script src="app.js"></script>
+  <script src="plus.js"></script>
+  <div id="toasts" class="toasts" aria-live="polite"></div>
 </body>
 </html>

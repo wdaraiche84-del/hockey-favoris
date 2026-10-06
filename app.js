@@ -133,6 +133,19 @@ function statutMatch(m) {
   if (estFini(m)) return "Final" + suffixeFin(m);
   return heureDe(m);
 }
+// Bilan d'une équipe à partir de ses matchs terminés : [victoires, défaites, défaites en prolongation]
+function issuePour(m, eq) { const { nous, eux } = scorePour(m, eq); return nous > eux ? 0 : m.fin ? 2 : 1; }
+function bilan(eq) {
+  const finis = matchsDe(eq).filter(estFini);
+  const r = { tous: [0, 0, 0], dom: [0, 0, 0], ext: [0, 0, 0], dix: [0, 0, 0], forme: [] };
+  for (const m of finis) { const i = issuePour(m, eq); r.tous[i]++; r[m.dom === eq ? "dom" : "ext"][i]++; }
+  for (const m of finis.slice(-10)) { const i = issuePour(m, eq); r.dix[i]++; r.forme.push({ m, i }); }
+  return r;
+}
+const fmtBilan = (b) => `${b[0]}-${b[1]}-${b[2]}`;
+// Ligue d'un identifiant de joueur, d'équipe ou de match (ex. « ahl-123 », « ahl_LAV » ; sinon LNH)
+const ligDeId = (id) => { const x = /^([a-z]+)[-_]/.exec(String(id)); return x && LIGUES[x[1]] ? x[1] : "lnh"; };
+const matchParId = (id) => D.cal.find((m) => String(m.id) === String(id));
 function prochainMatch(eq) {
   return D.cal.find((m) => (m.dom === eq || m.ext === eq) && !estFini(m) && m.date >= AUJ) || null;
 }
@@ -191,36 +204,56 @@ function rendreBandeau() {
   if (!liste.length) { $("bandeau-matchs").innerHTML = `<span class="bandeau-vide">Aucun match dans la ${LIGUES[ligue].nom} ce jour-là.</span>`; return; }
   $("bandeau-matchs").innerHTML = liste.map((m) => {
     const joue = estFini(m) || estDirect(m);
-    return `<a class="score-carte ${fav.includes(m.dom) || fav.includes(m.ext) ? "favori" : ""}" href="#/scores">
+    return `<button class="score-carte ${fav.includes(m.dom) || fav.includes(m.ext) ? "favori" : ""}" data-match="${m.id}" title="Voir le sommaire du match">
       <span class="statut ${estDirect(m) ? "direct" : ""}">${estDirect(m) ? "● " : ""}${statutMatch(m)}</span>
       <span class="eq ${estFini(m) && m.se < m.sd ? "perd" : ""}"><span>${abr(m.ext)}</span><span>${joue ? m.se : ""}</span></span>
       <span class="eq ${estFini(m) && m.sd < m.se ? "perd" : ""}"><span>${abr(m.dom)}</span><span>${joue ? m.sd : ""}</span></span>
-    </a>`;
+    </button>`;
   }).join("");
 }
+let scoresTout = memoire("scores-tout") === "1";
+async function carteScore(m, favs, eqs) {
+  const joue = estFini(m) || estDirect(m);
+  const pts = joue ? { ...(await points(m.dom))[m.id], ...(await points(m.ext))[m.id] } : {};
+  const lesMiens = favs.filter((j) => j.eq === m.dom || j.eq === m.ext);
+  const etoiles = Object.entries(pts).filter(([, l]) => ptsLigne(l) > 0).map(([id, [b, a]]) => ({ j: D.parId.get(id), b, a }))
+    .filter((x) => x.j).sort((x, y) => (y.b + y.a) - (x.b + x.a) || y.b - x.b).slice(0, 3);
+  const ligne = (eq, score, gagne) => `<div class="gs-eq ${estFini(m) && !gagne ? "perd" : ""}">
+    <span class="gs-abr">${abr(eq)}</span><span class="gs-nom">${echapper(nomEq(eq))}</span><span class="gs-score">${joue ? score : ""}</span></div>`;
+  const avant = !joue ? `<div class="gs-avant">${fmtBilan(bilan(m.ext).tous)} · ${fmtBilan(bilan(m.dom).tous)}</div>` : "";
+  return `<article class="gs-carte ${eqs.includes(m.dom) || eqs.includes(m.ext) ? "favori" : ""}" data-match="${m.id}" tabindex="0" role="button" aria-label="Sommaire : ${echapper(nomEq(m.ext))} contre ${echapper(nomEq(m.dom))}">
+    <div class="gs-statut">${estDirect(m) ? `<span class="badge-direct">EN DIRECT</span> ${m.periode || ""}` : statutMatch(m)}${m.series ? " · Séries" : ""}<span class="gs-lien">${joue ? "Sommaire ›" : "Avant-match ›"}</span></div>
+    ${ligne(m.ext, m.se, m.se > m.sd)}${ligne(m.dom, m.sd, m.sd > m.se)}${avant}
+    ${etoiles.length ? `<div class="gs-etoiles">${etoiles.map((x) => `<button class="puce-joueur" data-fiche="${x.j.id}">${echapper(nomDeFamille(x.j))} (${abr(x.j.eq)}) ${x.b} B, ${x.a} A</button>`).join("")}</div>` : ""}
+    ${lesMiens.length ? `<div class="gs-favoris">⭐ ${lesMiens.map((j) => echapper(nomDeFamille(j))).join(", ")}</div>` : ""}
+  </article>`;
+}
+let jetonScores = 0;
 async function rendrePageScores() {
+  const jeton = ++jetonScores;
   $("page-score-jour").textContent = jourScores === AUJ ? "Aujourd'hui" : dateLongue(jourScores);
-  const liste = matchsLigue(ligue).filter((m) => m.date === jourScores);
-  if (!liste.length) { $("grille-scores").innerHTML = `<p class="vide">Aucun match dans la ${LIGUES[ligue].nom} ce jour-là. Essaie les flèches pour changer de journée.</p>`; return; }
+  $("scores-tout").checked = scoresTout;
+  document.querySelector('[data-page="scores"] h2 .tag-ligue').hidden = scoresTout;
   const favs = favorisObjets(), eqs = equipesFavorites();
   let h = "";
-  for (const m of liste) {
-    const joue = estFini(m) || estDirect(m);
-    const pts = joue ? { ...(await points(m.dom))[m.id], ...(await points(m.ext))[m.id] } : {};
-    const lesMiens = favs.filter((j) => j.eq === m.dom || j.eq === m.ext);
-    const etoiles = Object.entries(pts).filter(([, l]) => ptsLigne(l) > 0).map(([id, [b, a]]) => ({ j: D.parId.get(id), b, a }))
-      .filter((x) => x.j).sort((x, y) => (y.b + y.a) - (x.b + x.a) || y.b - x.b).slice(0, 3);
-    const ligne = (eq, score, gagne) => `<div class="gs-eq ${estFini(m) && !gagne ? "perd" : ""}">
-      <span class="gs-abr">${abr(eq)}</span><span class="gs-nom">${echapper(nomEq(eq))}</span><span class="gs-score">${joue ? score : ""}</span></div>`;
-    h += `<article class="gs-carte ${eqs.includes(m.dom) || eqs.includes(m.ext) ? "favori" : ""}">
-      <div class="gs-statut">${estDirect(m) ? `<span class="badge-direct">EN DIRECT</span> ${m.periode || ""}` : statutMatch(m)}${m.series ? " · Séries" : ""}</div>
-      ${ligne(m.ext, m.se, m.se > m.sd)}${ligne(m.dom, m.sd, m.sd > m.se)}
-      ${etoiles.length ? `<div class="gs-etoiles">${etoiles.map((x) => `<button class="puce-joueur" data-fiche="${x.j.id}">${echapper(nomDeFamille(x.j))} (${abr(x.j.eq)}) ${x.b} B, ${x.a} A</button>`).join("")}</div>` : ""}
-      ${lesMiens.length ? `<div class="gs-favoris">⭐ ${lesMiens.map((j) => echapper(nomDeFamille(j))).join(", ")}</div>` : ""}
-    </article>`;
+  if (scoresTout) {
+    await chargerTout();
+    for (const [, ls] of GROUPES_LIGUES) for (const l of ls) {
+      const liste = matchsLigue(l).filter((m) => m.date === jourScores);
+      if (!liste.length) continue;
+      h += `<h3 class="groupe-titre gs-groupe">${LIGUES[l].nom} <small>${LIGUES[l].long} · ${pluriel(liste.length, "match")}</small></h3><div class="grille-scores">`;
+      for (const m of liste) h += await carteScore(m, favs, eqs);
+      h += "</div>";
+    }
+    if (!h) h = `<p class="vide">Aucun match dans aucune ligue ce jour-là. Essaie les flèches pour changer de journée.</p>`;
+  } else {
+    const liste = matchsLigue(ligue).filter((m) => m.date === jourScores);
+    if (!liste.length) h = `<p class="vide">Aucun match dans la ${LIGUES[ligue].nom} ce jour-là. Essaie les flèches pour changer de journée, ou coche « Toutes les ligues ».</p>`;
+    else { h = `<div class="grille-scores">`; for (const m of liste) h += await carteScore(m, favs, eqs); h += "</div>"; }
   }
-  $("grille-scores").innerHTML = h;
+  if (jeton === jetonScores) $("grille-scores").innerHTML = h;
 }
+$("scores-tout").addEventListener("change", (e) => { scoresTout = e.target.checked; memoire("scores-tout", scoresTout ? "1" : "0"); rendrePageScores(); });
 function changerJourScores(n) { jourScores = decaler(jourScores, n); rendreBandeau(); rendrePageScores(); }
 $("score-prec").onclick = () => changerJourScores(-1);
 $("score-suiv").onclick = () => changerJourScores(1);
@@ -503,11 +536,12 @@ const trierEquipes = (l) => [...l].sort((a, b) => b.pts - a.pts || a.pj - b.pj |
 function tableClassement(titre, liste) {
   const eqs = equipesFavorites();
   return `<div class="table-bloc"><h3>${echapper(titre)}</h3><div class="defile"><table class="tableau">
-    <thead><tr><th>#</th><th>Équipe</th><th>PJ</th><th>V</th><th>D</th><th>DP</th><th>PTS</th><th class="large">BP</th><th class="large">BC</th><th class="large">Série</th></tr></thead><tbody>
-    ${trierEquipes(liste).map((t, i) => `<tr class="${eqs.includes(t.eq) ? "favori" : ""}"><td>${i + 1}</td>
-      <td class="eq"><span class="abr">${abr(t.eq)}</span> <span class="nom-long">${echapper(courtEq(t.eq))}</span></td>
+    <thead><tr><th>#</th><th>Équipe</th><th>PJ</th><th>V</th><th>D</th><th>DP</th><th>PTS</th><th class="large">BP</th><th class="large">BC</th><th>Diff</th><th class="large">10 dern.</th><th class="large">Dom.</th><th class="large">Ext.</th><th class="large">Série</th></tr></thead><tbody>
+    ${trierEquipes(liste).map((t, i) => { const b = bilan(t.eq), diff = t.bp - t.bc; return `<tr class="${eqs.includes(t.eq) ? "favori" : ""}"><td>${i + 1}</td>
+      <td class="eq"><button class="lien-equipe" data-equipe-fiche="${t.eq}"><span class="abr">${abr(t.eq)}</span> <span class="nom-long">${echapper(courtEq(t.eq))}</span></button></td>
       <td>${t.pj}</td><td>${t.v}</td><td>${t.d}</td><td>${t.dp}</td><td class="pts">${t.pts}</td>
-      <td class="large">${t.bp}</td><td class="large">${t.bc}</td><td class="large">${t.serie || "–"}</td></tr>`).join("")}
+      <td class="large">${t.bp}</td><td class="large">${t.bc}</td><td class="${diff > 0 ? "plus" : diff < 0 ? "moins" : ""}">${diff > 0 ? "+" : ""}${diff}</td>
+      <td class="large">${fmtBilan(b.dix)}</td><td class="large">${fmtBilan(b.dom)}</td><td class="large">${fmtBilan(b.ext)}</td><td class="large">${t.serie || "–"}</td></tr>`; }).join("")}
   </tbody></table></div></div>`;
 }
 const groupes = (liste, cle) => [...new Set(liste.map((t) => t[cle]).filter(Boolean))];
@@ -665,12 +699,12 @@ async function htmlMatchParMatch(j) {
         const minutes = parseInt(String(temps).split(":")[0], 10) || 0;
         const dec = decBrute || (estFini(m) && minutes >= 50 ? (r.classe === "v" ? "W" : m.fin ? "O" : "L") : "");
         tot[0] += sv; tot[1] += sa; tot[2] += ga;
-        return `<tr>${debut}<td>${DECISIONS[dec] || "–"}</td><td>${sv}</td><td>${sa}</td><td>${ga}</td><td>${sa ? (sv / sa).toFixed(3).replace(/^0/, "") : "–"}</td></tr>`;
+        return `<tr data-match="${m.id}">${debut}<td>${DECISIONS[dec] || "–"}</td><td>${sv}</td><td>${sa}</td><td>${ga}</td><td>${sa ? (sv / sa).toFixed(3).replace(/^0/, "") : "–"}</td></tr>`;
       }
       const [b, a, pm, tirs, pun, tg] = estGardienLigne(l) ? [0, 0, 0, 0, 0, ""] : l;
       tot[0] += b; tot[1] += a; tot[2] += pm || 0; tot[3] += tirs; tot[4] += pun;
       const fort = b + a > 0 ? ' class="fort"' : "";
-      return `<tr${fort}>${debut}<td>${b}</td><td>${a}</td><td class="pts">${b + a}</td>${simple ? "" : `${pmCol ? `<td>${signe(pm)}</td>` : ""}<td>${tirs}</td><td>${pun}</td>${avecTemps ? `<td>${tg || "–"}</td>` : ""}`}</tr>`;
+      return `<tr${fort} data-match="${m.id}">${debut}<td>${b}</td><td>${a}</td><td class="pts">${b + a}</td>${simple ? "" : `${pmCol ? `<td>${signe(pm)}</td>` : ""}<td>${tirs}</td><td>${pun}</td>${avecTemps ? `<td>${tg || "–"}</td>` : ""}`}</tr>`;
     }).join("");
     const total = gardien
       ? `<tr class="total"><td colspan="4">Total · ${pluriel(joues.length, "match")}</td><td>${tot[0]}</td><td>${tot[1]}</td><td>${tot[2]}</td><td>${tot[1] ? (tot[0] / tot[1]).toFixed(3).replace(/^0/, "") : "–"}</td></tr>`
@@ -680,7 +714,7 @@ async function htmlMatchParMatch(j) {
   }
   if (prochains.length) {
     h += `<h3>Prochains matchs</h3><div class="prochains">${prochains.map((m) =>
-      `<div class="prochain-match"><strong>${m.date === AUJ ? "Ce soir" : dateLongue(m.date)}</strong><span>${m.dom === j.eq ? "vs" : "@"} ${echapper(nomEq(adversaire(m, j.eq)))}</span><span>${heureDe(m)}</span></div>`).join("")}</div>`;
+      `<div class="prochain-match" data-match="${m.id}"><strong>${m.date === AUJ ? "Ce soir" : dateLongue(m.date)}</strong><span>${m.dom === j.eq ? "vs" : "@"} ${echapper(nomEq(adversaire(m, j.eq)))}</span><span>${heureDe(m)}</span></div>`).join("")}</div>`;
   }
   return h;
 }
@@ -701,24 +735,32 @@ async function ouvrirFiche(id) {
   }
   $("fiche").innerHTML = `
     <div class="fiche-haut">${pastille(j)}
-      <div><h2>${echapper(j.nom)}</h2><p>${etiquetteLigue(j)} ${NOMS_POS[j.pos] || j.pos} · ${echapper(nomEq(j.eq))}</p>
-        <p style="margin-top:10px">${estFav ? `<button class="btn leger" data-retirer="${j.id}" data-garder>Retirer de mes favoris</button>`
-          : `<button class="btn accent" data-ajouter="${j.id}" data-garder>+ Ajouter à mes favoris</button>`}</p></div>
+      <div><h2>${echapper(j.nom)}</h2><p>${etiquetteLigue(j)} ${NOMS_POS[j.pos] || j.pos} · ${D.equipes[j.eq] ? `<button class="lien-equipe clair" data-equipe-fiche="${j.eq}">${echapper(nomEq(j.eq))} ›</button>` : echapper(nomEq(j.eq))}</p>
+        <p class="fiche-boutons">${estFav ? `<button class="btn leger" data-retirer="${j.id}" data-garder>Retirer de mes favoris</button>`
+          : `<button class="btn accent" data-ajouter="${j.id}" data-garder>+ Ajouter à mes favoris</button>`}
+          ${j.s || j.g ? `<button class="btn fantome" data-comparer="${j.id}">⇄ Comparer</button>` : ""}
+          <button class="btn fantome" data-partager="joueur/${j.id}" data-titre="${echapper(j.nom)} · MonTrio">↗ Partager</button></p></div>
       <button class="fermer" aria-label="Fermer">✕</button>
     </div>
     <div class="fiche-corps">${corps}</div>`;
   $("fiche-fond").hidden = false;
   $("fiche-fond").scrollTop = 0;
-  if (D.equipes[j.eq]) $("fiche-saison").innerHTML = await htmlMatchParMatch(j);
+  if (D.equipes[j.eq]) $("fiche-saison").innerHTML = (await htmlFormeJoueur(j)) + (await htmlMatchParMatch(j));
 }
-function fermerFiche() { $("fiche-fond").hidden = true; }
+function fermerFiche() {
+  const ouverte = !$("fiche-fond").hidden;
+  $("fiche-fond").hidden = true;
+  if (ouverte && /^#\/(joueur|equipe|match|comparer)\//.test(location.hash)) history.replaceState(null, "", "#/" + (pageActuelle || "accueil"));
+}
 $("fiche-fond").addEventListener("click", (e) => { if (e.target.id === "fiche-fond" || e.target.closest(".fermer")) fermerFiche(); });
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") fermerFiche(); });
 
 // ---- 13. Un seul « écouteur » pour tous les boutons ------------
 document.addEventListener("click", (e) => {
-  const b = e.target.closest("[data-fiche],[data-ajouter],[data-retirer],[data-jour]");
+  const b = e.target.closest("[data-fiche],[data-ajouter],[data-retirer],[data-jour],[data-match],[data-equipe-fiche]");
   if (!b) return;
+  if (b.dataset.equipeFiche) return ouvrirEquipe(b.dataset.equipeFiche);
+  if (b.dataset.match && !b.dataset.fiche) return ouvrirMatch(b.dataset.match);
   if (b.dataset.ajouter) { ajouter(b.dataset.ajouter); if (b.hasAttribute("data-garder")) ouvrirFiche(b.dataset.ajouter); }
   else if (b.dataset.retirer) { retirer(b.dataset.retirer); if (b.hasAttribute("data-garder")) ouvrirFiche(b.dataset.retirer); }
   else if (b.dataset.fiche) ouvrirFiche(b.dataset.fiche);
@@ -830,7 +872,7 @@ async function tourDirect() {
   let change = false;
   for (const lig of actives) change = (lig === "lnh" ? await directLnh(eqs) : await directAutre(lig)) || change;
   D.direct = D.cal.some(estDirect);
-  if (change) { rendreBandeau(); rendrePageScores(); rendreSoir(); rendreFavoris(); rendreCalendrier(); }
+  if (change) { rendreBandeau(); rendrePageScores(); rendreSoir(); rendreFavoris(); rendreCalendrier(); verifierAlertes(); }
   rendreMiseAJour();
 }
 
@@ -884,7 +926,7 @@ function allerA(page) {
   fermerRecherche();
 }
 const pageDeLAdresse = () => (location.hash.match(/^#\/(\w+)/) || [])[1] || "accueil";
-window.addEventListener("hashchange", () => allerA(pageDeLAdresse()));
+window.addEventListener("hashchange", () => { if (!ouvrirDepuisAdresse()) allerA(pageDeLAdresse()); });
 let toucheDepart = null;
 $("pages").addEventListener("touchstart", (e) => {
   const zone = e.target.closest(".defile, .bandeau-matchs, .jours, input");
@@ -922,6 +964,7 @@ async function demarrer() {
   rendreMiseAJour();
   rendreUne();
   rendreBuzz();
+  ouvrirDepuisAdresse();
   setInterval(tourDirect, SECONDES_DIRECT * 1000);
   tourDirect();
   setInterval(() => {
@@ -930,4 +973,4 @@ async function demarrer() {
     rendreMiseAJour();
   }, 60000);
 }
-demarrer();
+// demarrer() est appelé à la fin de plus.js (la 2e partie du code)
