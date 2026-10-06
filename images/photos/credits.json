@@ -1,14 +1,121 @@
 [
-  { "f": "action-1", "id": "XHTBZpRBoi0", "auteur": "Markus Spiske", "sujet": "action" },
-  { "f": "action-2", "id": "GXQP77GIsIU", "auteur": "Logan Weaver", "sujet": "action" },
-  { "f": "action-3", "id": "Rat7IoXPHYc", "auteur": "Jessica Vink", "sujet": "action" },
-  { "f": "action-4", "id": "SOv0qA0waR4", "auteur": "Maurice DT", "sujet": "action" },
-  { "f": "action-5", "id": "ZH9NCQKLyMg", "auteur": "Logan Weaver", "sujet": "action" },
-  { "f": "action-6", "id": "dQMG1BsJCuA", "auteur": "Klim Musalimov", "sujet": "action" },
-  { "f": "action-7", "id": "sqMPA86yVws", "auteur": "Braden Barwich", "sujet": "action" },
-  { "f": "filet", "id": "5oZ9uVx7buc", "auteur": "Jerry Yu", "sujet": "transaction" },
-  { "f": "arbitre", "id": "HRo2pfbVulQ", "auteur": "Mariah Hewines", "sujet": "suspension" },
-  { "f": "patins", "id": "o0zXUnmxsA0", "auteur": "Taylor Friehl", "sujet": "blessure" },
-  { "f": "patinoire", "id": "-ofOCf-jen4", "auteur": "Matthieu Pétiard", "sujet": "transaction" },
-  { "f": "exterieur", "id": "yaAruHxQ9OQ", "auteur": "Anders Krøgh Jørgensen", "sujet": "action" }
+ {
+  "f": "nouvelle-011.jpg",
+  "cat": "nouvelle",
+  "auteur": "TheAHL",
+  "lic": "CC BY 2.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Game-action_(50517137862).jpg"
+ },
+ {
+  "f": "nouvelle-045.jpg",
+  "cat": "nouvelle",
+  "auteur": "Trevor Cokley (U.S. Air Force Academy)",
+  "lic": "Public domain",
+  "page": "https://commons.wikimedia.org/wiki/File:Michigan_State_Spartans_at_Air_Force_Falcons_men%27s_ice_hockey_game_on_October_12,_2023_at_Cadet_Ice_Arena_in_Colorado_Springs_2012.jpg"
+ },
+ {
+  "f": "nouvelle-050.jpg",
+  "cat": "nouvelle",
+  "auteur": "Chris Waits",
+  "lic": "CC BY 2.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Festivus_Faceoff_(8371574667).jpg"
+ },
+ {
+  "f": "nouvelle-051.jpg",
+  "cat": "nouvelle",
+  "auteur": "Chris Waits",
+  "lic": "CC BY 2.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Clarkson_vs._St._Lawrence_game_at_Herb_Brooks_Arena_during_Festivus_Faceoff_2011_(8371577617).jpg"
+ },
+ {
+  "f": "nouvelle-097.jpg",
+  "cat": "nouvelle",
+  "auteur": "Trevor Cokley (U.S. Air Force Academy)",
+  "lic": "Public domain",
+  "page": "https://commons.wikimedia.org/wiki/File:Michigan_State_Spartans_at_Air_Force_Falcons_men%27s_ice_hockey_game_on_October_12,_2023_at_Cadet_Ice_Arena_in_Colorado_Springs_2002.jpg"
+ },
+ {
+  "f": "nouvelle-105.jpg",
+  "cat": "nouvelle",
+  "auteur": "Rick Dikeman",
+  "lic": "CC BY-SA 3.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Hockey_goal_cmd_2004.jpg"
+ },
+ {
+  "f": "nouvelle-126.jpg",
+  "cat": "nouvelle",
+  "auteur": "Chip Griffin",
+  "lic": "CC BY 2.0",
+  "page": "https://commons.wikimedia.org/wiki/File:UNH_Ice_Hockey_Players.jpg"
+ },
+ {
+  "f": "nouvelle-068.jpg",
+  "cat": "nouvelle",
+  "auteur": "Kurt Bauschardt from Edmonton, Canada",
+  "lic": "CC BY-SA 2.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Empire_Park_Hockey_(8581733524).jpg"
+ },
+ {
+  "f": "nouvelle-108.jpg",
+  "cat": "nouvelle",
+  "auteur": "Fabien Perissinotto",
+  "lic": "CC BY-SA 4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Euro_Hockey_Challenge,_Switzerland_vs._Russia,_22nd_April_2017_77.JPG"
+ },
+ {
+  "f": "nouvelle-112.jpg",
+  "cat": "nouvelle",
+  "auteur": "mark6mauno",
+  "lic": "CC BY 2.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Empty_net_goal_(3376907373).jpg"
+ },
+ {
+  "f": "blessure-087.jpg",
+  "cat": "blessure",
+  "auteur": "Santeri Viinamäki",
+  "lic": "CC BY-SA 4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Ice_hockey_skates_on_ice.jpg"
+ },
+ {
+  "f": "blessure-069.jpg",
+  "cat": "blessure",
+  "auteur": "Engo Ice Arena Equipment",
+  "lic": "CC BY-SA 4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Engo_Quick_Adapt_System_OYM.jpg"
+ },
+ {
+  "f": "transaction-080.jpg",
+  "cat": "transaction",
+  "auteur": "Santeri Viinamäki",
+  "lic": "CC BY-SA 4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Ice_hockey_stick_and_puck_20170120.jpg"
+ },
+ {
+  "f": "transaction-084.jpg",
+  "cat": "transaction",
+  "auteur": "Santeri Viinamäki",
+  "lic": "CC BY-SA 4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Ice_hockey_stick_and_puck_20181220.jpg"
+ },
+ {
+  "f": "transaction-086.jpg",
+  "cat": "transaction",
+  "auteur": "SergioRay",
+  "lic": "CC BY-SA 4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Ice-hockey-g75d2287fc_1920.jpg"
+ },
+ {
+  "f": "suspension-136.jpg",
+  "cat": "suspension",
+  "auteur": "TaraO",
+  "lic": "CC BY-SA 3.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Arbitres_de_hockey_-_Rouen_Angers.JPG"
+ },
+ {
+  "f": "suspension-138.jpg",
+  "cat": "suspension",
+  "auteur": "Axel Pettersson",
+  "lic": "CC BY 4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:AIK_Ishockey_Damer_-_Link%C3%B6pings_HC_Dam,_2015-03-11,_17.JPG"
+ }
 ]

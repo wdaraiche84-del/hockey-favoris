@@ -301,12 +301,39 @@ function equipeDuTitre(titre) {
   }
   return null;
 }
+// ---- Photos libres de droits (Wikimedia Commons) --------------
+// Chaque carte reçoit une photo de sa catégorie, toujours la même pour un
+// même titre, sans répéter une photo déjà affichée sur la page.
+let PHOTOS = [];
+const photosVues = new Set();
+const chargerPhotos = fetch("images/photos/credits.json").then((r) => r.json()).then((l) => { PHOTOS = l; }).catch(() => {});
+function hacher(t) { let h = 0; for (const c of t) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; }
+function photoPour(titre, cat) {
+  const essais = [PHOTOS.filter((p) => p.cat === cat), PHOTOS.filter((p) => p.cat === "nouvelle"), PHOTOS];
+  for (const l of essais) {
+    if (!l.length) continue;
+    const debut = hacher(titre) % l.length;
+    for (let i = 0; i < l.length; i++) {
+      const p = l[(debut + i) % l.length];
+      if (!photosVues.has(p.f)) { photosVues.add(p.f); return p; }
+    }
+  }
+  return PHOTOS.length ? PHOTOS[hacher(titre) % PHOTOS.length] : null;
+}
+function rendreCredits() {
+  const el = document.getElementById("credits-photos");
+  if (!el || !PHOTOS.length) return;
+  el.innerHTML = `<summary>Crédits photos</summary><p>Photos libres de droits provenant de Wikimedia Commons, utilisées à titre d'illustration seulement : elles ne montrent pas les personnes ou les équipes dont parlent les articles.</p><ul>${
+    PHOTOS.map((p) => `<li><a href="${echapper(p.page)}" target="_blank" rel="noopener">${echapper(p.auteur)}</a> · ${echapper(p.lic)}</li>`).join("")}</ul>`;
+}
+
 function carteArticle(x, taille) {
   const cat = NOMS_CAT[x.cat] ? x.cat : "nouvelle";
   const eq = equipeDuTitre(x.titre);
+  const ph = taille === "petite-liste" ? null : photoPour(x.titre, cat);
   const lig = x.lig && LIGUES[x.lig] ? `<span class="tag-ligue petit">${LIGUES[x.lig].nom}</span>` : "";
   return `<a class="article article-${taille} fond-${cat}" href="${echapper(x.lien)}" target="_blank" rel="noopener noreferrer">
-    <span class="article-visuel">${eq ? `<span class="article-eq">${abr(eq)}</span>` : `<span class="article-eq icone-cat">${{ blessure: "✚", transaction: "⇄", suspension: "⏸", nouvelle: "🏒" }[cat]}</span>`}
+    <span class="article-visuel${ph ? " avec-photo" : ""}">${ph ? `<img class="article-photo" src="images/photos/${ph.f}" alt="" loading="lazy"><span class="article-credit">Photo : ${echapper(ph.auteur)}</span>` : ""}${eq ? `<span class="article-eq">${abr(eq)}</span>` : `<span class="article-eq icone-cat">${{ blessure: "✚", transaction: "⇄", suspension: "⏸", nouvelle: "🏒" }[cat]}</span>`}
       <span class="article-tags"><span class="cat cat-${cat}">${NOMS_CAT[cat]}</span>${lig}</span></span>
     <span class="article-texte"><strong>${echapper(x.titre)}</strong><small>${echapper(x.source)} · ${ilYa(x.date)}</small></span>
   </a>`;
@@ -328,6 +355,7 @@ const carte = carteArticle;
 // Paris sportifs, cotes, casinos : jamais dans les articles
 const JEU = /\bparis? sportifs?\b|\bpari\b|\bparie[rz]?\b|parieu|mise-o-jeu|mises? sportives?|\bcotes?\b|\bodds\b|\bbet(s|ting|tor)?\b|rue ?des ?joueurs|odds scanner|prédiction|prediction|pronostic|parlay|sportsbook|bookmak|casino|draftkings|fanduel|betmgm|bet365|betway|bet99|betrivers|caesars sportsbook|pointsbet|fanatics sportsbook|loto-québec|covers\.com|action network|pickswise|oddsshark|sportsline|dimers|\bprops?\b/i;
 async function rendreBuzz() {
+  await chargerPhotos; photosVues.clear(); rendreCredits();
   if (!D.nouvelles) D.nouvelles = lireJson("data/nouvelles.json").catch(() => []);
   const tout = (await D.nouvelles).filter((x) => x.cat !== "bagarre" && !/bagarre|gants|\bfights?\b/i.test(x.titre) && !JEU.test(x.titre) && !JEU.test(x.source || "")).map((x) => ({ ...x, cat: categorieDe(x.titre, x.source) }));
   // La ligue choisie d'abord, puis le reste

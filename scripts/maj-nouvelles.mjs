@@ -20,7 +20,8 @@ const RECHERCHES = [
   { q: "LHJMQ", lig: "lhjmq", jours: 7 }, { q: "LHJMQ hockey junior", lig: "lhjmq", jours: 7 },
   { q: "OHL hockey", lig: "ohl", en: true, jours: 7 }, { q: "Ontario Hockey League", lig: "ohl", en: true, jours: 7 },
   { q: "WHL hockey", lig: "whl", en: true, jours: 7 }, { q: "Western Hockey League", lig: "whl", en: true, jours: 7 },
-  { q: "KHL hockey", lig: "khl", jours: 7 },
+  { q: "KHL hockey", lig: "khl", jours: 7 }, { q: "Ligue continentale de hockey", lig: "khl", jours: 14 },
+  { q: "KHL", lig: "khl", en: true, jours: 7 }, { q: "Kontinental Hockey League", lig: "khl", en: true, jours: 14 },
 ];
 // Une vraie transaction : un geste concret, pas une rumeur ni une question
 const TRANSACTION = /(?<!\p{L})(traded|acquires?|acquired|signs?|signed|re-signs?|extension|claimed|waivers|recall(s|ed)?|reassign(s|ed)?|loan(s|ed)|releases?|released|fired|hired|named (head )?coach|échangé|échangés|échange \w+ (à|aux|contre)|acquiert|acquis|obtient|obtenu|cède|cédé|signe|a signé|paraphe|prolonge|prolongation de contrat|contrat (de|d'une durée)|soumis au ballottage|plac\w*\s.{0,40}?au ballottage|réclamé|rappelé|rappelle|retranché|libéré|congédié|embauché|nommé (entraîneur|directeur|capitaine))(?!\p{L})/iu;
