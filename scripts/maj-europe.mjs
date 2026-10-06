@@ -249,7 +249,6 @@ async function khl() {
         if (points[cle] && Object.keys(ligne).length) points[cle][m.id] = ligne;
       }
       nouveaux++;
-      if (!globalThis.exemplePasse) { const as = (ev.goals || []).flatMap((x) => x.assistants || [])[0]; if (as) { globalThis.exemplePasse = 1; await writeFile(`${dossier}/exemple-passe.json`, JSON.stringify(as)); } }
       if (m.etat === "fini") traites.add(m.id);
     } catch (e) { console.warn("KHL sommaire", m.id, e.message); }
   }
