@@ -30,6 +30,21 @@ function montrerModale(html) {
   $("fiche").innerHTML = html;
   $("fiche-fond").hidden = false;
   $("fiche-fond").scrollTop = 0;
+  majAdresse();
+  $("fiche").querySelector(".fermer")?.focus({ preventScroll: true });
+}
+// L'adresse suit la fenêtre ouverte : le bouton Retour du téléphone la ferme,
+// et le lien peut être copié tel quel.
+function routeModale() {
+  const e = modaleActuelle;
+  if (!e || e.t === "lexique") return null;
+  return e.t === "comparer" ? (e.id2 ? `comparer/${e.id}/${e.id2}` : null) : `${e.t}/${e.id}`;
+}
+function majAdresse() {
+  const r = routeModale();
+  if (!r || decodeURIComponent(location.hash) === `#/${r}`) return;
+  if (/^#\/(joueur|equipe|match|comparer)\//.test(location.hash)) history.replaceState(history.state, "", `#/${r}`);
+  else history.pushState({ montrio: true }, "", `#/${r}`);
 }
 function revenir() {
   const e = pileModale.pop();
@@ -46,6 +61,8 @@ ouvrirFiche = function (id, opt = {}) {
   noterModale({ t: "joueur", id, retour: opt.retour });
   const p = ouvrirFicheBase(id);
   ajouterRetour();
+  majAdresse();
+  $("fiche").querySelector(".fermer")?.focus({ preventScroll: true });
   return p;
 };
 
@@ -75,7 +92,7 @@ const ligneMatchCourte = (m, eq) => {
   const r = joue ? resultatPour(m, eq) : null;
   return `<button class="ligne-cal" data-match="${m.id}">
     <span class="lc-date">${m.date === AUJ ? "Ce soir" : dateCourte(m.date)}</span>
-    <span class="lc-adv">${m.dom === eq ? "vs" : "@"} <b>${abr(adversaire(m, eq))}</b> <span class="lc-nom">${echapper(courtEq(adversaire(m, eq)))}</span></span>
+    <span class="lc-adv">${m.dom === eq ? "vs" : "@"} <b>${abr(adversaire(m, eq))}</b> ${simplifier(courtEq(adversaire(m, eq))).trim() !== simplifier(abr(adversaire(m, eq))) ? `<span class="lc-nom">${echapper(courtEq(adversaire(m, eq)))}</span>` : ""}</span>
     <span class="lc-res ${r ? r.classe : ""}">${r ? (estDirect(m) ? "● " : "") + r.texte : heureDe(m)}</span></button>`;
 };
 
@@ -89,7 +106,8 @@ function troisEtoiles(m, lignes) {
     const gagne = issuePour(m, eq) === 0;
     if (estGardienLigne(l)) {
       const [, sv, sa] = l; if (!sa) continue;
-      cand.push({ j, eq, l, note: (sv / sa - 0.89) * 60 + (gagne ? 2 : 0) + sv * 0.04 });
+      // Un gardien doit avoir fait face à beaucoup de tirs pour mériter une étoile
+      cand.push({ j, eq, l, note: (sv / sa - 0.9) * sa * 0.5 + (gagne ? 2 : 0) + sv * 0.04 });
     } else {
       const [b, a, pm, tirs] = l;
       cand.push({ j, eq, l, note: b * 3 + a * 2 + (pm > 0 ? pm * 0.4 : 0) + (tirs || 0) * 0.1 + (gagne ? 0.5 : 0) });
@@ -179,7 +197,7 @@ async function corpsMatchJoue(m) {
   // Feuille de match complète
   if (!simple) h += `<h3>Feuille de match</h3>${lignes.map(([eq, ligne]) => `<details class="feuille-equipe"><summary>${echapper(nomEq(eq))} <small>${Object.keys(ligne).length} joueurs</small></summary>${tableFeuille(eq, ligne, simple)}</details>`).join("")}
     <p class="petit-gris">Touche un joueur pour voir sa fiche. PUN : minutes de punition · TG : temps de glace · BC : buts contre.</p>`;
-  else h += `<p class="petit-gris">Pour la ${LIGUES[lig].nom}, la source donne seulement les buts et les passes.</p>`;
+  else h += `<p class="petit-gris">Pour ${laLigue(lig)}, la source donne seulement les buts et les passes.</p>`;
   // Les autres matchs entre ces deux équipes
   h += htmlFaceAFace(m);
   return h;
@@ -187,9 +205,9 @@ async function corpsMatchJoue(m) {
 function htmlFaceAFace(m) {
   const autres = D.cal.filter((x) => x !== m && ((x.dom === m.dom && x.ext === m.ext) || (x.dom === m.ext && x.ext === m.dom)));
   if (!autres.length) return "";
-  const v = { [m.dom]: 0, [m.ext]: 0 }, finis = autres.filter(estFini);
+  const v = { [m.dom]: 0, [m.ext]: 0 }, finis = [...autres, m].filter(estFini);
   for (const x of finis) v[x.sd > x.se ? x.dom : x.ext]++;
-  const ligneNeutre = (x) => `<button class="ligne-cal" data-match="${x.id}"><span class="lc-date">${x.date === AUJ ? "Ce soir" : dateCourte(x.date)}</span>
+  const ligneNeutre = (x) => `<button class="ligne-cal" data-match="${x.id}"><span class="lc-date">${x.date === AUJ ? "Ce soir" : dateCourte(x.date) + (x.date.slice(0, 4) !== AUJ.slice(0, 4) ? ` ${x.date.slice(0, 4)}` : "")}</span>
     <span class="lc-adv"><b>${abr(x.ext)}</b> @ <b>${abr(x.dom)}</b></span><span class="lc-res">${estFini(x) || estDirect(x) ? `${x.se}-${x.sd}${suffixeFin(x)}` : heureDe(x)}</span></button>`;
   return `<h3>Entre eux cette saison</h3>${finis.length ? `<p class="petit-gris" style="margin-top:0">${abr(m.ext)} : ${pluriel(v[m.ext], "victoire")} · ${abr(m.dom)} : ${pluriel(v[m.dom], "victoire")}</p>` : ""}
     <div class="liste-cal">${autres.map(ligneNeutre).join("")}</div>`;
@@ -197,7 +215,7 @@ function htmlFaceAFace(m) {
 function corpsAvantMatch(m) {
   const eqs = [m.ext, m.dom], b = eqs.map(bilan), r = eqs.map(rangDe);
   const ligneComp = (titre, a, d) => `<tr><td>${a}</td><th>${titre}</th><td>${d}</td></tr>`;
-  const moy = (t, k) => (t && t.pj ? (t[k] / t.pj).toFixed(2) : "–");
+  const moy = (t, k) => (t && t.pj ? dec(t[k] / t.pj) : "–");
   let h = `<h3>Face à face</h3><table class="table-face"><thead><tr><th>${abr(m.ext)}</th><th></th><th>${abr(m.dom)}</th></tr></thead><tbody>
     ${ligneComp("Rang dans la ligue", r[0] ? ieme(r[0].ligueRang) : "–", r[1] ? ieme(r[1].ligueRang) : "–")}
     ${ligneComp("Points", r[0]?.t.pts ?? "–", r[1]?.t.pts ?? "–")}
@@ -206,7 +224,7 @@ function corpsAvantMatch(m) {
     ${ligneComp("Buts contre par match", moy(r[0]?.t, "bc"), moy(r[1]?.t, "bc"))}
     ${ligneComp("Sur la route / à domicile", fmtBilan(b[0].ext), fmtBilan(b[1].dom))}
     ${ligneComp("10 derniers matchs", fmtBilan(b[0].dix), fmtBilan(b[1].dix))}
-    ${ligneComp("Séquence", r[0]?.t.serie || "–", r[1]?.t.serie || "–")}
+    ${ligneComp("Séquence", serieFr(r[0]?.t.serie), serieFr(r[1]?.t.serie))}
   </tbody></table>
   <h3>Forme récente</h3><div class="deux-col">${eqs.map((eq) => `<div class="col-equipe"><h4>${echapper(nomEq(eq))}</h4>${pastillesForme(eq, 5)}</div>`).join("")}</div>`;
   // Joueurs à surveiller : les meilleurs pointeurs de chaque équipe
@@ -245,11 +263,11 @@ async function ouvrirEquipe(eq, opt = {}) {
     ${r?.groupe ? tuile(ieme(r.groupeRang), echapper(r.groupe.replace(/^Association de l'|^Division /, ""))) : ""}
     ${tuile(t?.pts ?? "–", "points")}${tuile(fmtBilan(b.tous), "fiche V-D-DP")}
     ${tuile(`${diff > 0 ? "+" : ""}${diff}`, `diff. (${t?.bp ?? 0} BP, ${t?.bc ?? 0} BC)`)}
-    ${tuile(fmtBilan(b.dom), "à domicile")}${tuile(fmtBilan(b.ext), "à l'étranger")}${tuile(t?.serie || "–", "séquence")}</div>`;
+    ${tuile(fmtBilan(b.dom), "à domicile")}${tuile(fmtBilan(b.ext), "à l'étranger")}${tuile(serieFr(t?.serie), "séquence")}</div>`;
   h += `<h3>10 derniers matchs <small class="sous-titre">${fmtBilan(b.dix)}</small></h3>${pastillesForme(eq, 10)}`;
   // Meneurs de l'équipe
   const pat = effectif.filter((j) => j.s && j.s.pj).sort((a, c) => c.s.pts - a.s.pts || c.s.b - a.s.b);
-  const gar = effectif.filter((j) => j.g && j.g.pj).sort((a, c) => c.g.pj - a.g.pj);
+  const gar = effectif.filter((j) => j.g && j.g.pj).sort((a, c) => (c.g.pct ?? 0) - (a.g.pct ?? 0) || c.g.pj - a.g.pj);
   if (pat.length || gar.length) {
     h += `<h3>Meneurs de l'équipe</h3><div class="deux-col"><div><h4 class="mini-titre">Points</h4><ol class="meneurs">${htmlMeneurs(pat.slice(0, 5), (j) => j.s.pts)}</ol></div>
       <div><h4 class="mini-titre">Gardiens · % d'arrêts</h4><ol class="meneurs">${gar.length ? htmlMeneurs(gar.slice(0, 3), (j) => pct3(j.g.pct)) : `<li class="vide">Stats à venir.</li>`}</ol></div></div>`;
@@ -267,7 +285,7 @@ async function ouvrirEquipe(eq, opt = {}) {
       h += `<details class="feuille-equipe" ${titre === "Attaquants" ? "open" : ""}><summary>${titre} <small>${liste.length}</small></summary><div class="defile"><table class="tableau journal feuille"><thead><tr><th>Joueur</th><th>N°</th>
         ${gardiens ? "<th>PJ</th><th>V</th><th>D</th><th>Moy.</th><th>% arr.</th>" : "<th>PJ</th><th>B</th><th>A</th><th>PTS</th><th>+/-</th>"}<th></th></tr></thead><tbody>
         ${liste.map((j) => `<tr data-fiche="${j.id}"><td>${echapper(j.nom)}</td><td>${j.no ?? "–"}</td>${gardiens
-          ? `<td>${j.g?.pj ?? 0}</td><td>${j.g?.v ?? 0}</td><td>${j.g?.d ?? 0}</td><td>${j.g?.moy != null ? j.g.moy.toFixed(2) : "–"}</td><td>${pct3(j.g?.pct)}</td>`
+          ? `<td>${j.g?.pj ?? 0}</td><td>${j.g?.v ?? 0}</td><td>${j.g?.d ?? 0}</td><td>${dec(j.g?.moy)}</td><td>${pct3(j.g?.pct)}</td>`
           : `<td>${j.s?.pj ?? 0}</td><td>${j.s?.b ?? 0}</td><td>${j.s?.a ?? 0}</td><td class="pts">${j.s?.pts ?? 0}</td><td>${signe(j.s?.pm ?? 0)}</td>`}
           <td>${favoris.includes(j.id) ? "⭐" : `<button class="mini-plus" data-ajouter="${j.id}" aria-label="Ajouter ${echapper(j.nom)} à mes favoris">+</button>`}</td></tr>`).join("")}</tbody></table></div></details>`;
     }
@@ -327,7 +345,7 @@ async function rendreChauds() {
   const gar = f.filter((x) => x.j.pos === "G" && x.pj >= 2 && x.sa > 0).sort((a, b) => b.sv / b.sa - a.sv / a.sa);
   bloc.innerHTML = `
     <section class="bloc bloc-feu"><div class="titre-section"><h2>🔥 En feu <span class="tag-ligue">${LIGUES[lig].nom}</span></h2><span class="sur-titre">5 derniers matchs</span></div><ol class="meneurs">${htmlChauds(chauds.slice(0, 10), (x) => x.pts, detailPts)}</ol></section>
-    ${LIGUES[lig].pointsSeulement ? "" : `<section class="bloc"><div class="titre-section"><h2>Séquences de points <span class="tag-ligue">${LIGUES[lig].nom}</span></h2><span class="sur-titre">En cours</span></div><ol class="meneurs">${htmlChauds(seq.slice(0, 10), (x) => x.sequence, () => "matchs de suite")}</ol></section>`}
+    ${LIGUES[lig].pointsSeulement ? "" : `<section class="bloc"><div class="titre-section"><h2>Séquences de points <span class="tag-ligue">${LIGUES[lig].nom}</span></h2><span class="sur-titre">En cours</span></div><ol class="meneurs">${htmlChauds(seq.slice(0, 10), (x) => x.sequence, (x) => `${x.sequence} matchs de suite`)}</ol></section>`}
     <section class="bloc"><div class="titre-section"><h2>Gardiens en forme <span class="tag-ligue">${LIGUES[lig].nom}</span></h2><span class="sur-titre">5 derniers matchs</span></div><ol class="meneurs">${htmlChauds(gar.slice(0, 10), (x) => pct3(x.sv / x.sa), (x) => `${x.sv} arrêts sur ${x.sa} en ${pluriel(x.pj, "match")}`)}</ol></section>`;
 }
 // Forme récente dans la fiche d'un joueur
@@ -348,7 +366,7 @@ rendreMeneurs = function () {
   const ppm = listeMeneurs(15, (j) => j.s && j.s.pj >= min, (j) => j.s.pts / j.s.pj);
   $("grille-meneurs").insertAdjacentHTML("afterbegin", `<div id="bloc-chauds" class="bloc-chauds"></div>`);
   $("grille-meneurs").insertAdjacentHTML("beforeend", `<section class="bloc"><div class="titre-section"><h2>Points par match <span class="tag-ligue">${LIGUES[ligue].nom}</span></h2><span class="sur-titre">min. ${pluriel(min, "match")}</span></div>
-    <ol class="meneurs">${htmlMeneurs(ppm, (j) => (j.s.pts / j.s.pj).toFixed(2))}</ol></section>`);
+    <ol class="meneurs">${htmlMeneurs(ppm, (j) => dec(j.s.pts / j.s.pj))}</ol></section>`);
   rendreChauds();
 };
 
@@ -374,21 +392,23 @@ async function ouvrirComparaison(idA, idB, opt = {}) {
   const [fA, fB] = await Promise.all([A, B].map(async (j) => (j.lig ? (await formeLigue(j.lig)).get(j.id) : null)));
   const ligne = (titre, a, b, fmt = (x) => x, inverse = false) => {
     if (a == null && b == null) return "";
-    const na = Number(a) || 0, nb = Number(b) || 0, max = Math.max(Math.abs(na), Math.abs(nb)) || 1;
-    const mA = inverse ? na < nb : na > nb, mB = inverse ? nb < na : nb > na;
-    return `<div class="cmp-ligne"><div class="cmp-val ${mA ? "fort" : ""}"><span>${a == null ? "–" : fmt(a)}</span><i style="width:${(Math.abs(na) / max) * 100}%"></i></div>
-      <small>${titre}</small><div class="cmp-val droite ${mB ? "fort" : ""}"><i style="width:${(Math.abs(nb) / max) * 100}%"></i><span>${b == null ? "–" : fmt(b)}</span></div></div>`;
+    const ok = a != null && b != null, na = Number(a) || 0, nb = Number(b) || 0;
+    const bas = Math.min(0, na, nb), haut = Math.max(na, nb) - bas || 1; // les barres partent du plus petit (ex. différentiel négatif)
+    const larg = (v, x) => (x == null ? 0 : Math.max(4, ((v - bas) / haut) * 100));
+    const mA = ok && (inverse ? na < nb : na > nb), mB = ok && (inverse ? nb < na : nb > na);
+    return `<div class="cmp-ligne"><div class="cmp-val ${mA ? "fort" : ""}"><span>${a == null ? "–" : fmt(a)}</span><i style="width:${larg(na, a)}%"></i></div>
+      <small>${titre}</small><div class="cmp-val droite ${mB ? "fort" : ""}"><i style="width:${larg(nb, b)}%"></i><span>${b == null ? "–" : fmt(b)}</span></div></div>`;
   };
   const tete = (j) => `<button class="cmp-joueur" data-fiche="${j.id}"><span class="numero">${j.no ?? "–"}</span><strong>${echapper(j.nom)}</strong>
     <small>${etiquetteLigue(j)} ${NOMS_POS[j.pos] || j.pos} · ${echapper(courtEq(j.eq))}</small></button>`;
   let lignes = "";
   if (A.g && B.g) {
-    lignes = ligne("Matchs joués", A.g.pj, B.g.pj) + ligne("Victoires", A.g.v, B.g.v) + ligne("Moyenne de buts", A.g.moy, B.g.moy, (x) => x.toFixed(2), true)
-      + ligne("% d'arrêts", A.g.pct, B.g.pct, pct3) + ligne("% d'arrêts · 5 derniers", fA?.sa ? fA.sv / fA.sa : null, fB?.sa ? fB.sv / fB.sa : null, pct3);
+    lignes = ligne("Matchs joués", A.g.pj, B.g.pj) + ligne("Victoires", A.g.v, B.g.v) + ligne("Moyenne de buts", A.g.pj ? A.g.moy : null, B.g.pj ? B.g.moy : null, dec, true)
+      + ligne("% d'arrêts", A.g.pj ? A.g.pct : null, B.g.pj ? B.g.pct : null, pct3) + ligne("% d'arrêts · 5 derniers", fA?.sa ? fA.sv / fA.sa : null, fB?.sa ? fB.sv / fB.sa : null, pct3);
   } else if (A.s && B.s) {
     const ppm = (s) => (s.pj ? s.pts / s.pj : 0), bpm = (s) => (s.pj ? s.b / s.pj : 0);
     lignes = ligne("Matchs joués", A.s.pj, B.s.pj) + ligne("Buts", A.s.b, B.s.b) + ligne("Passes", A.s.a, B.s.a) + ligne("Points", A.s.pts, B.s.pts)
-      + ligne("Points par match", ppm(A.s), ppm(B.s), (x) => x.toFixed(2)) + ligne("Buts par match", bpm(A.s), bpm(B.s), (x) => x.toFixed(2))
+      + ligne("Points par match", ppm(A.s), ppm(B.s), dec) + ligne("Buts par match", bpm(A.s), bpm(B.s), dec)
       + ligne("Différentiel", A.s.pm, B.s.pm, signe) + ligne("Points · 5 derniers matchs", fA?.pts ?? null, fB?.pts ?? null);
   } else lignes = `<p class="vide">On ne peut pas comparer un gardien et un joueur. Choisis deux gardiens ou deux joueurs.</p>`;
   const note = A.lig !== B.lig ? `<p class="note-fiche">Attention : ${echapper(nomDeFamille(A))} et ${echapper(nomDeFamille(B))} ne jouent pas dans la même ligue, alors les chiffres ne se comparent pas parfaitement.</p>` : "";
@@ -417,6 +437,7 @@ function rendreChoixComp(A) {
 function toast(texte, duree = 4000) {
   const t = document.createElement("div");
   t.className = "toast"; t.textContent = texte;
+  while ($("toasts").children.length >= 2) $("toasts").firstElementChild.remove();
   $("toasts").appendChild(t);
   setTimeout(() => t.classList.add("part"), duree);
   setTimeout(() => t.remove(), duree + 400);
@@ -443,7 +464,10 @@ function telechargerIcs(matchs, nomFichier, titre) {
       `DESCRIPTION:${esc(`${nomEq(m.ext)} contre ${nomEq(m.dom)}. Suis le match sur MonTrio : ${location.origin}${location.pathname}#/match/${m.id}`)}`, "END:VEVENT");
   }
   lignes.push("END:VCALENDAR");
-  const blob = new Blob([lignes.join("\r\n")], { type: "text/calendar;charset=utf-8" });
+  const replier = (l) => { const enc = new TextEncoder(); const out = []; let cur = "", n = 0;
+    for (const ch of l) { const b = enc.encode(ch).length; if (n + b > (out.length ? 74 : 75)) { out.push(cur); cur = ""; n = 0; } cur += ch; n += b; }
+    out.push(cur); return out.join("\r\n "); };
+  const blob = new Blob([lignes.map(replier).join("\r\n")], { type: "text/calendar;charset=utf-8" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob); a.download = nomFichier;
   document.body.appendChild(a); a.click(); a.remove();
@@ -491,7 +515,7 @@ const LEXIQUE = [["PJ", "Parties (matchs) jouées"], ["B", "Buts"], ["A", "Passe
   ["PUN", "Minutes de punition"], ["TG", "Temps de glace"], ["V", "Victoires"], ["D", "Défaites en temps réglementaire"], ["DP", "Défaites en prolongation ou en tirs de barrage (valent 1 point)"],
   ["(P)", "Match décidé en prolongation"], ["(TB)", "Match décidé en tirs de barrage"], ["BP / BC", "Buts pour / buts contre"], ["Diff", "Différence entre les buts pour et les buts contre"],
   ["Moy.", "Moyenne de buts accordés par match (gardiens)"], ["% arr.", "Pourcentage d'arrêts : arrêts divisés par les tirs reçus (.920 = 92 %)"], ["Déc.", "Décision du gardien : V, D ou DP"],
-  ["Série / Séquence", "Résultats de suite en cours (W3 = 3 victoires de suite, L2 = 2 défaites)"], ["10 dern.", "Fiche des 10 derniers matchs (V-D-DP)"], ["Dom. / Ext.", "Fiche à domicile / à l'étranger"],
+  ["Série", "Résultats de suite en cours (V3 = 3 victoires de suite, D2 = 2 défaites, DP1 = 1 défaite en prolongation)"], ["10 dern.", "Fiche des 10 derniers matchs (V-D-DP)"], ["Dom. / Ext.", "Fiche à domicile / à l'étranger"],
   ["3 étoiles", "Les meilleurs du match, choisis automatiquement par MonTrio selon les stats"], ["En feu", "Les joueurs qui ont le plus de points dans les 5 derniers matchs de leur équipe"]];
 function ouvrirLexique() {
   noterModale({ t: "lexique", id: "x" });
@@ -530,6 +554,14 @@ function ouvrirDepuisAdresse() {
   else if (type === "comparer") ouvrirComparaison(id, id2);
   return true;
 }
+
+// À la une : on prévient quand les médias de cette ligue écrivent surtout en anglais
+const rendreBuzzBase = rendreBuzz;
+rendreBuzz = async function () {
+  await rendreBuzzBase();
+  const anglais = !["lnh", "lhjmq"].includes(ligue);
+  $("note-articles").textContent = `Les articles viennent de Google Actualités : un clic ouvre l'article complet sur le site du média.${anglais ? ` Pour ${laLigue(ligue)}, la plupart des médias écrivent en anglais.` : ""}`;
+};
 
 // ---- Démarrage ---------------------------------------------------
 rendreBoutonAlertes();

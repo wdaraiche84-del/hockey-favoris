@@ -90,7 +90,8 @@ async function liiga() {
       for (const [t, cle] of [[g.homeTeam, dom], [g.awayTeam, ext]]) {
         const ligne = {};
         for (const but of t.goalEvents || []) {
-          if (but.period >= 5) continue; // tirs de barrage
+          // Tirs de barrage : 5e période, ou après 65 minutes de jeu, ou marqués comme tels
+          if (but.period >= 5 || (but.gameTime ?? 0) >= 3900 || (but.goalTypes || []).some((x) => /VL|SO|RL/i.test(x))) continue;
           const ajoute = (id, i) => { if (!id) return; const k = `liiga-${id}`; ligne[k] = ligne[k] || [0, 0, 0, 0, 0, ""]; ligne[k][i]++; };
           ajoute(but.scorerPlayerId, 0);
           for (const a of but.assistantPlayerIds || []) ajoute(a, 1);
@@ -166,11 +167,15 @@ async function nl() {
   calendrier.sort((a, b) => a.debut.localeCompare(b.debut));
   const serieDe = series(calendrier);
   // Classement (3 points par victoire en temps réglementaire, 2 en prolongation, 1 pour une défaite en prolongation)
+  // V-D-DP comptés à partir des matchs terminés ; points, buts pour et contre : ceux de la ligue
+  const fiches = {};
+  for (const m of calendrier) if (m.etat === "fini") for (const [eq, nous, eux] of [[m.dom, m.sd, m.se], [m.ext, m.se, m.sd]]) {
+    const f = (fiches[eq] = fiches[eq] || { v: 0, d: 0, dp: 0 });
+    if (nous > eux) f.v++; else if (m.fin) f.dp++; else f.d++;
+  }
   const classement = tableau.map((t) => {
-    const cle = parId[String(t.teamId)];
-    const dp = (t.glot || 0) + (t.glpe || 0);
-    const d = (t.gw || 0) + (t.gl || 0) === (t.gp || 0) ? (t.gl || 0) - dp : (t.gl || 0); // « gl » peut inclure les défaites en prolongation
-    return { eq: cle, pj: t.gp || 0, v: t.gw || 0, d: Math.max(0, d), dp, pts: t.po || 0, bp: t.g || 0, bc: t.ga || 0, div: "National League", conf: "National League", serie: serieDe(cle) };
+    const cle = parId[String(t.teamId)], f = fiches[cle] || { v: 0, d: 0, dp: 0 };
+    return { eq: cle, pj: t.gp || f.v + f.d + f.dp, v: f.v, d: f.d, dp: f.dp, pts: t.po || 0, bp: t.g || 0, bc: t.ga || 0, div: "National League", conf: "National League", serie: serieDe(cle) };
   });
   // Joueurs et stats de la saison
   const joueurs = [], parNo = {};
@@ -407,7 +412,7 @@ async function khl() {
 
   // 4. Stats de chaque joueur, match par match (seulement les nouveaux matchs)
   //    Patineur [B, A, +/-, tirs, PUN, TG] (pas de +/- par match dans la source) ; gardien ["G", arrêts, tirs, BC, décision, TG]
-  const traites = new Set(await lireJson(`${dossier}/traites-v3.json`, []));
+  const traites = new Set(await lireJson(`${dossier}/traites-v4.json`, []));
   const points = {};
   for (const cle of Object.keys(equipes)) points[cle] = traites.size ? await lireJson(`${dossier}/points/${cle}.json`, {}) : {};
   let nouveaux = 0;
@@ -445,7 +450,8 @@ async function khl() {
             const sa = Math.max(adv.shots || 0, ga);
             ligne[`khl-${p.id}`] = ["G", sa - ga, sa, ga, "", mmss(val(st, "toi"))];
           } else {
-            const b = butsPour.filter((x) => x.author?.shirt_number === p.shirt_number && (x.period ?? 0) < 5).length || val(st, "goals");
+            // Les buts viennent de la liste des buts (sans les tirs de barrage) ; sinon, des stats du joueur
+            const b = (ev.goals || []).length ? butsPour.filter((x) => x.author?.shirt_number === p.shirt_number && (x.period ?? 0) < 5).length : val(st, "goals");
             ligne[`khl-${p.id}`] = [b, passes[p.id] || 0, null, val(st, "shots"), val(st, "pim"), mmss(val(st, "toi"))];
           }
         }
@@ -455,7 +461,7 @@ async function khl() {
       if (m.etat === "fini") traites.add(m.id);
     } catch (e) { console.warn("KHL sommaire", m.id, e.message); }
   }
-  await ecrireSiChange(`${dossier}/traites-v3.json`, [...traites].sort());
+  await ecrireSiChange(`${dossier}/traites-v4.json`, [...traites].sort());
   const d = new Date(), an = d.getMonth() >= 6 ? d.getFullYear() : d.getFullYear() - 1;
   await enregistrer("khl", `${an}-${String(an + 1).slice(2)}`, equipes, joueurs, classement, calendrier, points);
   console.log(`KHL : ${Object.keys(equipes).length} équipes, ${joueurs.length} joueurs, ${calendrier.length} matchs, ${nouveaux} sommaires lus.`);

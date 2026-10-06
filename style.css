@@ -697,3 +697,28 @@ button.score-carte:hover { background: #2B3647; }
 .grille-tables { grid-template-columns: 1fr !important; }
 .tableau td, .tableau th { white-space: nowrap; }
 .tableau td.eq { white-space: normal; min-width: 120px; }
+
+/* ---- Corrections après relecture ---- */
+.meneurs li.vide { cursor: default; }
+.meneurs li.vide::before { content: none; }
+.fiche-haut > div { padding-right: 40px; min-width: 0; }
+.fiche-haut h2 { overflow-wrap: anywhere; }
+.lexique { grid-template-columns: minmax(70px, 130px) 1fr; }
+.lexique dt { overflow-wrap: anywhere; line-height: 1.15; }
+/* Un tableau qui dépasse montre une ombre sur le côté (on comprend qu'on peut glisser) */
+.defile {
+  background: linear-gradient(to right, var(--carte) 30%, transparent), linear-gradient(to left, var(--carte) 30%, transparent) 100% 0,
+    radial-gradient(farthest-side at 0 50%, rgba(0,0,0,.18), transparent), radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,.18), transparent) 100% 0;
+  background-repeat: no-repeat; background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%; background-attachment: local, local, scroll, scroll;
+}
+.cmp-tetes { align-items: stretch; }
+.cmp-joueur { justify-content: center; }
+.tuiles { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .res.v, :root:not([data-theme="light"]) .lc-res.v { color: #4ADE80; } :root:not([data-theme="light"]) .res.d, :root:not([data-theme="light"]) .lc-res.d { color: #FCA5A5; } }
+:root[data-theme="dark"] .res.v, :root[data-theme="dark"] .lc-res.v { color: #4ADE80; }
+:root[data-theme="dark"] .res.d, :root[data-theme="dark"] .lc-res.d { color: #FCA5A5; }
+/* Téléphone et tablette : « Ce soir pour tes favoris » passe en premier sur l'accueil */
+@media (max-width: 960px) {
+  [data-page="accueil"] .grille-2 > .pile { display: contents; }
+  [data-page="accueil"] .bloc-soir { order: -1; }
+}

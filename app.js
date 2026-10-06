@@ -23,8 +23,13 @@ function slug(t) { return simplifier(t).replace(/[^a-z]+/g, "-").replace(/^-|-$/
 function echapper(t) { return String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]); }
 function pluriel(n, mot) { return `${n} ${mot}${n > 1 ? "s" : ""}`; }
 function heureDe(m) {
-  return m.debut ? new Date(m.debut).toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" }) : "";
+  // « 9 h 45 » (sans zéro devant), avec des espaces insécables pour ne pas couper l'heure
+  return m.debut ? new Date(m.debut).toLocaleTimeString("fr-CA", { hour: "numeric", minute: "2-digit" }).replace(/\s/g, "\u00a0") : "";
 }
+// « la LNH », mais « l'OHL » ; virgule décimale (3,00) ; séquences en français (V3, D2, DP1)
+const laLigue = (l) => (/^[AEIOUH]/.test(LIGUES[l]?.nom || "") && LIGUES[l]?.nom !== "LHJMQ" ? "l'" : "la ") + (LIGUES[l]?.nom || "ligue");
+const dec = (x, n = 2) => (x == null || isNaN(x) ? "–" : Number(x).toFixed(n).replace(".", ","));
+const serieFr = (s) => (s ? String(s).replace(/^OT/, "DP").replace(/^W/, "V").replace(/^L/, "D") : "–");
 async function lireJson(url) {
   const rep = await fetch(url, { cache: "no-store" });
   if (!rep.ok) throw new Error(url + " : " + rep.status);
@@ -180,7 +185,7 @@ async function choisirLigue(k) {
   ligue = k; memoire("ligue", k);
   rendreChoixLigue();
   document.body.classList.add("chargement");
-  try { await charger(k); } catch (e) { montrerErreur(`Les données de la ${LIGUES[k].nom} n'ont pas pu être chargées pour l'instant.`); }
+  try { await charger(k); } catch (e) { montrerErreur(`Les données de ${laLigue(k)} n'ont pas pu être chargées pour l'instant.`); }
   document.body.classList.remove("chargement");
   equipeChoisie = null;
   rafraichir(); rendreUne(); rendreBuzz(); rendreMiseAJour();
@@ -201,7 +206,7 @@ function rendreBandeau() {
   $("score-jour").textContent = texteJour(jourScores);
   const liste = matchsLigue(ligue).filter((m) => m.date === jourScores);
   const fav = equipesFavorites();
-  if (!liste.length) { $("bandeau-matchs").innerHTML = `<span class="bandeau-vide">Aucun match dans la ${LIGUES[ligue].nom} ce jour-là.</span>`; return; }
+  if (!liste.length) { $("bandeau-matchs").innerHTML = `<span class="bandeau-vide">Aucun match dans ${laLigue(ligue)} ce jour-là.</span>`; return; }
   $("bandeau-matchs").innerHTML = liste.map((m) => {
     const joue = estFini(m) || estDirect(m);
     return `<button class="score-carte ${fav.includes(m.dom) || fav.includes(m.ext) ? "favori" : ""}" data-match="${m.id}" title="Voir le sommaire du match">
@@ -220,7 +225,7 @@ async function carteScore(m, favs, eqs) {
     .filter((x) => x.j).sort((x, y) => (y.b + y.a) - (x.b + x.a) || y.b - x.b).slice(0, 3);
   const ligne = (eq, score, gagne) => `<div class="gs-eq ${estFini(m) && !gagne ? "perd" : ""}">
     <span class="gs-abr">${abr(eq)}</span><span class="gs-nom">${echapper(nomEq(eq))}</span><span class="gs-score">${joue ? score : ""}</span></div>`;
-  const avant = !joue ? `<div class="gs-avant">${fmtBilan(bilan(m.ext).tous)} · ${fmtBilan(bilan(m.dom).tous)}</div>` : "";
+  const avant = !joue ? `<div class="gs-avant">Fiches : ${abr(m.ext)} ${fmtBilan(bilan(m.ext).tous)} · ${abr(m.dom)} ${fmtBilan(bilan(m.dom).tous)}</div>` : "";
   return `<article class="gs-carte ${eqs.includes(m.dom) || eqs.includes(m.ext) ? "favori" : ""}" data-match="${m.id}" tabindex="0" role="button" aria-label="Sommaire : ${echapper(nomEq(m.ext))} contre ${echapper(nomEq(m.dom))}">
     <div class="gs-statut">${estDirect(m) ? `<span class="badge-direct">EN DIRECT</span> ${m.periode || ""}` : statutMatch(m)}${m.series ? " · Séries" : ""}<span class="gs-lien">${joue ? "Sommaire ›" : "Avant-match ›"}</span></div>
     ${ligne(m.ext, m.se, m.se > m.sd)}${ligne(m.dom, m.sd, m.sd > m.se)}${avant}
@@ -248,7 +253,7 @@ async function rendrePageScores() {
     if (!h) h = `<p class="vide">Aucun match dans aucune ligue ce jour-là. Essaie les flèches pour changer de journée.</p>`;
   } else {
     const liste = matchsLigue(ligue).filter((m) => m.date === jourScores);
-    if (!liste.length) h = `<p class="vide">Aucun match dans la ${LIGUES[ligue].nom} ce jour-là. Essaie les flèches pour changer de journée, ou coche « Toutes les ligues ».</p>`;
+    if (!liste.length) h = `<p class="vide">Aucun match dans ${laLigue(ligue)} ce jour-là. Essaie les flèches pour changer de journée, ou coche « Toutes les ligues ».</p>`;
     else { h = `<div class="grille-scores">`; for (const m of liste) h += await carteScore(m, favs, eqs); h += "</div>"; }
   }
   if (jeton === jetonScores) $("grille-scores").innerHTML = h;
@@ -399,7 +404,7 @@ async function rendreBuzz() {
     .filter((x) => filtreBuzz === "tout" || x.cat === filtreBuzz)
     .sort((a, b) => (ligue === "lnh" ? parleDuCH(b) - parleDuCH(a) : 0) || String(b.date).localeCompare(String(a.date)))
     .slice(0, 21);
-  if (!liste.length) { $("articles").innerHTML = `<p class="vide">Pas d'articles récents sur la ${LIGUES[ligue].nom}${filtreBuzz !== "tout" ? " dans cette catégorie" : ""} pour l'instant. Reviens un peu plus tard!</p>`; return; }
+  if (!liste.length) { $("articles").innerHTML = `<p class="vide">Pas d'articles récents sur ${laLigue(ligue)}${filtreBuzz !== "tout" ? " dans cette catégorie" : ""} pour l'instant. Reviens un peu plus tard!</p>`; return; }
   // Mise en page de site de sports : 1 grande + 2 moyennes, une grille de cartes, puis « Plus de nouvelles »
   const [vedette, ...reste] = liste;
   const cotes = reste.slice(0, 2), grille = reste.slice(2, 8), plus = reste.slice(8);
@@ -456,7 +461,7 @@ function htmlStats(j) {
     const g = j.g;
     return `<div class="stats">
       <div><b>${g.pj}</b><small>PJ</small></div><div><b>${g.v}-${g.d}-${g.dp}</b><small>Fiche</small></div>
-      <div><b>${g.moy != null ? g.moy.toFixed(2) : "–"}</b><small>Moy.</small></div>
+      <div><b>${dec(g.moy)}</b><small>Moy.</small></div>
       <div><b>${g.pct != null ? g.pct.toFixed(3).replace(/^0/, "") : "–"}</b><small>% arr.</small></div></div>`;
   }
   if (j.s) {
@@ -538,10 +543,10 @@ function tableClassement(titre, liste) {
   return `<div class="table-bloc"><h3>${echapper(titre)}</h3><div class="defile"><table class="tableau">
     <thead><tr><th>#</th><th>Équipe</th><th>PJ</th><th>V</th><th>D</th><th>DP</th><th>PTS</th><th class="large">BP</th><th class="large">BC</th><th>Diff</th><th class="large">10 dern.</th><th class="large">Dom.</th><th class="large">Ext.</th><th class="large">Série</th></tr></thead><tbody>
     ${trierEquipes(liste).map((t, i) => { const b = bilan(t.eq), diff = t.bp - t.bc; return `<tr class="${eqs.includes(t.eq) ? "favori" : ""}"><td>${i + 1}</td>
-      <td class="eq"><button class="lien-equipe" data-equipe-fiche="${t.eq}"><span class="abr">${abr(t.eq)}</span> <span class="nom-long">${echapper(courtEq(t.eq))}</span></button></td>
+      <td class="eq"><button class="lien-equipe" data-equipe-fiche="${t.eq}"><span class="abr">${abr(t.eq)}</span> ${simplifier(courtEq(t.eq)).trim() !== simplifier(abr(t.eq)) ? `<span class="nom-long">${echapper(courtEq(t.eq))}</span>` : ""}</button></td>
       <td>${t.pj}</td><td>${t.v}</td><td>${t.d}</td><td>${t.dp}</td><td class="pts">${t.pts}</td>
       <td class="large">${t.bp}</td><td class="large">${t.bc}</td><td class="${diff > 0 ? "plus" : diff < 0 ? "moins" : ""}">${diff > 0 ? "+" : ""}${diff}</td>
-      <td class="large">${fmtBilan(b.dix)}</td><td class="large">${fmtBilan(b.dom)}</td><td class="large">${fmtBilan(b.ext)}</td><td class="large">${t.serie || "–"}</td></tr>`; }).join("")}
+      <td class="large">${fmtBilan(b.dix)}</td><td class="large">${fmtBilan(b.dom)}</td><td class="large">${fmtBilan(b.ext)}</td><td class="large">${serieFr(t.serie)}</td></tr>`; }).join("")}
   </tbody></table></div></div>`;
 }
 const groupes = (liste, cle) => [...new Set(liste.map((t) => t[cle]).filter(Boolean))];
@@ -549,7 +554,7 @@ function rendreClassement() {
   const c = D.classement[ligue] || [];
   if (!c.length) { $("tables-classement").innerHTML = `<p class="vide">Classement à venir.</p>`; return; }
   let h = "";
-  if (vueClassement === "ligue") h = tableClassement(`Toute la ${LIGUES[ligue].nom}`, c);
+  if (vueClassement === "ligue") h = tableClassement(`Toute ${laLigue(ligue)}`, c);
   else for (const g of groupes(c, vueClassement)) h += tableClassement(g, c.filter((t) => t[vueClassement] === g));
   $("tables-classement").innerHTML = h;
   $("tables-classement").classList.toggle("une-col", vueClassement === "ligue");
@@ -573,14 +578,14 @@ function htmlMeneurs(liste, aff) {
 }
 function rendreMeneurs() {
   if (LIGUES[ligue].sansJoueurs) {
-    const msg = `<li class="vide">Les stats des joueurs de la ${LIGUES[ligue].nom} arrivent bientôt.</li>`;
+    const msg = `<li class="vide">Les stats des joueurs de ${laLigue(ligue)} arrivent bientôt.</li>`;
     $("mini-meneurs").innerHTML = msg;
     $("grille-meneurs").innerHTML = `<section class="bloc"><div class="titre-section"><h2>Meneurs <span class="tag-ligue">${LIGUES[ligue].nom}</span></h2></div><p class="vide">Les stats des joueurs de la ${LIGUES[ligue].nom} ne sont pas encore offertes : pour l'instant, on suit le calendrier, les scores et le classement.</p></section>`;
     return;
   }
   $("mini-meneurs").innerHTML = htmlMeneurs(listeMeneurs(5, patineur, (j) => j.s.pts), (j) => j.s.pts);
   const maxPj = Math.max(1, ...(D.classement[ligue] || []).map((t) => t.pj));
-  const gardien = (j) => j.g && j.g.pj >= Math.max(1, Math.floor(maxPj / 3));
+  const gardien = (j) => j.g && j.g.pj >= Math.max(Math.min(2, maxPj), Math.ceil(maxPj / 3));
   const blocs = [
     ["Points", htmlMeneurs(listeMeneurs(15, patineur, (j) => j.s.pts), (j) => j.s.pts)],
     ["Buts", htmlMeneurs(listeMeneurs(15, patineur, (j) => j.s.b), (j) => j.s.b)],
@@ -646,7 +651,7 @@ function rendreResultats() {
   $("fiche-equipe-choisie").dataset.equipeFiche = equipeChoisie;
   const liste = D.joueurs.filter((j) => j.eq === equipeChoisie).sort((a, b) => ORDRE_POS.indexOf(a.pos) - ORDRE_POS.indexOf(b.pos) || (a.no ?? 99) - (b.no ?? 99));
   $("resultats").innerHTML = liste.length ? liste.map(ligneJoueur).join("")
-    : `<li class="vide">Les joueurs de la ${LIGUES[ligueDe(equipeChoisie)]?.nom || "ligue"} arrivent bientôt : pour l'instant, on a seulement le calendrier, les scores et le classement.</li>`;
+    : `<li class="vide">Les joueurs de ${laLigue(ligueDe(equipeChoisie))} arrivent bientôt : pour l'instant, on a seulement le calendrier, les scores et le classement.</li>`;
   if (!$("recherche-fond").hidden) rendreRecherche();
 }
 function rendreEquipes() {
@@ -683,7 +688,7 @@ async function htmlMatchParMatch(j) {
   const prochains = tous.filter((m) => !estFini(m) && !estDirect(m) && m.date >= AUJ).slice(0, 5);
   const gardien = j.pos === "G";
   let h = "";
-  if (LIGUES[j.lig]?.pointsSeulement) h += `<p class="petit-gris">Pour la ${LIGUES[j.lig].nom}, on affiche seulement les matchs où ${echapper(nomDeFamille(j))} a fait des points (buts et passes).</p>`;
+  if (LIGUES[j.lig]?.pointsSeulement) h += `<p class="petit-gris">Pour ${laLigue(j.lig)}, on affiche seulement les matchs où ${echapper(nomDeFamille(j))} a fait des points (buts et passes).</p>`;
   if (!joues.length) h += `<p class="vide">${LIGUES[j.lig]?.pointsSeulement ? "Pas encore de point cette saison." : "Pas encore de match joué cette saison."}</p>`;
   else {
     const avecTemps = !gardien && joues.some((m) => pts[m.id][j.id][5]);
@@ -754,7 +759,10 @@ async function ouvrirFiche(id) {
 function fermerFiche() {
   const ouverte = !$("fiche-fond").hidden;
   $("fiche-fond").hidden = true;
-  if (ouverte && /^#\/(joueur|equipe|match|comparer)\//.test(location.hash)) history.replaceState(null, "", "#/" + (pageActuelle || "accueil"));
+  if (ouverte && /^#\/(joueur|equipe|match|comparer)\//.test(location.hash)) {
+    if (history.state?.montrio) history.back(); // retire l'adresse de la fenêtre (comme le bouton Retour)
+    else history.replaceState(null, "", "#/" + (pageActuelle || "accueil"));
+  }
 }
 $("fiche-fond").addEventListener("click", (e) => { if (e.target.id === "fiche-fond" || e.target.closest(".fermer")) fermerFiche(); });
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") fermerFiche(); });
