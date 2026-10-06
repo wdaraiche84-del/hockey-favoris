@@ -17,7 +17,7 @@ const RECHERCHES = [
   { q: "LNH suspension", lig: "lnh" }, { q: "Canadien de Montréal", lig: "lnh" }, { q: "Canadiens Montréal blessure", lig: "lnh" },
   { q: "Martin St-Louis Canadien", lig: "lnh" }, { q: "Kent Hughes Canadien", lig: "lnh" },
   { q: "Rocket de Laval", lig: "ahl" }, { q: "LAH hockey", lig: "ahl" }, { q: "AHL hockey", lig: "ahl", en: true, jours: 7 },
-  { q: "LHJMQ", lig: "lhjmq", jours: 7 }, { q: "LHJMQ hockey junior", lig: "lhjmq", jours: 7 }, { q: "QMJHL", lig: "lhjmq", en: true, jours: 7 },
+  { q: "LHJMQ", lig: "lhjmq", jours: 7 }, { q: "LHJMQ hockey junior", lig: "lhjmq", jours: 7 },
   { q: "OHL hockey", lig: "ohl", en: true, jours: 7 }, { q: "Ontario Hockey League", lig: "ohl", en: true, jours: 7 },
   { q: "WHL hockey", lig: "whl", en: true, jours: 7 }, { q: "Western Hockey League", lig: "whl", en: true, jours: 7 },
   { q: "KHL hockey", lig: "khl", jours: 7 },
