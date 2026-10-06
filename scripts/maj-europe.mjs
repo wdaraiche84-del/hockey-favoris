@@ -133,6 +133,11 @@ async function pointsExistants(dossier, equipes, fichier) {
 }
 
 // ---- National League (Suisse) ---------------------------------
+// Noms usuels en français (Suisse romande)
+const NL_FR = {
+  ZSC: ["ZSC Lions (Zurich)", "ZSC Lions"], SCL: ["SCL Tigers (Langnau)", "SCL Tigers"], SCRJ: ["Rapperswil-Jona Lakers", "Rapperswil"],
+  SCB: ["CP Berne", "Berne"], EHCB: ["HC Bienne", "Bienne"], EVZ: ["EV Zoug", "Zoug"], EHCK: ["EHC Kloten", "Kloten"],
+};
 async function nl() {
   const API = "https://www.nationalleague.ch/api/";
   const dossier = "data/ligues/nl";
@@ -142,7 +147,8 @@ async function nl() {
   const tableau = await lire(API + "teams");
   for (const t of tableau) {
     const cle = `nl_${t.shortName}`;
-    equipes[cle] = { abr: t.shortName, nom: t.name, court: court(t.name), div: "National League", conf: "National League" };
+    const fr = NL_FR[t.shortName] || [t.name, court(t.name)];
+    equipes[cle] = { abr: t.shortName, nom: fr[0], court: fr[1], div: "National League", conf: "National League" };
     parId[String(t.teamId)] = cle;
   }
   // Calendrier (sans les matchs préparatoires)
