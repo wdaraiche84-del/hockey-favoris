@@ -2,6 +2,9 @@
 // LE ROBOT DES LIGUES EUROPÉENNES
 //   Liiga (Finlande) : équipes, joueurs et stats, calendrier,
 //                      classement, points match par match
+//   National League  : (Suisse) équipes, joueurs et stats, calendrier,
+//                      classement, stats match par match
+//   SHL              : (Suède) même chose, à partir du site officiel
 //   KHL              : équipes, joueurs et stats, calendrier, classement
 //                      officiel, stats match par match (source : l'API de
 //                      l'application mobile officielle de la KHL)
@@ -105,6 +108,200 @@ async function liiga() {
   }).filter(Boolean);
   await enregistrer("liiga", `${saison - 1}-${String(saison).slice(2)}`, equipes, joueurs, classement, calendrier, points);
   console.log(`Liiga : ${Object.keys(equipes).length} équipes, ${joueurs.length} joueurs, ${calendrier.length} matchs.`);
+}
+
+
+// ---- Outils communs -------------------------------------------
+// Secondes → « mm:ss »
+const secMmss = (s) => { s = Math.round(Number(s) || 0); return s ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : ""; };
+// Séquence en cours (ex. « W3 ») à partir des matchs terminés
+function series(calendrier) {
+  const suites = {};
+  for (const m of calendrier) if (m.etat === "fini") {
+    (suites[m.dom] = suites[m.dom] || []).push(m.sd > m.se ? "W" : "L");
+    (suites[m.ext] = suites[m.ext] || []).push(m.se > m.sd ? "W" : "L");
+  }
+  return (eq) => { const s = suites[eq] || [], d = s[s.length - 1]; let n = 0; for (let i = s.length - 1; i >= 0 && s[i] === d; i--) n++; return d ? `${d}${n}` : ""; };
+}
+const saisonEnCours = () => { const d = new Date(), an = d.getMonth() >= 6 ? d.getFullYear() : d.getFullYear() - 1; return `${an}-${String(an + 1).slice(2)}`; };
+async function pointsExistants(dossier, equipes, fichier) {
+  await mkdir(`${dossier}/points`, { recursive: true });
+  const traites = new Set(await lireJson(`${dossier}/${fichier}`, []));
+  const points = {};
+  for (const cle of Object.keys(equipes)) points[cle] = traites.size ? await lireJson(`${dossier}/points/${cle}.json`, {}) : {};
+  return { traites, points };
+}
+
+// ---- National League (Suisse) ---------------------------------
+async function nl() {
+  const API = "https://www.nationalleague.ch/api/";
+  const dossier = "data/ligues/nl";
+  const POS = { forwarder: "AV", forward: "AV", defender: "D", defense: "D", goalkeeper: "G" };
+  const equipes = {}, parId = {};
+  const court = (nom) => nom.replace(/\b(HC|SC|EHC|EV|HCD|Lakers|Lions|Tigers)\b/g, "").replace(/\s+/g, " ").trim() || nom;
+  const tableau = await lire(API + "teams");
+  for (const t of tableau) {
+    const cle = `nl_${t.shortName}`;
+    equipes[cle] = { abr: t.shortName, nom: t.name, court: court(t.name), div: "National League", conf: "National League" };
+    parId[String(t.teamId)] = cle;
+  }
+  // Calendrier (sans les matchs préparatoires)
+  const calendrier = [];
+  for (const g of await lire(API + "games")) {
+    if (g.isExhibition) continue;
+    const dom = parId[String(g.homeTeamId)], ext = parId[String(g.awayTeamId)];
+    if (!dom || !ext) continue;
+    const fini = g.status === "finished", avant = /before|scheduled|notStarted|planned/i.test(g.status || "");
+    const m = { id: `nl-${g.gameId}`, date: dateQc(g.date), debut: new Date(g.date).toISOString(), dom, ext, etat: fini ? "fini" : avant ? "avenir" : "direct" };
+    if (!avant) { m.sd = g.homeTeamResult ?? 0; m.se = g.awayTeamResult ?? 0; }
+    if (fini && g.isShootout) m.fin = "SO"; else if (fini && g.isOvertime) m.fin = "OT";
+    calendrier.push(m);
+  }
+  calendrier.sort((a, b) => a.debut.localeCompare(b.debut));
+  const serieDe = series(calendrier);
+  // Classement (3 points par victoire en temps réglementaire, 2 en prolongation, 1 pour une défaite en prolongation)
+  const classement = tableau.map((t) => {
+    const cle = parId[String(t.teamId)];
+    const dp = (t.glot || 0) + (t.glpe || 0);
+    const d = (t.gw || 0) + (t.gl || 0) === (t.gp || 0) ? (t.gl || 0) - dp : (t.gl || 0); // « gl » peut inclure les défaites en prolongation
+    return { eq: cle, pj: t.gp || 0, v: t.gw || 0, d: Math.max(0, d), dp, pts: t.po || 0, bp: t.g || 0, bc: t.ga || 0, div: "National League", conf: "National League", serie: serieDe(cle) };
+  });
+  // Joueurs et stats de la saison
+  const joueurs = [], parNo = {};
+  for (const p of await lire(API + "player")) {
+    const pos = POS[p.position], eq = parId[String(p.teamId)];
+    if (!pos || !eq) continue;
+    const j = { id: `nl-${p.playerId}`, nom: `${p.firstName} ${p.lastName}`.trim(), no: p.number ? Number(p.number) : null, pos, eq };
+    if (pos === "G") j.g = { pj: p.gp || 0, v: p.gw || 0, d: p.gl || 0, dp: 0, moy: p.gp ? +Number(p.gaPerGame || 0).toFixed(2) : null, pct: p.sa ? +(p.svs / p.sa).toFixed(3) : null };
+    else j.s = { pj: p.gp || 0, b: p.g || 0, a: p.assists ?? ((p.a1 || 0) + (p.a2 || 0)), pts: p.points || 0, pm: p.plusMinus || 0 };
+    joueurs.push(j);
+    parNo[`${eq}#${Number(p.number)}`] = j.id;
+  }
+  // Stats match par match
+  const { traites, points } = await pointsExistants(dossier, equipes, "traites-v1.json");
+  for (const m of calendrier) {
+    if (m.etat === "avenir" || traites.has(m.id)) continue;
+    try {
+      const g = await lire(API + `games/${m.id.slice(3)}`);
+      for (const [stats, alignement, cle] of [[g.playerStatsHome, g.lineupHome, m.dom], [g.playerStatsAway, g.lineupAway, m.ext]]) {
+        const idDe = {};
+        for (const bloc of alignement || []) for (const p of bloc.players || []) idDe[Number(p.number)] = `nl-${p.playerId}`;
+        const ligne = {};
+        for (const p of stats || []) {
+          const id = idDe[Number(p.number)] || parNo[`${cle}#${Number(p.number)}`];
+          if (!id) continue;
+          if (p.position === "goalkeeper") {
+            if (!p.mip) continue;
+            const ga = p.ga || 0, sv = Math.max(0, p.svs || 0), sa = p.sa || sv + ga;
+            ligne[id] = ["G", sv, sa, ga, "", secMmss(p.mip)];
+          } else {
+            const toi = p.toi || 0;
+            ligne[id] = [p.g || 0, p.a ?? ((p.a1 || 0) + (p.a2 || 0)), p.plMi ?? ((p.pl || 0) - (p.mi || 0)), p.sog || 0, p.pim || 0, secMmss(toi)];
+          }
+        }
+        if (Object.keys(ligne).length) points[cle][m.id] = ligne;
+      }
+      if (m.etat === "fini") traites.add(m.id);
+    } catch (e) { console.warn("NL sommaire", m.id, e.message); }
+  }
+  await ecrireSiChange(`${dossier}/traites-v1.json`, [...traites].sort());
+  await enregistrer("nl", saisonEnCours(), equipes, joueurs, classement, calendrier, points);
+  console.log(`National League : ${Object.keys(equipes).length} équipes, ${joueurs.length} joueurs, ${calendrier.length} matchs.`);
+}
+
+// ---- SHL (Suède) ------------------------------------------------
+async function shl() {
+  const API = "https://www.shl.se/api/";
+  const dossier = "data/ligues/shl";
+  const POS = { LW: "AG", RW: "AD", CE: "C", C: "C", F: "AV", LD: "D", RD: "D", D: "D", GK: "G" };
+  const filtre = (await lire(API + "sports-v2/season-series-game-types-filter")).defaultSsgtFilter;
+  const sch = await lire(API + `sports-v2/game-schedule?seasonUuid=${filtre.season}&seriesUuid=${filtre.series}&gameTypeUuid=${filtre.gameType}`);
+  const equipes = {};
+  for (const t of sch.teamList || []) {
+    const n = t.teamNames || {};
+    equipes[`shl_${t.teamCode}`] = { abr: t.teamCode, nom: (n.long || t.teamCode).trim(), court: (n.short || n.long || t.teamCode).trim(), div: "SHL", conf: "SHL" };
+  }
+  const calendrier = [];
+  for (const g of sch.gameInfo || []) {
+    const dom = `shl_${g.homeTeamInfo?.code}`, ext = `shl_${g.awayTeamInfo?.code}`;
+    if (!equipes[dom] || !equipes[ext]) continue;
+    const fini = g.state === "post-game", avant = g.state === "pre-game";
+    const m = { id: `shl-${g.uuid}`, date: dateQc(g.rawStartDateTime), debut: new Date(g.rawStartDateTime).toISOString(), dom, ext, etat: fini ? "fini" : avant ? "avenir" : "direct" };
+    if (!avant) { m.sd = g.homeTeamInfo.score ?? 0; m.se = g.awayTeamInfo.score ?? 0; }
+    if (fini && g.shootout) m.fin = "SO"; else if (fini && g.overtime) m.fin = "OT";
+    calendrier.push(m);
+  }
+  calendrier.sort((a, b) => a.debut.localeCompare(b.debut));
+  const serieDe = series(calendrier);
+  const ssgt = sch.gameInfo?.[0]?.ssgtUuid;
+  const classement = [];
+  if (ssgt) for (const t of (await lire(API + `statistics-v2/league-standings?ssgtUuid=${ssgt}`)).leagueStandings || []) {
+    const cle = `shl_${t.info?.teamId}`; if (!equipes[cle]) continue;
+    classement.push({ eq: cle, pj: t.GP || 0, v: (t.W || 0) + (t.OTW || 0), d: t.L || 0, dp: t.OTL || 0, pts: t.Points || 0, bp: t.G || 0, bc: t.GA || 0, div: "SHL", conf: "SHL", serie: serieDe(cle) });
+  }
+  // Stats match par match ; les stats de la saison sont l'addition de tous les matchs
+  const { traites, points } = await pointsExistants(dossier, equipes, "traites-v1.json");
+  const infos = await lireJson(`${dossier}/joueurs-vus.json`, {}); // id → { nom, no, pos, eq }
+  for (const m of calendrier) {
+    if (m.etat === "avenir" || traites.has(m.id)) continue;
+    try {
+      const ps = await lire(API + `gameday/player-stats/${m.id.slice(4)}`);
+      for (const [cote, cle] of [["homeTeamValue", m.dom], ["awayTeamValue", m.ext]]) {
+        const ligne = {};
+        for (const p of ps.stats?.[cote] || []) {
+          const pid = p.info?.playerId, nom = ps.players?.[cote]?.[pid];
+          if (!pid || !nom) continue;
+          const id = `shl-${pid}`;
+          infos[id] = { nom: nom.fullName || `${nom.firstName} ${nom.lastName}`, no: p.NR ?? null, pos: POS[p.POS] || "AV", eq: cle };
+          const toi = String(p.TOI || "");
+          if (/^0?0:00$/.test(toi) && !p.G && !p.A) continue; // n'a pas joué
+          ligne[id] = [p.G || 0, p.A || 0, p["+/-"] || 0, p.SOG || 0, p.PIM || 0, toi.replace(/^0(\d)/, "$1")];
+        }
+        for (const g of ps.gkStats?.[cote] || []) {
+          const pid = g.info?.playerId, nom = ps.goalkeepers?.[cote]?.[pid];
+          if (!pid || !nom) continue;
+          const id = `shl-${pid}`;
+          infos[id] = { nom: nom.fullName || `${nom.firstName} ${nom.lastName}`, no: g.NR ?? null, pos: "G", eq: cle };
+          if (!g.SOGA && !g.GA) continue;
+          ligne[id] = ["G", g.SVS || 0, g.SOGA || 0, g.GA || 0, "", ""];
+        }
+        if (Object.keys(ligne).length) points[cle][m.id] = ligne;
+      }
+      if (m.etat === "fini") traites.add(m.id);
+    } catch (e) { console.warn("SHL sommaire", m.id, e.message); }
+  }
+  // Totaux de la saison à partir des matchs
+  const parMatch = Object.fromEntries(calendrier.map((m) => [m.id, m]));
+  const joueurs = Object.entries(infos).map(([id, j]) => {
+    const x = { id, ...j };
+    if (j.pos === "G") x.g = { pj: 0, v: 0, d: 0, dp: 0, moy: null, pct: null, _sv: 0, _sa: 0, _ga: 0 };
+    else x.s = { pj: 0, b: 0, a: 0, pts: 0, pm: 0 };
+    return x;
+  });
+  const parId = new Map(joueurs.map((j) => [j.id, j]));
+  for (const [cle, matchs] of Object.entries(points)) for (const [mid, ligne] of Object.entries(matchs)) {
+    const m = parMatch[mid]; if (!m) continue;
+    // Le gardien qui a fait face au plus de tirs reçoit la décision
+    const gardiens = Object.entries(ligne).filter(([, l]) => l[0] === "G").sort((a, b) => b[1][2] - a[1][2]);
+    for (const [id, l] of Object.entries(ligne)) {
+      const j = parId.get(id); if (!j) continue;
+      if (l[0] === "G" && j.g) {
+        j.g.pj++; j.g._sv += l[1]; j.g._sa += l[2]; j.g._ga += l[3];
+        if (m.etat === "fini" && gardiens[0]?.[0] === id) {
+          const gagne = m.dom === cle ? m.sd > m.se : m.se > m.sd;
+          if (gagne) { j.g.v++; l[4] = "W"; } else if (m.fin) { j.g.dp++; l[4] = "O"; } else { j.g.d++; l[4] = "L"; }
+        }
+      } else if (j.s) { j.s.pj++; j.s.b += l[0]; j.s.a += l[1]; j.s.pts += l[0] + l[1]; j.s.pm += l[2]; }
+    }
+  }
+  for (const j of joueurs) if (j.g) {
+    const { _sv, _sa, _ga, ...g } = j.g;
+    j.g = { ...g, moy: g.pj ? +(_ga / g.pj).toFixed(2) : null, pct: _sa ? +(_sv / _sa).toFixed(3) : null };
+  }
+  await ecrireSiChange(`${dossier}/joueurs-vus.json`, infos);
+  await ecrireSiChange(`${dossier}/traites-v1.json`, [...traites].sort());
+  await enregistrer("shl", saisonEnCours(), equipes, joueurs, classement, calendrier, points);
+  console.log(`SHL : ${Object.keys(equipes).length} équipes, ${joueurs.length} joueurs, ${calendrier.length} matchs.`);
 }
 
 // ---- KHL -----------------------------------------------------
@@ -259,7 +456,8 @@ async function khl() {
 }
 
 let erreurs = 0;
-for (const [nom, f] of [["Liiga", liiga], ["KHL", khl]]) {
+const LISTE = [["Liiga", liiga], ["KHL", khl], ["National League", nl], ["SHL", shl]];
+for (const [nom, f] of LISTE) {
   try { await f(); } catch (e) { erreurs++; console.error(`${nom} : problème —`, e.message); }
 }
-if (erreurs === 2) process.exit(1);
+if (erreurs === LISTE.length) process.exit(1);

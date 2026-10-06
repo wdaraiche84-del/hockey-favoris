@@ -44,6 +44,8 @@ const LIGUES = {
   whl:   { nom: "WHL",   long: "Junior · Ouest canadien et américain" },
   khl:   { nom: "KHL",   long: "Russie", sansPlusMoins: true },
   liiga: { nom: "Liiga", long: "Finlande", pointsSeulement: true },
+  shl:   { nom: "SHL",   long: "Suède" },
+  nl:    { nom: "NL",    long: "Suisse · National League" },
 };
 const NOMS_CONF = { Eastern: "Association de l'Est", Western: "Association de l'Ouest" };
 const NOMS_DIV = { Atlantic: "Division Atlantique", Metropolitan: "Division Métropolitaine", Central: "Division Centrale", Pacific: "Division Pacifique" };
@@ -153,7 +155,7 @@ function ajouter(id) { if (!favoris.includes(id)) favoris.push(id); sauverFavori
 function retirer(id) { favoris = favoris.filter((f) => f !== id); sauverFavoris(); rafraichir(); }
 
 // ---- 4. Choix de la ligue ------------------------------------
-const GROUPES_LIGUES = [["Pro", ["lnh", "ahl"]], ["Junior", ["lhjmq", "ohl", "whl"]], ["Europe", ["khl", "liiga"]]];
+const GROUPES_LIGUES = [["Pro", ["lnh", "ahl"]], ["Junior", ["lhjmq", "ohl", "whl"]], ["Europe", ["khl", "shl", "liiga", "nl"]]];
 function rendreChoixLigue() {
   $("choix-ligue").innerHTML = GROUPES_LIGUES.map(([g, ls]) => `<div class="groupe-ligues"><span class="groupe-nom">${g}</span>${ls.map((k) =>
     `<button class="puce-ligue ${k === ligue ? "actif" : ""}" data-ligue="${k}" role="tab" aria-selected="${k === ligue}" title="${LIGUES[k].long}">${LIGUES[k].nom}</button>`).join("")}</div>`).join("");

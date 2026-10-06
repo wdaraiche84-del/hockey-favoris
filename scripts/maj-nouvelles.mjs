@@ -21,7 +21,10 @@ const RECHERCHES = [
   { q: "OHL hockey", lig: "ohl", en: true, jours: 7 }, { q: "Ontario Hockey League", lig: "ohl", en: true, jours: 7 },
   { q: "WHL hockey", lig: "whl", en: true, jours: 7 }, { q: "Western Hockey League", lig: "whl", en: true, jours: 7 },
   { q: "KHL hockey", lig: "khl", jours: 7 }, { q: "Ligue continentale de hockey", lig: "khl", jours: 14 },
-  { q: "KHL", lig: "khl", en: true, jours: 7 }, { q: "Kontinental Hockey League", lig: "khl", en: true, jours: 14 },
+  { q: "KHL", lig: "khl", en: true, jours: 7 },
+  { q: "SHL hockey Suède", lig: "shl", jours: 14 }, { q: "SHL hockey Sweden", lig: "shl", en: true, jours: 7 },
+  { q: "Liiga hockey Finlande", lig: "liiga", jours: 14 }, { q: "Liiga hockey Finland", lig: "liiga", en: true, jours: 7 },
+  { q: "National League hockey Suisse", lig: "nl", jours: 7 }, { q: "Genève-Servette OR Lausanne HC OR Fribourg-Gottéron hockey", lig: "nl", jours: 7 }, { q: "Kontinental Hockey League", lig: "khl", en: true, jours: 14 },
 ];
 // Une vraie transaction : un geste concret, pas une rumeur ni une question
 const TRANSACTION = /(?<!\p{L})(traded|acquires?|acquired|signs?|signed|re-signs?|extension|claimed|waivers|recall(s|ed)?|reassign(s|ed)?|loan(s|ed)|releases?|released|fired|hired|named (head )?coach|échangé|échangés|échange \w+ (à|aux|contre)|acquiert|acquis|obtient|obtenu|cède|cédé|signe|a signé|paraphe|prolonge|prolongation de contrat|contrat (de|d'une durée)|soumis au ballottage|plac\w*\s.{0,40}?au ballottage|réclamé|rappelé|rappelle|retranché|libéré|congédié|embauché|nommé (entraîneur|directeur|capitaine))(?!\p{L})/iu;
@@ -32,7 +35,7 @@ function categorieDe(titre, source = "") {
   if (TRANSACTION.test(titre) && !SPECULATION.test(titre) && !/rumeur/i.test(source)) return "transaction";
   return "nouvelle";
 }
-const LIGUES = [["ahl", /\b(LAH|AHL)\b|Rocket de Laval|Laval Rocket/], ["lnh", /\b(LNH|NHL)\b/], ["lhjmq", /\b(LHJMQ|QMJHL)\b/], ["ohl", /\bOHL\b/], ["whl", /\bWHL\b/], ["khl", /\b(KHL|LKH)\b/]];
+const LIGUES = [["ahl", /\b(LAH|AHL)\b|Rocket de Laval|Laval Rocket/], ["lnh", /\b(LNH|NHL)\b/], ["lhjmq", /\b(LHJMQ|QMJHL)\b/], ["ohl", /\bOHL\b/], ["whl", /\bWHL\b/], ["khl", /\b(KHL|LKH)\b/], ["shl", /\bSHL\b/], ["liiga", /\bLiiga\b/i]];
 
 // Paris sportifs, cotes, casinos : on n'en veut pas dans les articles
 const JEU = /\bparis? sportifs?\b|\bpari\b|\bparie[rz]?\b|parieu|mise-o-jeu|mises? sportives?|\bcotes?\b|\bodds\b|\bbet(s|ting|tor)?\b|rue ?des ?joueurs|odds scanner|prédiction|prediction|pronostic|parlay|sportsbook|bookmak|casino|draftkings|fanduel|betmgm|bet365|betway|bet99|betrivers|caesars sportsbook|pointsbet|fanatics sportsbook|loto-québec|covers\.com|action network|pickswise|oddsshark|sportsline|dimers|\bprops?\b/i;
