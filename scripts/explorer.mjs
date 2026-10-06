@@ -1,26 +1,25 @@
-// Outil temporaire : teste API-Sports (hockey) avec la clé rangée dans les secrets GitHub.
-// La clé n'est jamais affichée.
-const CLE = process.env.APISPORTS_KEY;
-if (!CLE) { console.log("AUCUNE CLÉ : le secret APISPORTS_KEY n'est pas lu."); process.exit(0); }
-console.log("Clé trouvée (" + CLE.length + " caractères).");
-const BASE = "https://v1.hockey.api-sports.io";
-async function api(chemin) {
-  const r = await fetch(BASE + chemin, { headers: { "x-apisports-key": CLE } });
-  const j = await r.json();
-  console.log(`\n### ${chemin} → ${r.status} résultats=${j.results} erreurs=${JSON.stringify(j.errors)} restant=${r.headers.get("x-ratelimit-requests-remaining")}`);
-  return j;
+// Temporaire : cherche des photos de hockey sous licence libre sur Wikimedia Commons
+import { writeFile, mkdir } from "node:fs/promises";
+const UA = { "User-Agent": "MonTrio/1.0 (https://wdaraiche84-del.github.io/hockey-favoris/; site de fan)" };
+const LIBRE = /^(CC0|CC BY(-SA)? [0-9.]+|Public domain|PD.*)$/i;
+const RECH = ["ice hockey game action", "ice hockey goaltender save", "ice hockey faceoff", "hockey rink arena", "ice hockey puck stick", "ice hockey skates ice", "pond hockey outdoor", "ice hockey goal net", "ice hockey player shot", "ice hockey referee"];
+await mkdir("cand", { recursive: true });
+const vus = new Set(), infos = [];
+let n = 0;
+for (const q of RECH) {
+  const u = "https://commons.wikimedia.org/w/api.php?" + new URLSearchParams({ action: "query", format: "json", generator: "search", gsrsearch: `${q} filetype:bitmap`, gsrnamespace: "6", gsrlimit: "25", prop: "imageinfo", iiprop: "url|size|extmetadata", iiurlwidth: "900" });
+  const d = await (await fetch(u, { headers: UA })).json();
+  for (const p of Object.values(d.query?.pages || {})) {
+    const ii = p.imageinfo?.[0]; if (!ii || vus.has(p.title)) continue;
+    const m = ii.extmetadata || {}, lic = (m.LicenseShortName?.value || "").trim();
+    if (!LIBRE.test(lic) || ii.width < 1400 || ii.width < ii.height * 1.25) continue;
+    vus.add(p.title);
+    const f = `c${String(++n).padStart(3, "0")}.jpg`;
+    const r = await fetch(ii.thumburl, { headers: UA }); if (!r.ok) { n--; continue; }
+    await writeFile(`cand/${f}`, Buffer.from(await r.arrayBuffer()));
+    infos.push({ f, q, titre: p.title, page: ii.descriptionurl, lic, auteur: (m.Artist?.value || "").replace(/<[^>]+>/g, "").trim().slice(0, 80), thumb: ii.thumburl });
+    await new Promise((r) => setTimeout(r, 300));
+  }
 }
-const st = await api("/status");
-console.log(JSON.stringify(st.response).slice(0, 400));
-const lg = await api("/leagues?search=KHL");
-for (const l of lg.response || []) console.log("LIGUE", l.id, l.name, l.country?.name, JSON.stringify((l.seasons || []).slice(-2)));
-const khl = (lg.response || []).find((l) => /^KHL$/i.test(l.name)) || (lg.response || [])[0];
-if (khl) {
-  const saison = (khl.seasons || []).map((s) => s.season).sort().pop();
-  const jeux = await api(`/games?league=${khl.id}&season=${saison}`);
-  console.log("NB MATCHS", (jeux.response || []).length, "EXEMPLE", JSON.stringify((jeux.response || []).find((g) => g.status?.short === "FT") || {}).slice(0, 1200));
-  const cl = await api(`/standings?league=${khl.id}&season=${saison}`);
-  console.log("CLASSEMENT", JSON.stringify(cl.response).slice(0, 800));
-  const g = (jeux.response || []).find((x) => x.status?.short === "FT");
-  if (g) { const ev = await api(`/games/events?game=${g.id}`); console.log("ÉVÉNEMENTS", JSON.stringify(ev.response).slice(0, 1200)); }
-}
+await writeFile("cand/infos.json", JSON.stringify(infos, null, 1));
+console.log(`${infos.length} candidates`);

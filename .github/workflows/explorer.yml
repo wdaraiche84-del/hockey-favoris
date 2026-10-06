@@ -16,16 +16,14 @@ jobs:
         with:
           node-version: 20
       - run: node scripts/explorer.mjs > explo.txt 2>&1 || true
-        env:
-          APISPORTS_KEY: ${{ secrets.APISPORTS_KEY }}
       - name: Ranger le résultat sur une branche à part
         run: |
           git config user.name "robot-stats"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          mv explo.txt /tmp/explo.txt
+          mv explo.txt /tmp/explo.txt; mv cand /tmp/cand || true
           git checkout --orphan exploration
           git rm -rfq .
-          mv /tmp/explo.txt explo.txt
-          git add explo.txt
+          mv /tmp/explo.txt explo.txt; mv /tmp/cand cand || true
+          git add explo.txt cand
           git commit -qm "Résultat de l'exploration"
           git push -f origin exploration
