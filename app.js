@@ -875,7 +875,9 @@ const estInstallee = () => matchMedia("(display-mode: standalone)").matches || n
 const estIPhone = /iphone|ipad|ipod/i.test(navigator.userAgent);
 let demandeInstall = null;
 function rendreInstaller() {
-  const montrer = !estInstallee() && memoire("installer-non") !== "1" && (demandeInstall || estIPhone);
+  // Seulement sur téléphone ou tablette (écran tactile), jamais sur un ordinateur
+  const mobile = matchMedia("(pointer: coarse)").matches && Math.min(screen.width, screen.height) <= 900;
+  const montrer = mobile && !estInstallee() && memoire("installer-non") !== "1" && (demandeInstall || estIPhone);
   $("installer").hidden = !montrer;
   if (montrer && estIPhone && !demandeInstall) {
     $("installer-aide").innerHTML = "Dans Safari, touche le bouton <b>Partager</b> (le carré avec la flèche ⬆️), puis <b>« Sur l'écran d'accueil »</b>.";
