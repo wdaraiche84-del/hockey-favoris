@@ -124,10 +124,15 @@ async function principal() {
     }));
   } catch (e) { console.warn("Classement :", e.message); }
 
-  // 4. Buts et passes match par match (seulement les matchs pas encore traités)
-  const traites = new Set(await lireJson("data/traites.json", []));
+  // 4. Stats de chaque joueur, match par match (seulement les matchs pas encore traités)
+  //    Patineur : [buts, passes, +/-, tirs, minutes de punition, temps de glace]
+  //    Gardien  : ["G", arrêts, tirs reçus, buts accordés, décision (W/L/O), temps de jeu]
+  //    On note aussi les bagarres, pour la section « Le buzz ».
+  const traites = new Set(await lireJson("data/traites-v2.json", []));
   const points = {};
-  for (const eq of Object.keys(EQUIPES)) points[eq] = await lireJson(`data/points/${eq}.json`, {});
+  for (const eq of Object.keys(EQUIPES)) points[eq] = traites.size ? await lireJson(`data/points/${eq}.json`, {}) : {};
+  const evenements = (await lireJson("data/evenements.json", [])).filter((e) => traites.has(e.match));
+  const nomDe = (c) => (!c ? "" : typeof c === "string" ? c : c.default && !c.firstName ? c.default : `${texte(c.firstName)} ${texte(c.lastName)}`.trim());
   for (const m of calendrier) {
     if (m.etat === "avenir" || traites.has(m.id)) continue;
     try {
@@ -136,11 +141,33 @@ async function principal() {
         const e = box.playerByGameStats?.[cote] || {};
         const ligne = {};
         for (const p of [...(e.forwards || []), ...(e.defense || [])]) {
-          if (p.goals || p.assists) ligne[p.playerId] = [p.goals || 0, p.assists || 0];
+          ligne[p.playerId] = [p.goals || 0, p.assists || 0, p.plusMinus || 0, p.sog ?? p.shots ?? 0, p.pim || 0, p.toi || ""];
+        }
+        for (const g of e.goalies || []) {
+          if (!g.toi || g.toi === "00:00") continue;
+          const [sv, sa] = String(g.saveShotsAgainst || "0/0").split("/").map(Number);
+          ligne[g.playerId] = ["G", sv || 0, sa || 0, g.goalsAgainst ?? (sa - sv) ?? 0, g.decision || "", g.toi];
         }
         if (points[eq]) points[eq][m.id] = ligne;
       }
-      if (m.etat === "fini") traites.add(m.id);
+      if (m.etat === "fini") {
+        // Bagarres : punitions « fighting » dans le résumé du match
+        try {
+          const land = await lire(`/gamecenter/${m.id}/landing`);
+          const combats = [];
+          for (const per of land.summary?.penalties || []) {
+            for (const pen of per.penalties || []) {
+              if (!/fight/i.test(pen.descKey || "")) continue;
+              combats.push({ nom: nomDe(pen.committedByPlayer), eq: texte(pen.teamAbbrev), periode: per.periodDescriptor?.number, temps: pen.timeInPeriod });
+            }
+          }
+          for (let k = 0; k < combats.length; k += 2) {
+            const qui = combats.slice(k, k + 2);
+            evenements.push({ type: "bagarre", lig: "lnh", match: m.id, date: m.date, debut: m.debut, dom: m.dom, ext: m.ext, periode: qui[0].periode, temps: qui[0].temps, qui: qui.map(({ nom, eq }) => ({ nom, eq })) });
+          }
+        } catch (e) { console.warn("Résumé non disponible pour", m.id, e.message); }
+        traites.add(m.id);
+      }
     } catch (e) {
       console.warn("Sommaire non disponible pour", m.id, e.message);
     }
@@ -159,7 +186,8 @@ async function principal() {
   await ecrire("data/calendrier.json", calendrier);
   if (classement.length) await ecrire("data/classement.json", classement);
   for (const eq of Object.keys(EQUIPES)) await ecrire(`data/points/${eq}.json`, points[eq]);
-  await ecrire("data/traites.json", [...traites].sort());
+  await ecrire("data/traites-v2.json", [...traites].sort());
+  await ecrire("data/evenements.json", evenements.sort((a, b) => (b.debut || b.date).localeCompare(a.debut || a.date)));
 
   const ancienJoueurs = await lireJson("data/joueurs.json", null);
   const memesJoueurs = ancienJoueurs && JSON.stringify(ancienJoueurs.joueurs) === JSON.stringify(joueurs);
