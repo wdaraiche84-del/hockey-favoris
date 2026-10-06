@@ -519,3 +519,11 @@ button.article { font: inherit; text-align: left; padding: 0; cursor: pointer; w
 #qc-onglets { flex-wrap: wrap; margin-bottom: 10px; }
 .page-quebecois .barre-ligues .choix-ligue { opacity: .45; pointer-events: none; }
 @media (max-width: 640px) { .qc-compteur { min-width: 0; flex: 1 1 28%; padding: 8px; } .qc-compteur b { font-size: 1.5rem; } }
+
+/* ---- Bouton « Installer l'app » (ordinateur) ---- */
+.btn-installer { border: 1px solid var(--accent); background: transparent; color: #5EEAD4; border-radius: 99px; padding: 7px 14px; font-weight: 600; font-size: .82rem; white-space: nowrap; }
+.btn-installer:hover { background: var(--accent); color: #fff; }
+.btn-installer[hidden] { display: none; }
+@media (max-width: 1100px) { .btn-installer { padding: 7px 10px; } }
+/* Assez de place pour tout : sous 1400 px, l'heure de mise à jour reste seulement en bas de page */
+@media (max-width: 1400px) { .maj-badge { display: none; } }

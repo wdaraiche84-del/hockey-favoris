@@ -879,6 +879,8 @@ function rendreInstaller() {
   const mobile = matchMedia("(pointer: coarse)").matches && Math.min(screen.width, screen.height) <= 900;
   const montrer = mobile && !estInstallee() && memoire("installer-non") !== "1" && (demandeInstall || estIPhone);
   $("installer").hidden = !montrer;
+  // Sur ordinateur : un petit bouton dans l'en-tête, quand le navigateur permet l'installation
+  $("installer-pc").hidden = mobile || estInstallee() || !demandeInstall;
   if (montrer && estIPhone && !demandeInstall) {
     $("installer-aide").innerHTML = "Dans Safari, touche le bouton <b>Partager</b> (le carré avec la flèche ⬆️), puis <b>« Sur l'écran d'accueil »</b>.";
     $("installer-ok").hidden = true;
@@ -886,6 +888,7 @@ function rendreInstaller() {
 }
 window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); demandeInstall = e; rendreInstaller(); });
 window.addEventListener("appinstalled", () => { demandeInstall = null; rendreInstaller(); });
+$("installer-pc").onclick = () => $("installer-ok").onclick();
 $("installer-ok").onclick = async () => {
   if (!demandeInstall) return;
   demandeInstall.prompt();
