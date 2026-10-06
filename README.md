@@ -12,6 +12,7 @@ Scores, classement, meneurs et stats de la LNH, de la LAH, des ligues junior (LH
 | `manifest.webmanifest`, `sw.js`, `icones/` | Ce qui permet d'installer MonTrio comme une application sur le téléphone |
 | `style.css` | L'apparence (couleurs, thème sombre, version téléphone) |
 | `app.js` | Ce qui réagit aux clics et affiche les données |
+| `plus.js` | Les fenêtres de détail : sommaire de match, fiche d'équipe, comparateur, joueurs en feu, agenda, alertes, lexique |
 | `config.js` | Les réglages (adresse du relais pour le direct) |
 | `donnees.js` | Ce qu'aucune source ne publie : les joueurs hors des ligues suivies |
 | `data/` | Les données de la LNH, mises à jour automatiquement par le robot |
