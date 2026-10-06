@@ -354,3 +354,58 @@ table.tableau { width: 100%; border-collapse: collapse; font-size: .85rem; }
 }
 /* L'étiquette de ligue reste lisible partout (ex. dans les résultats de recherche) */
 .resultats .infos span.tag-ligue, .tag-ligue.petit { color: #fff; font-size: .66rem; }
+
+/* =============================================================
+   SIMPLIFICATION : recherche toujours accessible, ligues
+   regroupées, carte de bienvenue, page Joueurs guidée
+   ============================================================= */
+.btn-recherche {
+  display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(255, 255, 255, .22);
+  background: rgba(255, 255, 255, .08); color: #fff; border-radius: 99px; padding: 7px 16px 7px 12px; font-weight: 600; font-size: .88rem;
+}
+.btn-recherche:hover { border-color: var(--accent); background: rgba(13, 148, 136, .25); }
+
+.groupe-ligues { display: flex; align-items: center; gap: 5px; padding-right: 10px; margin-right: 4px; border-right: 1px solid rgba(255, 255, 255, .12); }
+.groupe-ligues:last-child { border-right: 0; }
+.groupe-nom { font-size: .64rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #6B7280; margin-right: 2px; }
+.barre-titre { color: #D1D5DB; }
+
+.page-scores .bandeau { display: none; }
+
+.aide { color: var(--texte-doux); margin: 0 0 14px; font-size: .92rem; }
+.panneau-recherche { background: var(--carte); border-radius: var(--rayon); width: 100%; max-width: 760px; padding: 18px; animation: apparait .2s ease-out; }
+.panneau-tete { display: flex; gap: 8px; margin-bottom: 8px; }
+.panneau-tete input {
+  flex: 1; padding: 13px 15px; font-size: 1.05rem; border-radius: 10px; border: 2px solid var(--accent);
+  background: var(--carte-2); color: var(--texte); outline: none; min-width: 0;
+}
+.groupe-titre { font-size: 1.1rem; text-transform: uppercase; margin: 14px 0 6px; color: var(--accent); }
+.groupe-titre small { font-family: "Inter", sans-serif; text-transform: none; color: var(--texte-doux); font-size: .75rem; font-weight: 500; margin-left: 6px; }
+#resultats-globaux { max-height: 65vh; overflow-y: auto; }
+
+.bienvenue { border: 2px solid var(--accent); }
+.bienvenue-tete { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; }
+.bienvenue-tete h2 { font-size: 1.6rem; }
+.etapes { list-style: none; padding: 0; margin: 0 0 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.etapes li { display: flex; gap: 10px; background: var(--carte-2); border-radius: 10px; padding: 12px; }
+.etapes b { font-family: var(--titre); font-size: 1.6rem; color: #fff; background: var(--accent); width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; }
+.etapes strong { display: block; margin-bottom: 2px; }
+.etapes span { font-size: .85rem; color: var(--texte-doux); }
+.etapes a { color: var(--accent); }
+
+@media (max-width: 960px) { .btn-recherche-texte { display: none; } .btn-recherche { padding: 7px 11px; } }
+@media (max-width: 640px) {
+  .etapes { grid-template-columns: 1fr; }
+  .groupe-nom { display: none; }
+  .groupe-ligues { padding-right: 6px; }
+  .panneau-recherche { padding: 12px; }
+  .fiche-fond { padding: 10px 8px; }
+}
+.nav-haut a { white-space: nowrap; }
+@media (max-width: 1340px) { .btn-recherche-texte { display: none; } .btn-recherche { padding: 7px 11px; } }
+@media (max-width: 640px) {
+  .entete-int { gap: 10px; padding: 0 10px; }
+  .logo { gap: 6px; }
+  .logo-texte { font-size: 1.02rem; }
+  .icone { width: 34px; height: 34px; }
+}

@@ -36,6 +36,7 @@
         <a href="#/joueurs" data-lien="joueurs">Joueurs</a>
       </nav>
       <div class="entete-droite">
+        <button id="ouvrir-recherche" class="btn-recherche" aria-label="Chercher un joueur"><span aria-hidden="true">🔍</span><span class="btn-recherche-texte">Chercher un joueur</span></button>
         <span id="maj-badge" class="maj-badge"></span>
         <button id="theme" class="icone" aria-label="Changer de thème" title="Mode clair / sombre">◐</button>
       </div>
@@ -45,7 +46,7 @@
   <!-- ===== Choix de la ligue (s'applique aux scores, à la une, classement, meneurs, joueurs) ===== -->
   <div class="barre-ligues">
     <div class="barre-ligues-int">
-      <span class="barre-titre">Ligue</span>
+      <span class="barre-titre">Choisis ta ligue</span>
       <div id="choix-ligue" class="choix-ligue" role="tablist" aria-label="Choisir la ligue"></div>
       <span id="ligue-long" class="ligue-long"></span>
     </div>
@@ -69,6 +70,19 @@
 
     <!-- ========== PAGE 1 : À la une ========== -->
     <div class="page" data-page="accueil">
+      <!-- Carte de bienvenue (premier passage seulement) -->
+      <section id="bienvenue" class="bloc bienvenue" hidden>
+        <div class="bienvenue-tete">
+          <h2>Bienvenue sur Mes Favoris Hockey! 👋</h2>
+          <button id="fermer-bienvenue" class="btn leger">J'ai compris</button>
+        </div>
+        <ol class="etapes">
+          <li><b>1</b><div><strong>Choisis ta ligue</strong><span>LNH, LAH ou junior, juste sous le menu en haut.</span></div></li>
+          <li><b>2</b><div><strong>Trouve tes joueurs</strong><span>Avec le bouton 🔍 en haut, ou par équipe dans l'onglet <a href="#/joueurs">Joueurs</a>.</span></div></li>
+          <li><b>3</b><div><strong>Ajoute-les à tes favoris ⭐</strong><span>Leurs stats et leurs matchs t'attendront dans <a href="#/favoris">Mes favoris</a>.</span></div></li>
+        </ol>
+        <button class="btn accent" data-ouvrir-recherche>🔍 Chercher un joueur maintenant</button>
+      </section>
       <div class="grille-2">
         <section class="bloc une">
           <div class="titre-section"><h2>À la une <span class="tag-ligue" data-nom-ligue></span></h2><span id="une-date" class="sur-titre"></span></div>
@@ -148,10 +162,14 @@
     <!-- ========== PAGE 6 : Joueurs ========== -->
     <div class="page" data-page="joueurs">
       <section class="bloc">
-        <div class="titre-section"><h2>Trouver un joueur</h2><span class="sur-titre">Toutes les ligues</span></div>
-        <input id="recherche" type="search" placeholder="Nom ou équipe… ex. Demidov, Oilers, Océanic" autocomplete="off">
-        <ul id="resultats" class="resultats grand"></ul>
+        <div class="titre-section"><h2>Joueurs <span class="tag-ligue" data-nom-ligue></span></h2>
+          <button class="btn accent" data-ouvrir-recherche>🔍 Chercher par nom</button></div>
+        <p class="aide">Choisis une équipe pour voir tous ses joueurs, puis touche <b>+</b> pour l'ajouter à tes favoris.</p>
         <div id="equipes" class="equipes"></div>
+      </section>
+      <section id="bloc-effectif" class="bloc" hidden>
+        <div class="titre-section"><h2 id="titre-effectif"></h2><button id="fermer-effectif" class="btn leger">Changer d'équipe</button></div>
+        <ul id="resultats" class="resultats grand"></ul>
       </section>
     </div>
   </main>
@@ -170,6 +188,18 @@
     <a href="#/meneurs" data-lien="meneurs"><span>📊</span>Meneurs</a>
     <a href="#/joueurs" data-lien="joueurs"><span>🔍</span>Joueurs</a>
   </nav>
+
+  <!-- ===== Recherche (s'ouvre par-dessus la page) ===== -->
+  <div id="recherche-fond" class="fiche-fond" hidden>
+    <div class="panneau-recherche" role="dialog" aria-modal="true" aria-label="Chercher un joueur">
+      <div class="panneau-tete">
+        <input id="recherche" type="search" placeholder="Tape un nom ou une équipe… ex. Demidov, Oilers, Océanic" autocomplete="off">
+        <button id="fermer-recherche" class="btn leger">Fermer</button>
+      </div>
+      <p class="aide">Recherche dans toutes les ligues à la fois.</p>
+      <div id="resultats-globaux"></div>
+    </div>
+  </div>
 
   <!-- ===== Fiche d'un joueur (s'ouvre par-dessus la page) ===== -->
   <div id="fiche-fond" class="fiche-fond" hidden>

@@ -154,9 +154,10 @@ function ajouter(id) { if (!favoris.includes(id)) favoris.push(id); sauverFavori
 function retirer(id) { favoris = favoris.filter((f) => f !== id); sauverFavoris(); rafraichir(); }
 
 // ---- 4. Choix de la ligue ------------------------------------
+const GROUPES_LIGUES = [["Pro", ["lnh", "ahl"]], ["Junior", ["lhjmq", "ohl", "whl"]]];
 function rendreChoixLigue() {
-  $("choix-ligue").innerHTML = Object.entries(LIGUES).map(([k, l]) =>
-    `<button class="puce-ligue ${k === ligue ? "actif" : ""}" data-ligue="${k}" role="tab" aria-selected="${k === ligue}">${l.nom}</button>`).join("");
+  $("choix-ligue").innerHTML = GROUPES_LIGUES.map(([g, ls]) => `<div class="groupe-ligues"><span class="groupe-nom">${g}</span>${ls.map((k) =>
+    `<button class="puce-ligue ${k === ligue ? "actif" : ""}" data-ligue="${k}" role="tab" aria-selected="${k === ligue}" title="${LIGUES[k].long}">${LIGUES[k].nom}</button>`).join("")}</div>`).join("");
   $("ligue-long").textContent = LIGUES[ligue].long;
   document.querySelectorAll("[data-nom-ligue]").forEach((x) => (x.textContent = LIGUES[ligue].nom));
 }
@@ -448,26 +449,58 @@ function rendreMeneurs() {
 // ---- 11. Recherche (toutes les ligues) et liste des équipes ---
 let equipeChoisie = null;
 const ORDRE_POS = ["C", "AG", "AD", "AV", "D", "G"];
-function rendreResultats() {
-  const q = simplifier($("recherche").value.trim());
-  $("equipes").hidden = !!q;
-  if (!q && !equipeChoisie) { $("resultats").innerHTML = ""; return; }
-  const trouves = q
-    ? [...D.joueurs, ...AUTRES_JOUEURS].filter((j) => simplifier(j.nom).includes(q) || simplifier(nomEq(j.eq)).includes(q) || simplifier(abr(j.eq)) === q)
-        .sort((a, b) => (a.lig === ligue ? 0 : 1) - (b.lig === ligue ? 0 : 1)).slice(0, 30)
-    : D.joueurs.filter((j) => j.eq === equipeChoisie).sort((a, b) => ORDRE_POS.indexOf(a.pos) - ORDRE_POS.indexOf(b.pos) || (a.no ?? 99) - (b.no ?? 99));
-  $("resultats").innerHTML = trouves.length ? trouves.map((j) => `
-    <li>${pastille(j)}
-      <div class="infos" data-fiche="${j.id}"><strong>${echapper(j.nom)}</strong><span>${etiquetteLigue(j)} ${NOMS_POS[j.pos] || j.pos} · ${echapper(courtEq(j.eq))}</span></div>
-      ${favoris.includes(j.id) ? `<button class="btn leger" disabled aria-label="Déjà dans tes favoris">✓</button>` : `<button class="btn accent" data-ajouter="${j.id}" aria-label="Ajouter ${echapper(j.nom)}">+</button>`}
-    </li>`).join("") : `<li class="vide">Aucun joueur trouvé.</li>`;
+function ligneJoueur(j) {
+  return `<li>${pastille(j)}
+    <div class="infos" data-fiche="${j.id}"><strong>${echapper(j.nom)}</strong><span>${etiquetteLigue(j)} ${NOMS_POS[j.pos] || j.pos} · ${echapper(courtEq(j.eq))}</span></div>
+    ${favoris.includes(j.id) ? `<button class="btn leger" disabled aria-label="Déjà dans tes favoris">⭐</button>` : `<button class="btn accent" data-ajouter="${j.id}" aria-label="Ajouter ${echapper(j.nom)} à mes favoris">+</button>`}
+  </li>`;
 }
-$("recherche").addEventListener("input", () => { equipeChoisie = null; rendreResultats(); rendreEquipes(); });
-// La recherche couvre toutes les ligues : on les charge à la première lettre tapée
-$("recherche").addEventListener("focus", () => { chargerTout().then(() => { nettoyerFavoris(); rendreResultats(); }); }, { once: true });
+// Fenêtre de recherche : ouverte par le bouton 🔍 (ou la touche « / »)
+function ouvrirRecherche() {
+  fermerFiche();
+  $("recherche-fond").hidden = false;
+  $("recherche").focus();
+  rendreRecherche();
+  chargerTout().then(() => { nettoyerFavoris(); rendreRecherche(); });
+}
+function fermerRecherche() { $("recherche-fond").hidden = true; }
+function rendreRecherche() {
+  const q = simplifier($("recherche").value.trim());
+  const boite = $("resultats-globaux");
+  if (q.length < 2) { boite.innerHTML = `<p class="vide">Commence à taper au moins 2 lettres.</p>`; return; }
+  const trouves = [...D.joueurs, ...AUTRES_JOUEURS].filter((j) =>
+    simplifier(j.nom).includes(q) || simplifier(nomEq(j.eq)).includes(q) || simplifier(abr(j.eq)) === q);
+  if (!trouves.length) { boite.innerHTML = `<p class="vide">Aucun joueur trouvé. Vérifie l'orthographe ou essaie seulement le nom de famille.</p>`; return; }
+  // Résultats regroupés par ligue, la ligue choisie en premier
+  const ordre = [ligue, ...Object.keys(LIGUES).filter((l) => l !== ligue), null];
+  boite.innerHTML = ordre.map((l) => {
+    const liste = trouves.filter((j) => (j.lig || null) === l).slice(0, 15);
+    if (!liste.length) return "";
+    return `<h3 class="groupe-titre">${l ? `${LIGUES[l].nom} <small>${LIGUES[l].long}</small>` : "Autres ligues"}</h3><ul class="resultats grand">${liste.map(ligneJoueur).join("")}</ul>`;
+  }).join("");
+}
+$("recherche").addEventListener("input", rendreRecherche);
+$("ouvrir-recherche").onclick = ouvrirRecherche;
+$("fermer-recherche").onclick = fermerRecherche;
+$("recherche-fond").addEventListener("click", (e) => { if (e.target.id === "recherche-fond") fermerRecherche(); });
+document.addEventListener("click", (e) => { if (e.target.closest("[data-ouvrir-recherche]")) ouvrirRecherche(); });
+document.addEventListener("keydown", (e) => {
+  if (e.key === "/" && !/input|textarea/i.test(document.activeElement.tagName)) { e.preventDefault(); ouvrirRecherche(); }
+  if (e.key === "Escape") fermerRecherche();
+});
+
+// Page Joueurs : on choisit une équipe, puis on voit tout son effectif
+function rendreResultats() {
+  $("bloc-effectif").hidden = !equipeChoisie;
+  if (!equipeChoisie) return;
+  $("titre-effectif").textContent = nomEq(equipeChoisie);
+  const liste = D.joueurs.filter((j) => j.eq === equipeChoisie).sort((a, b) => ORDRE_POS.indexOf(a.pos) - ORDRE_POS.indexOf(b.pos) || (a.no ?? 99) - (b.no ?? 99));
+  $("resultats").innerHTML = liste.map(ligneJoueur).join("");
+  if (!$("recherche-fond").hidden) rendreRecherche();
+}
 function rendreEquipes() {
   const liste = Object.keys(D.equipes).filter((e) => ligueDe(e) === ligue).sort((a, b) => courtEq(a).localeCompare(courtEq(b), "fr"));
-  $("equipes").innerHTML = `<p class="detail-titre">Ou choisis une équipe de la ${LIGUES[ligue].nom} :</p><div class="equipes-liste">${liste.map((eq) =>
+  $("equipes").innerHTML = `<div class="equipes-liste">${liste.map((eq) =>
     `<button class="btn-equipe ${eq === equipeChoisie ? "actif" : ""}" data-equipe="${eq}" title="${echapper(nomEq(eq))}"><b>${abr(eq)}</b><span>${echapper(courtEq(eq))}</span></button>`).join("")}</div>`;
 }
 $("equipes").addEventListener("click", (e) => {
@@ -475,8 +508,13 @@ $("equipes").addEventListener("click", (e) => {
   if (!b) return;
   equipeChoisie = equipeChoisie === b.dataset.equipe ? null : b.dataset.equipe;
   rendreEquipes(); rendreResultats();
-  if (equipeChoisie) $("resultats").scrollIntoView({ behavior: "smooth", block: "start" });
+  if (equipeChoisie) $("bloc-effectif").scrollIntoView({ behavior: "smooth", block: "start" });
 });
+$("fermer-effectif").onclick = () => { equipeChoisie = null; rendreEquipes(); rendreResultats(); $("equipes").scrollIntoView({ behavior: "smooth", block: "start" }); };
+
+// Carte de bienvenue : seulement au premier passage
+function rendreBienvenue() { $("bienvenue").hidden = memoire("bienvenue-vue") === "1"; }
+$("fermer-bienvenue").onclick = () => { memoire("bienvenue-vue", "1"); rendreBienvenue(); };
 
 // ---- 12. Fiche d'un joueur ------------------------------------
 function caseJoueur(j, idChoisi, etiquette) {
@@ -524,6 +562,7 @@ async function htmlSaison(j) {
 async function ouvrirFiche(id) {
   const j = joueur(id);
   if (!j) return;
+  fermerRecherche();
   const estFav = favoris.includes(j.id);
   let corps = "";
   if (j.s || j.g) {
@@ -681,9 +720,11 @@ function allerA(page) {
   document.querySelectorAll("[data-lien]").forEach((a) => a.classList.toggle("actif", a.dataset.lien === page));
   // Le choix de ligue ne concerne pas la page « Mes favoris »
   document.body.classList.toggle("page-favoris", page === "favoris");
+  document.body.classList.toggle("page-scores", page === "scores");
   if (pageActuelle !== null && pageActuelle !== page) window.scrollTo({ top: 0 });
   pageActuelle = page;
   fermerFiche();
+  fermerRecherche();
 }
 const pageDeLAdresse = () => (location.hash.match(/^#\/(\w+)/) || [])[1] || "accueil";
 window.addEventListener("hashchange", () => allerA(pageDeLAdresse()));
@@ -703,7 +744,7 @@ $("pages").addEventListener("touchend", (e) => {
 
 // ---- 18. Démarrage --------------------------------------------
 function rafraichir() {
-  rendreChoixLigue();
+  rendreChoixLigue(); rendreBienvenue();
   rendreBandeau(); rendrePageScores(); rendreSoir(); rendreFavoris(); rendreCalendrier();
   rendreClassement(); rendreMeneurs(); rendreResultats(); rendreEquipes();
 }
