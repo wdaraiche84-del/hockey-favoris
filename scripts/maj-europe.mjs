@@ -335,6 +335,8 @@ const prenomNom = (n) => { const [nom, ...prenom] = String(n || "").trim().split
 const mmss = (m) => { if (!m) return ""; const t = Math.round(m * 60); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`; };
 const val = (stats, id) => stats?.find((x) => x.id === id)?.val ?? 0;
 
+// Un but de tirs de barrage (« буллит ») ne compte pas dans les stats
+const estTirBarrage = (x) => (x.period ?? 0) >= 5 || (x.time ?? 0) > 3900 || /булл|shootout/i.test(`${x.status || ""} ${x.status_abbr || ""}`);
 async function khl() {
   const B = "https://khl.api.webcaster.pro/api/khl_mobile/";
   const dossier = "data/ligues/khl";
@@ -412,7 +414,7 @@ async function khl() {
 
   // 4. Stats de chaque joueur, match par match (seulement les nouveaux matchs)
   //    Patineur [B, A, +/-, tirs, PUN, TG] (pas de +/- par match dans la source) ; gardien ["G", arrêts, tirs, BC, décision, TG]
-  const traites = new Set(await lireJson(`${dossier}/traites-v4.json`, []));
+  const traites = new Set(await lireJson(`${dossier}/traites-v5.json`, []));
   const points = {};
   for (const cle of Object.keys(equipes)) points[cle] = traites.size ? await lireJson(`${dossier}/points/${cle}.json`, {}) : {};
   let nouveaux = 0;
@@ -430,7 +432,7 @@ async function khl() {
         const parNo = new Map((t.players || []).map((p) => [String(p.shirt_number), p.id]));
         const parNom = new Map((t.players || []).map((p) => [String(p.name).toLowerCase(), p.id]));
         for (const but of ev.goals || []) {
-          if (Number(but.author?.team_id) !== t.id || (but.period ?? 0) >= 5) continue;
+          if (Number(but.author?.team_id) !== t.id || estTirBarrage(but)) continue;
           for (const as of but.assistants || []) {
             const no = as.shirt_number ?? as.number ?? as.player?.shirt_number;
             const nom = String(as.name ?? as.player?.name ?? "").toLowerCase();
@@ -446,12 +448,12 @@ async function khl() {
           if (p.role_key === "goaltender") {
             if (p !== principal) continue;
             // Buts contre : ceux de l'adversaire, sauf dans un filet désert et en tirs de barrage
-            const ga = (ev.goals || []).filter((x) => Number(x.author?.team_id) === adv.id && !/пуст/i.test(x.status || "") && (x.period ?? 0) < 5).length;
+            const ga = (ev.goals || []).filter((x) => Number(x.author?.team_id) === adv.id && !/пуст/i.test(x.status || "") && !estTirBarrage(x)).length;
             const sa = Math.max(adv.shots || 0, ga);
             ligne[`khl-${p.id}`] = ["G", sa - ga, sa, ga, "", mmss(val(st, "toi"))];
           } else {
             // Les buts viennent de la liste des buts (sans les tirs de barrage) ; sinon, des stats du joueur
-            const b = (ev.goals || []).length ? butsPour.filter((x) => x.author?.shirt_number === p.shirt_number && (x.period ?? 0) < 5).length : val(st, "goals");
+            const b = (ev.goals || []).length ? butsPour.filter((x) => x.author?.shirt_number === p.shirt_number && !estTirBarrage(x)).length : val(st, "goals");
             ligne[`khl-${p.id}`] = [b, passes[p.id] || 0, null, val(st, "shots"), val(st, "pim"), mmss(val(st, "toi"))];
           }
         }
@@ -461,7 +463,7 @@ async function khl() {
       if (m.etat === "fini") traites.add(m.id);
     } catch (e) { console.warn("KHL sommaire", m.id, e.message); }
   }
-  await ecrireSiChange(`${dossier}/traites-v4.json`, [...traites].sort());
+  await ecrireSiChange(`${dossier}/traites-v5.json`, [...traites].sort());
   const d = new Date(), an = d.getMonth() >= 6 ? d.getFullYear() : d.getFullYear() - 1;
   await enregistrer("khl", `${an}-${String(an + 1).slice(2)}`, equipes, joueurs, classement, calendrier, points);
   console.log(`KHL : ${Object.keys(equipes).length} équipes, ${joueurs.length} joueurs, ${calendrier.length} matchs, ${nouveaux} sommaires lus.`);
