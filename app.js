@@ -616,10 +616,13 @@ function rendreRecherche() {
   if (q.length < 2) { boite.innerHTML = `<p class="vide">Commence à taper au moins 2 lettres.</p>`; return; }
   const trouves = [...D.joueurs, ...AUTRES_JOUEURS].filter((j) =>
     simplifier(j.nom).includes(q) || simplifier(nomEq(j.eq)).includes(q) || simplifier(abr(j.eq)) === q);
-  if (!trouves.length) { boite.innerHTML = `<p class="vide">Aucun joueur trouvé. Vérifie l'orthographe ou essaie seulement le nom de famille.</p>`; return; }
+  const equipesTrouvees = Object.keys(D.equipes).filter((eq) => simplifier(nomEq(eq)).includes(q) || simplifier(abr(eq)) === q).slice(0, 8);
+  const htmlEquipes = equipesTrouvees.length ? `<h3 class="groupe-titre">Équipes</h3><div class="equipes-liste">${equipesTrouvees.map((eq) =>
+    `<button class="btn-equipe" data-equipe-fiche="${eq}"><b>${abr(eq)}</b><span>${echapper(courtEq(eq))} <span class="tag-ligue petit">${LIGUES[ligueDe(eq)].nom}</span></span></button>`).join("")}</div>` : "";
+  if (!trouves.length) { boite.innerHTML = htmlEquipes || `<p class="vide">Aucun joueur ni aucune équipe trouvé. Vérifie l'orthographe ou essaie seulement le nom de famille.</p>`; return; }
   // Résultats regroupés par ligue, la ligue choisie en premier
   const ordre = [ligue, ...Object.keys(LIGUES).filter((l) => l !== ligue), null];
-  boite.innerHTML = ordre.map((l) => {
+  boite.innerHTML = htmlEquipes + ordre.map((l) => {
     const liste = trouves.filter((j) => (j.lig || null) === l).slice(0, 15);
     if (!liste.length) return "";
     return `<h3 class="groupe-titre">${l ? `${LIGUES[l].nom} <small>${LIGUES[l].long}</small>` : "Autres ligues"}</h3><ul class="resultats grand">${liste.map(ligneJoueur).join("")}</ul>`;
@@ -640,6 +643,7 @@ function rendreResultats() {
   $("bloc-effectif").hidden = !equipeChoisie;
   if (!equipeChoisie) return;
   $("titre-effectif").textContent = nomEq(equipeChoisie);
+  $("fiche-equipe-choisie").dataset.equipeFiche = equipeChoisie;
   const liste = D.joueurs.filter((j) => j.eq === equipeChoisie).sort((a, b) => ORDRE_POS.indexOf(a.pos) - ORDRE_POS.indexOf(b.pos) || (a.no ?? 99) - (b.no ?? 99));
   $("resultats").innerHTML = liste.length ? liste.map(ligneJoueur).join("")
     : `<li class="vide">Les joueurs de la ${LIGUES[ligueDe(equipeChoisie)]?.nom || "ligue"} arrivent bientôt : pour l'instant, on a seulement le calendrier, les scores et le classement.</li>`;

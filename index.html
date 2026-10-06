@@ -221,7 +221,7 @@
         <div id="equipes" class="equipes"></div>
       </section>
       <section id="bloc-effectif" class="bloc" hidden>
-        <div class="titre-section"><h2 id="titre-effectif"></h2><button id="fermer-effectif" class="btn leger">Changer d'équipe</button></div>
+        <div class="titre-section"><h2 id="titre-effectif"></h2><div class="outils-favoris"><button id="fiche-equipe-choisie" class="btn accent">Fiche de l'équipe ›</button><button id="fermer-effectif" class="btn leger">Changer d'équipe</button></div></div>
         <ul id="resultats" class="resultats grand"></ul>
       </section>
     </div>
@@ -247,10 +247,10 @@
   <div id="recherche-fond" class="fiche-fond" hidden>
     <div class="panneau-recherche" role="dialog" aria-modal="true" aria-label="Chercher un joueur">
       <div class="panneau-tete">
-        <input id="recherche" type="search" placeholder="Tape un nom ou une équipe… ex. Demidov, Oilers, Océanic" autocomplete="off">
+        <input id="recherche" type="search" placeholder="Tape un joueur ou une équipe… ex. Demidov, Oilers, Océanic" autocomplete="off">
         <button id="fermer-recherche" class="btn leger">Fermer</button>
       </div>
-      <p class="aide">Recherche dans toutes les ligues à la fois.</p>
+      <p class="aide">Recherche dans toutes les ligues à la fois : joueurs et équipes.</p>
       <div id="resultats-globaux"></div>
     </div>
   </div>

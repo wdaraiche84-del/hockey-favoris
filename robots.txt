@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://wdaraiche84-del.github.io/hockey-favoris/sitemap.xml

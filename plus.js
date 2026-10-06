@@ -26,6 +26,7 @@ function ajouterRetour() {
   if (haut && pileModale.length && !haut.querySelector(".retour")) haut.insertAdjacentHTML("afterbegin", boutonRetour());
 }
 function montrerModale(html) {
+  fermerRecherche();
   $("fiche").innerHTML = html;
   $("fiche-fond").hidden = false;
   $("fiche-fond").scrollTop = 0;
@@ -96,7 +97,7 @@ function troisEtoiles(m, lignes) {
   }
   return cand.sort((x, y) => y.note - x.note).slice(0, 3).filter((x) => x.note > 1);
 }
-const texteLigne = (l) => (estGardienLigne(l) ? `${l[1]} arrêts sur ${l[2]} (${l[2] ? pct3(l[1] / l[2]) : "–"})` : `${l[0]} B, ${l[1]} A${l[3] ? ` · ${l[3]} tirs` : ""}`);
+const texteLigne = (l) => (estGardienLigne(l) ? `${l[1]} arrêts sur ${l[2]} (${l[2] ? pct3(l[1] / l[2]) : "–"})` : `${l[0]} B, ${l[1]} A${l[3] ? ` · ${pluriel(l[3], "tir")}` : ""}`);
 function barreComparee(titre, a, b, inverse = false) {
   if (!a && !b) return "";
   const tot = a + b || 1, mieuxA = inverse ? a < b : a > b, mieuxB = inverse ? b < a : b > a;
