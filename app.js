@@ -327,9 +327,9 @@ function raisonSpectaculaire(b) {
   const joueurs = b.qui.map((q) => (q.id && D.parId.get(q.id)) || D.joueurs.find((j) => j.lig === b.lig && simplifier(j.nom) === simplifier(q.nom)));
   if (joueurs.some((j) => j && j.pos === "G")) return "🧤 Un gardien jette les gants!";
   if (b.nbMatch >= 3) return `💥 Bagarre générale : ${b.nbMatch} combats dans le match`;
-  // Le Canadien (et son club-école, le Rocket de Laval) : on veut tout voir
-  const duCH = b.qui.find((q) => (b.lig === "lnh" && q.eq === "MTL") || (b.lig === "ahl" && q.eq === "LAV"));
-  if (duCH) return `🔵 ${duCH.nom} ${b.lig === "lnh" ? "(Canadien)" : "(Rocket de Laval)"} jette les gants`;
+  // Le Canadien : on veut tout voir
+  const duCH = b.qui.find((q) => q.eq === "MTL");
+  if (duCH) return `🔵 ${duCH.nom} (Canadien) jette les gants`;
   const vedette = b.qui.find((q) => grosNoms.has(simplifier(q.nom)));
   if (vedette) return `⭐ ${vedette.nom} jette les gants`;
   // Un des 25 meilleurs pointeurs de sa ligue
@@ -339,8 +339,9 @@ function raisonSpectaculaire(b) {
   return null;
 }
 async function bagarresSpectaculaires() {
-  const ligues = Object.keys(LIGUES).filter((l) => D.charge[l]);
-  for (const l of ligues) if (!D.bagarres[l]) D.bagarres[l] = lireJson(l === "lnh" ? "data/bagarres.json" : `data/ligues/${l}/bagarres.json`).catch(() => []);
+  // LNH seulement : dans la LAH et les juniors, les bagarres sont trop fréquentes
+  const ligues = ["lnh"].filter((l) => D.charge[l]);
+  for (const l of ligues) if (!D.bagarres[l]) D.bagarres[l] = lireJson("data/bagarres.json").catch(() => []);
   const toutes = (await Promise.all(ligues.map((l) => D.bagarres[l]))).flat().filter((b) => b.date >= decaler(AUJ, -7));
   return toutes.map((b) => ({ ...b, raison: raisonSpectaculaire(b) })).filter((b) => b.raison)
     .map((b) => ({ ...b, genre: "bagarre", cat: "bagarre", date: b.debut || b.date }));
