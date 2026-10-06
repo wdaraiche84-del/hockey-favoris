@@ -1,4 +1,6 @@
-# Mes Favoris Hockey
+# MonTrio
+
+Tes joueurs de hockey préférés, toutes les ligues, au même endroit.
 
 Scores, classement, meneurs et stats de la LNH, de la LAH et des ligues junior (LHJMQ, OHL, WHL), avec le suivi de tes joueurs préférés.
 

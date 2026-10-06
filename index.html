@@ -11,8 +11,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Mes Favoris Hockey</title>
-  <meta name="description" content="Scores, classement et stats de la LNH, avec le suivi de tes joueurs préférés.">
+  <title>MonTrio · Tes joueurs de hockey, toutes les ligues</title>
+  <meta name="description" content="MonTrio : scores, classements et stats de la LNH, de la LAH et des juniors, avec le suivi de tes joueurs préférés.">
+  <meta property="og:title" content="MonTrio">
+  <meta property="og:description" content="Tes joueurs de hockey préférés, toutes les ligues, au même endroit.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%230D9488%22/%3E%3Ctext x=%2232%22 y=%2243%22 font-family=%22Arial,sans-serif%22 font-weight=%22900%22 font-size=%2230%22 text-anchor=%22middle%22 fill=%22white%22%3EMT%3C/text%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
@@ -26,7 +29,7 @@
   <!-- ===== En-tête ===== -->
   <header class="entete">
     <div class="entete-int">
-      <a class="logo" href="#/accueil"><span class="logo-pastille">MFH</span><span class="logo-texte">Mes Favoris <b>Hockey</b></span></a>
+      <a class="logo" href="#/accueil"><span class="logo-pastille" aria-hidden="true">MT</span><span class="logo-texte">Mon<b>Trio</b></span></a>
       <nav class="nav-haut" aria-label="Pages">
         <a href="#/accueil" data-lien="accueil">À la une</a>
         <a href="#/scores" data-lien="scores">Scores</a>
@@ -73,7 +76,7 @@
       <!-- Carte de bienvenue (premier passage seulement) -->
       <section id="bienvenue" class="bloc bienvenue" hidden>
         <div class="bienvenue-tete">
-          <h2>Bienvenue sur Mes Favoris Hockey! 👋</h2>
+          <h2>Bienvenue sur MonTrio! 👋</h2>
           <button id="fermer-bienvenue" class="btn leger">J'ai compris</button>
         </div>
         <ol class="etapes">
