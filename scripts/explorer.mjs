@@ -11,7 +11,7 @@ async function voir(u, n = 500) {
 }
 const S = "https://www.shl.se";
 const q = "seasonUuid=ndcf81nlb3&seriesUuid=qQ9-bb0bzEWUk&gameTypeUuid=qQ9-af37Ti40B";
-const sch = await voir(`${S}/api/sports-v2/game-schedule?${q}&gameTypeUuid=qQ9-af37Ti40B`, 1500);
+const sch = await voir(`${S}/api/sports-v2/game-schedule?${q}`, 1500);
 // Chercher les routes d'API dans le code du site
 const pages = ["/", "/statistik/spelare", "/tabell", "/matcher", "/lag"];
 const routes = new Set(), scripts = new Set();
@@ -19,9 +19,10 @@ for (const p of pages) {
   const r = await fetch(S + p, { headers: UA }); const h = await r.text();
   console.log(`page ${p} → ${r.status}`);
   for (const m of h.matchAll(/\/api\/[a-zA-Z0-9\-_/]+/g)) routes.add(m[0]);
-  for (const m of h.matchAll(/(?:src|href)="(\/_next\/static\/[^"]+\.js)"/g)) scripts.add(m[1]);
+  for (const m of h.matchAll(/(?:src|href)="([^"]+\.js[^"]*)"/g)) scripts.add(m[1].startsWith("http") ? m[1] : S + (m[1].startsWith("/") ? "" : "/") + m[1]);
+  if (p === "/statistik/spelare") console.log("extrait:", [...h.matchAll(/.{60}(api|uuid|Uuid).{100}/g)].slice(0, 15).map((m) => m[0]).join("\n"));
 }
-for (const s of scripts) { const t = await (await fetch(S + s, { headers: UA })).text(); for (const m of t.matchAll(/["'`](\/?(?:api\/)?(?:sports|statistics|stats|sports-v2|statistics-v2|gameday|game|player|team|standings|league)[a-zA-Z0-9\-_/${}.]*)["'`]/g)) routes.add(m[1]); }
+for (const s of scripts) { const t = await (await fetch(s, { headers: UA })).text(); for (const m of t.matchAll(/["'`](\/?(?:api\/)?(?:sports|statistics|stats|sports-v2|statistics-v2|gameday|game|player|team|standings|league)[a-zA-Z0-9\-_/${}.]*)["'`]/g)) routes.add(m[1]); }
 console.log(`\n${scripts.size} scripts\nROUTES:\n` + [...routes].filter((r) => r.length > 4).slice(0, 200).join("\n"));
 const g = (Array.isArray(sch) ? sch : sch?.gameInfo || sch?.games || []);
 console.log("\nexemple match:", JSON.stringify(g?.[0] || sch).slice(0, 1500));
