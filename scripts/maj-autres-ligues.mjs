@@ -133,7 +133,6 @@ async function uneLigue(lig, conf) {
   const traites = new Set(await lireJson(`${dossier}/traites-v2.json`, []));
   const points = {};
   for (const cle of Object.keys(equipes)) points[cle] = traites.size ? await lireJson(`${dossier}/points/${cle}.json`, {}) : {};
-  const evenements = (await lireJson(`${dossier}/evenements.json`, [])).filter((e) => traites.has(e.match));
   for (const m of calendrier) {
     if (m.etat === "avenir" || traites.has(m.id)) continue;
     try {
@@ -154,17 +153,7 @@ async function uneLigue(lig, conf) {
         }
         if (points[cle]) points[cle][m.id] = ligne;
       }
-      // Bagarres
       if (m.etat === "fini") {
-        const combats = (gs.penalties || []).filter((p) => /fight/i.test(JSON.stringify([p.lang_penalty_description, p.offence, p.offence_description, p.description])));
-        const quiDe = (p) => {
-          const i = p.player_penalized_info || p.player_penalized || {};
-          return { nom: `${i.first_name || ""} ${i.last_name || ""}`.trim(), eq: p.home === "1" ? equipes[m.dom]?.abr : equipes[m.ext]?.abr };
-        };
-        for (let k = 0; k < combats.length; k += 2) {
-          const qui = combats.slice(k, k + 2).map(quiDe).filter((x) => x.nom);
-          if (qui.length) evenements.push({ type: "bagarre", lig, match: m.id, date: m.date, debut: m.debut, dom: m.dom, ext: m.ext, periode: n(combats[k].period_id || combats[k].period), temps: combats[k].time || "", qui });
-        }
         traites.add(m.id);
       }
     } catch (e) { console.warn(lig, "sommaire", m.id, e.message); }
@@ -181,7 +170,6 @@ async function uneLigue(lig, conf) {
   await ecrire(`${dossier}/calendrier.json`, calendrier);
   for (const cle of Object.keys(equipes)) await ecrire(`${dossier}/points/${cle}.json`, points[cle]);
   await ecrire(`${dossier}/traites-v2.json`, [...traites].sort());
-  await ecrire(`${dossier}/evenements.json`, evenements.sort((a, b) => (b.debut || b.date).localeCompare(a.debut || a.date)));
   const ancien = await lireJson(`${dossier}/infos.json`, null);
   const contenu = { saison: saison.season_name, equipes, joueurs, classement };
   if (change || !ancien || JSON.stringify({ ...ancien, misAJour: undefined }) !== JSON.stringify({ ...contenu, misAJour: undefined })) {

@@ -276,10 +276,10 @@ async function rendreUne() {
     </button></li>`).join("");
 }
 
-// ---- 6 b. Le buzz : nouvelles + bagarres repérées dans les matchs
-const NOMS_CAT = { blessure: "Blessure", bagarre: "Bagarre", suspension: "Suspension", transaction: "Transaction", nouvelle: "Nouvelle" };
+// ---- 6 b. Le buzz : les nouvelles du hockey --------------------
+const NOMS_CAT = { blessure: "Blessure", suspension: "Suspension", transaction: "Transaction", nouvelle: "Nouvelle" };
 let filtreBuzz = "tout";
-D.nouvelles = null; D.evenements = {};
+D.nouvelles = null;
 function ilYa(date) {
   const min = Math.round((Date.now() - new Date(date)) / 60000);
   if (min < 60) return `il y a ${Math.max(1, min)} min`;
@@ -287,32 +287,15 @@ function ilYa(date) {
   const j = Math.round(min / 1440);
   return j === 1 ? "hier" : `il y a ${j} jours`;
 }
-async function chargerBuzz() {
-  if (!D.nouvelles) D.nouvelles = lireJson("data/nouvelles.json").catch(() => []);
-  const ligues = Object.keys(LIGUES).filter((l) => D.charge[l]);
-  for (const l of ligues) if (!D.evenements[l]) D.evenements[l] = lireJson(l === "lnh" ? "data/evenements.json" : `data/ligues/${l}/evenements.json`).catch(() => []);
-  const nouvelles = await D.nouvelles;
-  const bagarres = (await Promise.all(ligues.map((l) => D.evenements[l]))).flat()
-    .filter((e) => e.date >= decaler(AUJ, -3));
-  return [
-    ...nouvelles.map((n) => ({ ...n, genre: "nouvelle" })),
-    ...bagarres.map((e) => ({ ...e, cat: "bagarre", genre: "bagarre", date: e.debut || e.date })),
-  ].sort((a, b) => String(b.date).localeCompare(String(a.date)));
-}
 function htmlBuzz(x) {
-  const tag = `<span class="cat cat-${x.cat}">${NOMS_CAT[x.cat] || "Nouvelle"}</span>`;
+  const cat = NOMS_CAT[x.cat] ? x.cat : "nouvelle";
   const lig = x.lig && LIGUES[x.lig] ? `<span class="tag-ligue petit">${LIGUES[x.lig].nom}</span>` : "";
-  if (x.genre === "bagarre") {
-    const qui = x.qui.map((q) => echapper(q.nom) + (q.eq ? ` (${echapper(q.eq)})` : "")).join(" et ");
-    const titre = x.qui.length > 1 ? `Les gants tombent : ${qui}` : `Bagarre pour ${qui}`;
-    return `<li class="buzz-item">${tag}${lig}<div class="buzz-texte"><strong>${titre}</strong>
-      <small>${echapper(courtEq(x.ext))} @ ${echapper(courtEq(x.dom))}${x.periode ? ` · ${x.periode}${x.periode === 1 ? "re" : "e"} période${x.temps ? ` à ${x.temps}` : ""}` : ""} · ${dateLongue(String(x.date).slice(0, 10))}</small></div></li>`;
-  }
-  return `<li class="buzz-item">${tag}${lig}<a class="buzz-texte" href="${echapper(x.lien)}" target="_blank" rel="noopener noreferrer">
+  return `<li class="buzz-item"><span class="cat cat-${cat}">${NOMS_CAT[cat]}</span>${lig}<a class="buzz-texte" href="${echapper(x.lien)}" target="_blank" rel="noopener noreferrer">
     <strong>${echapper(x.titre)}</strong><small>${echapper(x.source)} · ${ilYa(x.date)} ↗</small></a></li>`;
 }
 async function rendreBuzz() {
-  const tout = await chargerBuzz();
+  if (!D.nouvelles) D.nouvelles = lireJson("data/nouvelles.json").catch(() => []);
+  const tout = (await D.nouvelles).filter((x) => x.cat !== "bagarre");
   // La ligue choisie d'abord, puis le reste
   const liste = tout.filter((x) => filtreBuzz === "tout" || x.cat === filtreBuzz)
     .sort((a, b) => (b.lig === ligue) - (a.lig === ligue) || String(b.date).localeCompare(String(a.date)))

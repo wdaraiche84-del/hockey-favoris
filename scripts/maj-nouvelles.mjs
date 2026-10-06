@@ -3,7 +3,7 @@
 // Va chercher les manchettes du hockey sur Google Actualités, en
 // français. On garde seulement le titre, la source, la date et le
 // lien : le visiteur lit l'article complet sur le site d'origine.
-// Chaque manchette reçoit une catégorie (blessure, bagarre…) et,
+// Chaque manchette reçoit une catégorie (blessure, transaction…) et,
 // si on la reconnaît, une ligue.
 // Résultat : data/nouvelles.json
 // =============================================================
@@ -11,12 +11,11 @@
 import { readFile, writeFile } from "node:fs/promises";
 
 const RECHERCHES = [
-  "LNH hockey", "LNH blessure", "LNH échange OR transaction", "hockey bagarre",
+  "LNH hockey", "LNH blessure", "LNH échange OR transaction", "LNH suspension",
   "Canadien de Montréal", "LHJMQ", "LAH hockey Rocket", "KHL hockey",
 ];
 const CATEGORIES = [
   ["blessure", /bless|injur|\bIR\b|à l'écart|absen|opér[ée]|commotion|rétabli|retour au jeu|infirmerie/i],
-  ["bagarre", /bagarre|combat|jette les gants|gants tombent|fight/i],
   ["suspension", /suspen|amende|sanction|audience disciplinaire/i],
   ["transaction", /échang|trade|signe|contrat|prolongation de contrat|rappel|cédé|ballottage|waiver|acquiert|acquis|congédi|embauch/i],
 ];
@@ -42,6 +41,7 @@ const tous = new Map();
 for (const q of RECHERCHES) {
   try {
     for (const n of await chercher(q)) {
+      if (/bagarre|jette les gants|gants tombent|\bfight/i.test(n.titre)) continue; // pas de bagarres sur le site
       const cle = n.titre.toLowerCase().replace(/[^a-zà-ÿ0-9]+/g, " ").trim().slice(0, 80);
       if (!n.titre || tous.has(cle)) continue;
       n.cat = (CATEGORIES.find(([, re]) => re.test(n.titre)) || ["nouvelle"])[0];

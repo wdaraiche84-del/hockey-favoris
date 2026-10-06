@@ -25,6 +25,6 @@ Scores, classement, meneurs et stats de la LNH, de la LAH et des ligues junior (
 
 - **Stats, résultats, calendrier, effectifs, classement** : automatiques. Pour forcer une mise à jour, va dans l'onglet **Actions**, choisis « Mise à jour des stats », puis « Run workflow ».
 - **Scores pendant les matchs** : aux 20 secondes une fois le relais installé.
-- **Le buzz** : manchettes de Google Actualités (titre, source et lien seulement) et bagarres repérées dans les sommaires de match.
+- **Le buzz** : manchettes de Google Actualités (titre, source et lien seulement).
 
 Site non officiel, sans lien avec la LNH ni aucune de ses équipes.
