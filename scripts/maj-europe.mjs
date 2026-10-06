@@ -204,7 +204,7 @@ async function khl() {
 
   // 4. Stats de chaque joueur, match par match (seulement les nouveaux matchs)
   //    Patineur [B, A, +/-, tirs, PUN, TG] (pas de +/- par match dans la source) ; gardien ["G", arrêts, tirs, BC, décision, TG]
-  const traites = new Set(await lireJson(`${dossier}/traites-v2.json`, []));
+  const traites = new Set(await lireJson(`${dossier}/traites-v3.json`, []));
   const points = {};
   for (const cle of Object.keys(equipes)) points[cle] = traites.size ? await lireJson(`${dossier}/points/${cle}.json`, {}) : {};
   let nouveaux = 0;
@@ -217,9 +217,18 @@ async function khl() {
       for (const [t, cle, adv] of cotes) {
         const ligne = {};
         // Passes : la source les donne seulement dans la liste des buts (numéro de chandail + équipe)
+        // (les passeurs sont toujours de l'équipe du marqueur ; on les reconnaît par numéro ou par nom)
         const passes = {};
-        for (const but of ev.goals || []) for (const as of but.assistants || []) {
-          if (Number(as.team_id) === t.id) passes[as.shirt_number] = (passes[as.shirt_number] || 0) + 1;
+        const parNo = new Map((t.players || []).map((p) => [String(p.shirt_number), p.id]));
+        const parNom = new Map((t.players || []).map((p) => [String(p.name).toLowerCase(), p.id]));
+        for (const but of ev.goals || []) {
+          if (Number(but.author?.team_id) !== t.id || (but.period ?? 0) >= 5) continue;
+          for (const as of but.assistants || []) {
+            const no = as.shirt_number ?? as.number ?? as.player?.shirt_number;
+            const nom = String(as.name ?? as.player?.name ?? "").toLowerCase();
+            const id = (no != null && parNo.get(String(no))) || parNom.get(nom);
+            if (id) passes[id] = (passes[id] || 0) + 1;
+          }
         }
         const butsPour = (ev.goals || []).filter((x) => Number(x.author?.team_id) === t.id);
         const gardiens = (t.players || []).filter((p) => p.role_key === "goaltender" && val(p.match_stats, "toi") > 0);
@@ -234,16 +243,17 @@ async function khl() {
             ligne[`khl-${p.id}`] = ["G", sa - ga, sa, ga, "", mmss(val(st, "toi"))];
           } else {
             const b = butsPour.filter((x) => x.author?.shirt_number === p.shirt_number && (x.period ?? 0) < 5).length || val(st, "goals");
-            ligne[`khl-${p.id}`] = [b, passes[p.shirt_number] || 0, null, val(st, "shots"), val(st, "pim"), mmss(val(st, "toi"))];
+            ligne[`khl-${p.id}`] = [b, passes[p.id] || 0, null, val(st, "shots"), val(st, "pim"), mmss(val(st, "toi"))];
           }
         }
         if (points[cle] && Object.keys(ligne).length) points[cle][m.id] = ligne;
       }
       nouveaux++;
+      if (!globalThis.exemplePasse) { const as = (ev.goals || []).flatMap((x) => x.assistants || [])[0]; if (as) { globalThis.exemplePasse = 1; await writeFile(`${dossier}/exemple-passe.json`, JSON.stringify(as)); } }
       if (m.etat === "fini") traites.add(m.id);
     } catch (e) { console.warn("KHL sommaire", m.id, e.message); }
   }
-  await ecrireSiChange(`${dossier}/traites-v2.json`, [...traites].sort());
+  await ecrireSiChange(`${dossier}/traites-v3.json`, [...traites].sort());
   const d = new Date(), an = d.getMonth() >= 6 ? d.getFullYear() : d.getFullYear() - 1;
   await enregistrer("khl", `${an}-${String(an + 1).slice(2)}`, equipes, joueurs, classement, calendrier, points);
   console.log(`KHL : ${Object.keys(equipes).length} équipes, ${joueurs.length} joueurs, ${calendrier.length} matchs, ${nouveaux} sommaires lus.`);
