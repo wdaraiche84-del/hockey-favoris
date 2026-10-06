@@ -77,9 +77,6 @@ async function principal() {
         pos: POSITIONS[p.positionCode] || p.positionCode,
         eq,
       };
-      // Né au Québec? On garde sa ville natale (page « Les Québécois »)
-      const prov = texte(p.birthStateProvince);
-      if (prov === "QC" || /qu[eé]bec/i.test(prov)) j.qc = texte(p.birthCity) || "Québec";
       const g = sg[p.id], s = sp[p.id];
       if (j.pos === "G") {
         j.g = { pj: g?.gamesPlayed ?? 0, v: g?.wins ?? 0, d: g?.losses ?? 0, dp: g?.overtimeLosses ?? 0,

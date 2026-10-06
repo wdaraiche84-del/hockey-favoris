@@ -834,63 +834,6 @@ async function tourDirect() {
   rendreMiseAJour();
 }
 
-// ---- 16 a. Les Québécois partout ------------------------------
-const VILLES = { "quebec city": "Québec", "quebec": "Québec", "montreal": "Montréal", "st-jerome": "Saint-Jérôme", "trois-rivieres": "Trois-Rivières", "levis": "Lévis" };
-const ville = (v) => VILLES[simplifier(v || "").trim()] || v;
-let qcLigue = "tout";
-const quebecois = () => D.joueurs.filter((j) => j.qc);
-function ligneQc(j, l) {
-  if (estGardienLigne(l)) return `🧤 ${l[1]} arrêts sur ${l[2]}`;
-  const [b, a] = l;
-  return b + a > 0 ? `🔥 ${b} B, ${a} A` : `${b} B, ${a} A`;
-}
-async function rendreQuebecois() {
-  await chargerTout();
-  const qc = quebecois();
-  // Compteurs par ligue
-  $("qc-compteurs").innerHTML = Object.keys(LIGUES).map((l) => {
-    const n = qc.filter((j) => j.lig === l).length;
-    return n ? `<div class="qc-compteur"><b>${n}</b><span>${LIGUES[l].nom}</span></div>` : "";
-  }).join("") + `<div class="qc-compteur total"><b>${qc.length}</b><span>au total</span></div>`;
-  // Leur dernière soirée, ligue par ligue
-  let h = "";
-  for (const l of Object.keys(LIGUES)) {
-    const finis = matchsLigue(l).filter((m) => estFini(m) && m.date <= AUJ);
-    if (!finis.length) continue;
-    const date = finis[finis.length - 1].date;
-    const lignes = [];
-    for (const m of finis.filter((x) => x.date === date)) {
-      for (const eq of [m.dom, m.ext]) {
-        const pts = (await points(eq))[m.id] || {};
-        for (const [id, ligne] of Object.entries(pts)) {
-          const j = D.parId.get(id);
-          if (j && j.qc && j.eq === eq) lignes.push({ j, ligne, m });
-        }
-      }
-    }
-    if (!lignes.length) continue;
-    lignes.sort((x, y) => ptsLigne(y.ligne) - ptsLigne(x.ligne) || (y.ligne[0] || 0) - (x.ligne[0] || 0));
-    h += `<h3 class="groupe-titre">${LIGUES[l].nom} <small>${dateLongue(date)} · ${lignes.length} Québécois</small></h3>
-      <ul class="qc-liste">${lignes.slice(0, 12).map(({ j, ligne, m }) => `<li data-fiche="${j.id}">
-        <span class="nom">${echapper(j.nom)}${favoris.includes(j.id) ? " ⭐" : ""}<small>${echapper(courtEq(j.eq))} vs ${abr(adversaire(m, j.eq))} · ${echapper(ville(j.qc))}</small></span>
-        <span class="qc-ligne ${ptsLigne(ligne) > 0 ? "chaud" : ""}">${ligneQc(j, ligne)}</span></li>`).join("")}</ul>
-      ${lignes.length > 12 ? `<p class="petit-gris">et ${lignes.length - 12} autres.</p>` : ""}`;
-  }
-  $("qc-soiree").innerHTML = h || `<p class="vide">Aucun match récent.</p>`;
-  // Les meilleurs de la saison
-  $("qc-onglets").innerHTML = [["tout", "Toutes"], ...Object.keys(LIGUES).map((l) => [l, LIGUES[l].nom])].map(([k, n]) =>
-    `<button class="onglet ${k === qcLigue ? "actif" : ""}" data-qc="${k}">${n}</button>`).join("");
-  const choix = qc.filter((j) => qcLigue === "tout" || j.lig === qcLigue);
-  const pat = choix.filter((j) => j.s && j.s.pj > 0).sort((a, b) => b.s.pts - a.s.pts || b.s.b - a.s.b).slice(0, 15);
-  const gar = choix.filter((j) => j.g && j.g.pj > 0).sort((a, b) => b.g.v - a.g.v || (b.g.pct || 0) - (a.g.pct || 0)).slice(0, 5);
-  const sousTitre = (j) => `<small>${qcLigue === "tout" ? `${LIGUES[j.lig].nom} · ` : ""}${echapper(courtEq(j.eq))} · ${echapper(ville(j.qc))}</small>`;
-  $("qc-meneurs").innerHTML = pat.length ? pat.map((j) => `<li data-fiche="${j.id}"><span class="nom">${echapper(j.nom)}${sousTitre(j)}</span>
-    <span class="qc-detail">${j.s.b} B · ${j.s.a} A</span><span class="val">${j.s.pts}</span></li>`).join("") : `<li class="vide">À venir.</li>`;
-  $("qc-gardiens").innerHTML = gar.length ? gar.map((j) => `<li data-fiche="${j.id}"><span class="nom">${echapper(j.nom)}${sousTitre(j)}</span>
-    <span class="qc-detail">${j.g.pct != null ? j.g.pct.toFixed(3).replace(/^0/, "") : "–"}</span><span class="val">${j.g.v} V</span></li>`).join("") : `<li class="vide">À venir.</li>`;
-}
-$("qc-onglets").addEventListener("click", (e) => { const b = e.target.closest("[data-qc]"); if (b) { qcLigue = b.dataset.qc; rendreQuebecois(); } });
-
 // ---- 16 b. L'application sur le téléphone ------------------------
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 const estInstallee = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
@@ -920,7 +863,7 @@ $("installer-ok").onclick = async () => {
 $("installer-non").onclick = () => { memoire("installer-non", "1"); rendreInstaller(); };
 
 // ---- 17. Les pages (onglets, glisser sur téléphone) -----------
-const PAGES = ["accueil", "scores", "favoris", "classement", "meneurs", "joueurs", "quebecois"];
+const PAGES = ["accueil", "scores", "favoris", "classement", "meneurs", "joueurs"];
 let pageActuelle = null;
 function allerA(page) {
   if (!PAGES.includes(page)) page = "accueil";
@@ -935,8 +878,6 @@ function allerA(page) {
   // Le choix de ligue ne concerne pas la page « Mes favoris »
   document.body.classList.toggle("page-favoris", page === "favoris");
   document.body.classList.toggle("page-scores", page === "scores");
-  document.body.classList.toggle("page-quebecois", page === "quebecois");
-  if (page === "quebecois" && D.charge.lnh) rendreQuebecois();
   if (pageActuelle !== null && pageActuelle !== page) window.scrollTo({ top: 0 });
   pageActuelle = page;
   fermerFiche();
@@ -981,7 +922,6 @@ async function demarrer() {
   rendreMiseAJour();
   rendreUne();
   rendreBuzz();
-  if (pageActuelle === "quebecois") rendreQuebecois();
   setInterval(tourDirect, SECONDES_DIRECT * 1000);
   tourDirect();
   setInterval(() => {
