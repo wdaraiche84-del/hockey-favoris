@@ -17,7 +17,7 @@ Scores, classement, meneurs et stats de la LNH, de la LAH et des ligues junior (
 | `data/ligues/` | Les données de la LAH, de la LHJMQ, de l'OHL et de la WHL |
 | `scripts/maj-donnees.mjs` | Le robot qui va chercher les données des 32 équipes de la LNH |
 | `scripts/maj-autres-ligues.mjs` | Le robot de la LAH et des juniors |
-| `scripts/maj-nouvelles.mjs` | Le robot des manchettes (section « Le buzz ») |
+| `scripts/maj-nouvelles.mjs` | Le robot des articles (section « À la une ») |
 | `.github/workflows/maj-donnees.yml` | Dit à GitHub de lancer le robot toutes les 30 minutes environ |
 | `relais/` | Le relais optionnel pour le direct à la seconde (voir `relais/LISEZMOI.md`) |
 
@@ -25,6 +25,6 @@ Scores, classement, meneurs et stats de la LNH, de la LAH et des ligues junior (
 
 - **Stats, résultats, calendrier, effectifs, classement** : automatiques. Pour forcer une mise à jour, va dans l'onglet **Actions**, choisis « Mise à jour des stats », puis « Run workflow ».
 - **Scores pendant les matchs** : aux 20 secondes une fois le relais installé.
-- **Le buzz** : manchettes de Google Actualités (titre, source et lien seulement).
+- **À la une** : articles de Google Actualités (titre, source et lien seulement).
 
 Site non officiel, sans lien avec la LNH ni aucune de ses équipes.

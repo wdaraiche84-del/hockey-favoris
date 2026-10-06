@@ -223,7 +223,7 @@ $("score-suiv").onclick = () => changerJourScores(1);
 $("page-score-prec").onclick = () => changerJourScores(-1);
 $("page-score-suiv").onclick = () => changerJourScores(1);
 
-// ---- 6. À la une (résumés générés à partir des stats) -------
+// ---- 6. Performances (résumés générés à partir des stats) ----
 function titrePerformance(p) {
   const nom = p.j.nom;
   if (p.b >= 3) return `Tour du chapeau pour ${nom}`;
@@ -276,7 +276,7 @@ async function rendreUne() {
     </button></li>`).join("");
 }
 
-// ---- 6 b. Le buzz : les nouvelles du hockey --------------------
+// ---- 6 b. À la une : les articles du hockey ---------------------
 const NOMS_CAT = { blessure: "Blessure", suspension: "Suspension", transaction: "Transaction", nouvelle: "Nouvelle" };
 let filtreBuzz = "tout";
 D.nouvelles = null;
@@ -287,11 +287,27 @@ function ilYa(date) {
   const j = Math.round(min / 1440);
   return j === 1 ? "hier" : `il y a ${j} jours`;
 }
-function htmlBuzz(x) {
+// Repère l'équipe dont parle un titre (ex. « Canadien » → MTL), pour décorer la carte
+function equipeDuTitre(titre) {
+  const t = simplifier(titre);
+  for (const [eq, e] of Object.entries(D.equipes)) {
+    if (e.lig !== "lnh" && e.lig !== ligue) continue;
+    const court = simplifier(e.court || "");
+    if (court.length < 4) continue;
+    const singulier = court.endsWith("s") ? court.slice(0, -1) : court;
+    if (new RegExp(`\\b${singulier.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`).test(t)) return eq;
+  }
+  return null;
+}
+function carteArticle(x, taille) {
   const cat = NOMS_CAT[x.cat] ? x.cat : "nouvelle";
+  const eq = equipeDuTitre(x.titre);
   const lig = x.lig && LIGUES[x.lig] ? `<span class="tag-ligue petit">${LIGUES[x.lig].nom}</span>` : "";
-  return `<li class="buzz-item"><span class="cat cat-${cat}">${NOMS_CAT[cat]}</span>${lig}<a class="buzz-texte" href="${echapper(x.lien)}" target="_blank" rel="noopener noreferrer">
-    <strong>${echapper(x.titre)}</strong><small>${echapper(x.source)} · ${ilYa(x.date)} ↗</small></a></li>`;
+  return `<a class="article article-${taille} fond-${cat}" href="${echapper(x.lien)}" target="_blank" rel="noopener noreferrer">
+    <span class="article-visuel">${eq ? `<span class="article-eq">${abr(eq)}</span>` : `<span class="article-eq icone-cat">${{ blessure: "✚", transaction: "⇄", suspension: "⏸", nouvelle: "🏒" }[cat]}</span>`}
+      <span class="article-tags"><span class="cat cat-${cat}">${NOMS_CAT[cat]}</span>${lig}</span></span>
+    <span class="article-texte"><strong>${echapper(x.titre)}</strong><small>${echapper(x.source)} · ${ilYa(x.date)}</small></span>
+  </a>`;
 }
 async function rendreBuzz() {
   if (!D.nouvelles) D.nouvelles = lireJson("data/nouvelles.json").catch(() => []);
@@ -299,8 +315,16 @@ async function rendreBuzz() {
   // La ligue choisie d'abord, puis le reste
   const liste = tout.filter((x) => filtreBuzz === "tout" || x.cat === filtreBuzz)
     .sort((a, b) => (b.lig === ligue) - (a.lig === ligue) || String(b.date).localeCompare(String(a.date)))
-    .slice(0, filtreBuzz === "tout" ? 12 : 20);
-  $("buzz").innerHTML = liste.length ? liste.map(htmlBuzz).join("") : `<li class="vide">Rien de ce côté pour l'instant.</li>`;
+    .slice(0, 21);
+  if (!liste.length) { $("articles").innerHTML = `<p class="vide">Rien de ce côté pour l'instant.</p>`; return; }
+  // Mise en page de site de sports : 1 grande + 2 moyennes, une grille de cartes, puis « Plus de nouvelles »
+  const [vedette, ...reste] = liste;
+  const cotes = reste.slice(0, 2), grille = reste.slice(2, 8), plus = reste.slice(8);
+  $("articles").innerHTML = `
+    <div class="une-haut">${carteArticle(vedette, "grande")}<div class="une-cotes">${cotes.map((x) => carteArticle(x, "moyenne")).join("")}</div></div>
+    ${grille.length ? `<div class="grille-articles">${grille.map((x) => carteArticle(x, "petite")).join("")}</div>` : ""}
+    ${plus.length ? `<h3 class="groupe-titre">Plus de nouvelles</h3><ul class="buzz">${plus.map((x) => `<li class="buzz-item"><span class="cat cat-${NOMS_CAT[x.cat] ? x.cat : "nouvelle"}">${NOMS_CAT[x.cat] || "Nouvelle"}</span>
+      <a class="buzz-texte" href="${echapper(x.lien)}" target="_blank" rel="noopener noreferrer"><strong>${echapper(x.titre)}</strong><small>${echapper(x.source)} · ${ilYa(x.date)} ↗</small></a></li>`).join("")}</ul>` : ""}`;
 }
 $("filtres-buzz").addEventListener("click", (e) => {
   const b = e.target.closest("[data-buzz]");
