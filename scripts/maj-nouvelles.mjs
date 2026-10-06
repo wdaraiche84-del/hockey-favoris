@@ -16,7 +16,7 @@ const RECHERCHES = [
   "Kent Hughes Canadien", "Rocket de Laval", "LHJMQ", "KHL hockey",
 ];
 // Une vraie transaction : un geste concret, pas une rumeur ni une question
-const TRANSACTION = /\b(échangé|échangés|échange \w+ (à|aux|contre)|acquiert|acquis|obtient|obtenu|cède|cédé|signe|a signé|paraphe|prolonge|prolongation de contrat|contrat (de|d'une durée)|soumis au ballottage|plac\w*\s.{0,40}?au ballottage|réclamé|rappelé|rappelle|retranché|libéré|congédié|embauché|nommé)\b/i;
+const TRANSACTION = /(?<!\p{L})(échangé|échangés|échange \w+ (à|aux|contre)|acquiert|acquis|obtient|obtenu|cède|cédé|signe|a signé|paraphe|prolonge|prolongation de contrat|contrat (de|d'une durée)|soumis au ballottage|plac\w*\s.{0,40}?au ballottage|réclamé|rappelé|rappelle|retranché|libéré|congédié|embauché|nommé (entraîneur|directeur|capitaine))(?!\p{L})/iu;
 const SPECULATION = /\?|rumeur|pourrai(t|ent)|surprise|choix|intéress|cible|possible|spécul|envisag|aimerai(t|ent)|songe|candidat|serait|devrai(t|ent)|options?\b/i;
 function categorieDe(titre, source = "") {
   if (/bless|injur|\bIR\b|à l'écart|absen|opér[ée]|commotion|rétabli|retour au jeu|infirmerie/i.test(titre)) return "blessure";
