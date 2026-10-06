@@ -40,6 +40,10 @@ jobs:
         run: node scripts/maj-autres-ligues.mjs
         continue-on-error: true
 
+      - name: Aller chercher les ligues européennes (Liiga, KHL)
+        run: node scripts/maj-europe.mjs
+        continue-on-error: true
+
       - name: Aller chercher les nouvelles du hockey
         run: node scripts/maj-nouvelles.mjs
         continue-on-error: true
