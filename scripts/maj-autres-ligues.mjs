@@ -159,6 +159,27 @@ async function uneLigue(lig, conf) {
     } catch (e) { console.warn(lig, "sommaire", m.id, e.message); }
   }
 
+  // 7 b. Bagarres (le site n'affiche ensuite que les plus spectaculaires)
+  const bagTraites = new Set(await lireJson(`${dossier}/bagarres-traites.json`, []));
+  const bagarres = await lireJson(`${dossier}/bagarres.json`, []);
+  for (const m of calendrier) {
+    if (m.etat !== "fini" || bagTraites.has(m.id)) continue;
+    try {
+      const gs = (await lire({ feed: "gc", tab: "gamesummary", game_id: m.id.split("-")[1], key: conf.cle, client_code: lig })).GC?.Gamesummary;
+      if (!gs) continue;
+      const combats = (gs.penalties || []).filter((p) => /fight/i.test(JSON.stringify([p.lang_penalty_description, p.offence, p.offence_description, p.description])));
+      const quiDe = (p) => {
+        const i = p.player_penalized_info || p.player_penalized || {};
+        return { nom: `${i.first_name || ""} ${i.last_name || ""}`.trim(), id: i.player_id ? `${lig}-${i.player_id}` : undefined, eq: p.home === "1" ? equipes[m.dom]?.abr : equipes[m.ext]?.abr };
+      };
+      for (let k = 0; k < combats.length; k += 2) {
+        const qui = combats.slice(k, k + 2).map(quiDe).filter((x) => x.nom);
+        if (qui.length) bagarres.push({ lig, match: m.id, date: m.date, debut: m.debut, dom: m.dom, ext: m.ext, periode: n(combats[k].period_id || combats[k].period), temps: combats[k].time || "", nbMatch: Math.ceil(combats.length / 2), qui });
+      }
+      bagTraites.add(m.id);
+    } catch (e) { console.warn(lig, "bagarres", m.id, e.message); }
+  }
+
   // 8. On écrit seulement ce qui a changé
   let change = false;
   async function ecrire(f, contenu) {
@@ -170,6 +191,8 @@ async function uneLigue(lig, conf) {
   await ecrire(`${dossier}/calendrier.json`, calendrier);
   for (const cle of Object.keys(equipes)) await ecrire(`${dossier}/points/${cle}.json`, points[cle]);
   await ecrire(`${dossier}/traites-v2.json`, [...traites].sort());
+  await ecrire(`${dossier}/bagarres-traites.json`, [...bagTraites].sort());
+  await ecrire(`${dossier}/bagarres.json`, bagarres.sort((a, b) => (b.debut || b.date).localeCompare(a.debut || a.date)));
   const ancien = await lireJson(`${dossier}/infos.json`, null);
   const contenu = { saison: saison.season_name, equipes, joueurs, classement };
   if (change || !ancien || JSON.stringify({ ...ancien, misAJour: undefined }) !== JSON.stringify({ ...contenu, misAJour: undefined })) {

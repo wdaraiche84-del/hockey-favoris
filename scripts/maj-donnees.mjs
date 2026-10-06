@@ -155,6 +155,32 @@ async function principal() {
     }
   }
 
+  // 4 b. Bagarres : punitions « fighting » dans le résumé des matchs terminés
+  //      (le site n'affiche ensuite que les plus spectaculaires)
+  const bagTraites = new Set(await lireJson("data/bagarres-traites.json", []));
+  const bagarres = await lireJson("data/bagarres.json", []);
+  const nomDe = (c) => (!c ? "" : typeof c === "string" ? c : c.default && !c.firstName ? c.default : `${texte(c.firstName)} ${texte(c.lastName)}`.trim());
+  for (const m of calendrier) {
+    if (m.etat !== "fini" || bagTraites.has(m.id)) continue;
+    try {
+      const land = await lire(`/gamecenter/${m.id}/landing`);
+      const combats = [];
+      for (const per of land.summary?.penalties || []) {
+        for (const pen of per.penalties || []) {
+          if (!/fight/i.test(pen.descKey || "")) continue;
+          const c = pen.committedByPlayer || {};
+          combats.push({ nom: nomDe(c), id: c.playerId ? String(c.playerId) : undefined, eq: texte(pen.teamAbbrev), periode: per.periodDescriptor?.number, temps: pen.timeInPeriod });
+        }
+      }
+      for (let k = 0; k < combats.length; k += 2) {
+        const qui = combats.slice(k, k + 2);
+        bagarres.push({ lig: "lnh", match: m.id, date: m.date, debut: m.debut, dom: m.dom, ext: m.ext, periode: qui[0].periode, temps: qui[0].temps,
+          nbMatch: Math.ceil(combats.length / 2), qui: qui.map(({ nom, id, eq }) => ({ nom, id, eq })) });
+      }
+      bagTraites.add(m.id);
+    } catch (e) { console.warn("Résumé non disponible pour", m.id, e.message); }
+  }
+
   // 5. On écrit seulement les fichiers qui ont changé
   await mkdir("data/points", { recursive: true });
   let change = false;
@@ -169,6 +195,8 @@ async function principal() {
   if (classement.length) await ecrire("data/classement.json", classement);
   for (const eq of Object.keys(EQUIPES)) await ecrire(`data/points/${eq}.json`, points[eq]);
   await ecrire("data/traites-v2.json", [...traites].sort());
+  await ecrire("data/bagarres-traites.json", [...bagTraites].sort());
+  await ecrire("data/bagarres.json", bagarres.sort((a, b) => (b.debut || b.date).localeCompare(a.debut || a.date)));
 
   const ancienJoueurs = await lireJson("data/joueurs.json", null);
   const memesJoueurs = ancienJoueurs && JSON.stringify(ancienJoueurs.joueurs) === JSON.stringify(joueurs);
