@@ -6,7 +6,7 @@
 //   C. Fiche d'une équipe
 //   D. Forme récente : joueurs en feu, séquences de points
 //   E. Comparateur de joueurs
-//   F. Partage, agenda (.ics), alertes de buts, lexique
+//   F. Partage, alertes de buts, lexique
 //   G. Liens directs (#/joueur/…, #/equipe/…, #/match/…)
 // =============================================================
 
@@ -159,7 +159,7 @@ async function ouvrirMatch(id, opt = {}) {
   if (modaleActuelle?.t !== "match" || modaleActuelle.id !== String(m.id)) return; // une autre fenêtre a été ouverte entre-temps
   const outils = `<div class="fiche-outils">
     <button class="btn fantome" data-partager="match/${m.id}" data-titre="${echapper(abr(m.ext))} @ ${echapper(abr(m.dom))} · MonTrio">↗ Partager</button>
-    ${!joue ? `<button class="btn fantome" data-ics-match="${m.id}">📅 Ajouter à mon agenda</button>` : ""}</div>`;
+</div>`;
   $("fiche").querySelector(".fiche-corps").innerHTML = corps + outils;
 }
 async function corpsMatchJoue(m) {
@@ -255,8 +255,7 @@ async function ouvrirEquipe(eq, opt = {}) {
   const e = D.equipes[eq];
   let h = `<div class="fiche-haut equipe-haut">${boutonRetour()}<span class="numero equipe-pastille">${abr(eq)}</span>
     <div><h2>${echapper(nomEq(eq))}</h2><p><span class="tag-ligue petit">${LIGUES[lig].nom}</span> ${[e.conf, e.div].filter((x, i, a) => x && a.indexOf(x) === i && x !== LIGUES[lig].nom).map(echapper).join(" · ")}</p>
-      <p class="fiche-boutons"><button class="btn accent" data-ics-equipe="${eq}">📅 Calendrier dans mon agenda</button>
-        <button class="btn fantome" data-partager="equipe/${eq}" data-titre="${echapper(nomEq(eq))} · MonTrio">↗ Partager</button></p></div>
+      <p class="fiche-boutons">        <button class="btn fantome" data-partager="equipe/${eq}" data-titre="${echapper(nomEq(eq))} · MonTrio">↗ Partager</button></p></div>
     <button class="fermer" aria-label="Fermer">✕</button></div><div class="fiche-corps">`;
   h += `<div class="tuiles">
     ${tuile(r ? ieme(r.ligueRang) : "–", `rang · ${LIGUES[lig].nom}`)}
@@ -433,7 +432,7 @@ function rendreChoixComp(A) {
   boite.dataset.a = A.id;
 }
 
-// ---- F. Partage, agenda, alertes, lexique ----------------------
+// ---- F. Partage, alertes, lexique ----------------------
 function toast(texte, duree = 4000) {
   const t = document.createElement("div");
   t.className = "toast"; t.textContent = texte;
@@ -450,35 +449,6 @@ async function partager(chemin, titre) {
     toast("Lien copié! Tu peux le coller dans un message.");
   } catch (e) { if (e.name !== "AbortError") prompt("Copie ce lien :", url); }
 }
-// Fichier .ics : s'ouvre dans Google Agenda, Apple Calendrier ou Outlook
-function telechargerIcs(matchs, nomFichier, titre) {
-  const avenir = matchs.filter((m) => m.debut && !estFini(m) && new Date(m.debut) > Date.now() - 3 * 3600e3);
-  if (!avenir.length) return toast("Aucun match à venir à ajouter.");
-  const t = (d) => new Date(d).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
-  const esc = (x) => String(x).replace(/[\\;,]/g, (c) => "\\" + c);
-  const lignes = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//MonTrio//Hockey//FR", "CALSCALE:GREGORIAN", `X-WR-CALNAME:${esc(titre)}`];
-  for (const m of avenir) {
-    const fin = new Date(new Date(m.debut).getTime() + 150 * 60000);
-    lignes.push("BEGIN:VEVENT", `UID:${m.id}@montrio`, `DTSTAMP:${t(Date.now())}`, `DTSTART:${t(m.debut)}`, `DTEND:${t(fin)}`,
-      `SUMMARY:${esc(`🏒 ${courtEq(m.ext)} @ ${courtEq(m.dom)} (${LIGUES[ligueDe(m.dom)].nom})`)}`,
-      `DESCRIPTION:${esc(`${nomEq(m.ext)} contre ${nomEq(m.dom)}. Suis le match sur MonTrio : ${location.origin}${location.pathname}#/match/${m.id}`)}`, "END:VEVENT");
-  }
-  lignes.push("END:VCALENDAR");
-  const replier = (l) => { const enc = new TextEncoder(); const out = []; let cur = "", n = 0;
-    for (const ch of l) { const b = enc.encode(ch).length; if (n + b > (out.length ? 74 : 75)) { out.push(cur); cur = ""; n = 0; } cur += ch; n += b; }
-    out.push(cur); return out.join("\r\n "); };
-  const blob = new Blob([lignes.map(replier).join("\r\n")], { type: "text/calendar;charset=utf-8" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob); a.download = nomFichier;
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-  toast(`${pluriel(avenir.length, "match")} prêt${avenir.length > 1 ? "s" : ""} pour ton agenda. Ouvre le fichier téléchargé pour les ajouter.`, 6000);
-}
-$("agenda-favoris").onclick = () => {
-  const eqs = equipesFavorites();
-  if (!eqs.length) return toast("Ajoute d'abord des favoris.");
-  telechargerIcs(D.cal.filter((m) => eqs.includes(m.dom) || eqs.includes(m.ext)), "montrio-mes-favoris.ics", "MonTrio · Mes favoris");
-};
 // Alertes de buts : pendant que MonTrio est ouvert (onglet ou application)
 let alertesOn = memoire("alertes") === "1";
 const vus = new Map();
@@ -526,12 +496,10 @@ $("ouvrir-lexique").onclick = ouvrirLexique;
 
 // Les boutons de cette 2e partie
 document.addEventListener("click", (e) => {
-  const b = e.target.closest("[data-retour],[data-partager],[data-ics-equipe],[data-ics-match],[data-comparer],[data-comparer-avec],[data-lexique]");
+  const b = e.target.closest("[data-retour],[data-partager],[data-comparer],[data-comparer-avec],[data-lexique]");
   if (!b) return;
   if (b.hasAttribute("data-retour")) revenir();
   else if (b.dataset.partager) partager(b.dataset.partager, b.dataset.titre || "MonTrio");
-  else if (b.dataset.icsEquipe) telechargerIcs(matchsDe(b.dataset.icsEquipe), `montrio-${slug(courtEq(b.dataset.icsEquipe))}.ics`, `MonTrio · ${nomEq(b.dataset.icsEquipe)}`);
-  else if (b.dataset.icsMatch) { const m = matchParId(b.dataset.icsMatch); if (m) telechargerIcs([m], "montrio-match.ics", "MonTrio"); }
   else if (b.dataset.comparer) ouvrirComparaison(b.dataset.comparer);
   else if (b.dataset.comparerAvec) ouvrirComparaison($("comp-resultats").dataset.a, b.dataset.comparerAvec);
   else if (b.hasAttribute("data-lexique")) ouvrirLexique();
