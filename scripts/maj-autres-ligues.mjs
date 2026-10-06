@@ -92,6 +92,11 @@ async function uneLigue(lig, conf) {
       const pos = POSITIONS[p.position];
       if (!pos || !p.player_id || parId.has(p.player_id)) continue;
       const j = { id: `${lig}-${p.player_id}`, nom: `${p.first_name} ${p.last_name}`.trim(), no: p.tp_jersey_number ? Number(p.tp_jersey_number) : null, pos, eq: cle };
+      // Né au Québec? On garde sa ville natale (page « Les Québécois »)
+      const naissance = [p.birthplace, p.birthtown, p.birthprov].filter(Boolean).join(", ");
+      if (/(^|,\s*)(QC|PQ|Qc|Que\.?|Québec|Quebec)\s*(,|$)/i.test(naissance) || /^(QC|PQ)$/i.test(p.birthprov || "")) {
+        j.qc = (p.birthtown || p.birthplace || "").split(",")[0].trim() || "Québec";
+      }
       parId.set(p.player_id, j); joueurs.push(j);
     }
   }
