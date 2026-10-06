@@ -2,7 +2,7 @@
 
 Tes joueurs de hockey préférés, toutes les ligues, au même endroit.
 
-Scores, classement, meneurs et stats de la LNH, de la LAH, des ligues junior (LHJMQ, OHL, WHL) et de l'Europe (Liiga, KHL), avec le suivi de tes joueurs préférés.
+Scores, classement, meneurs et stats de la LNH, de la LAH, des ligues junior (LHJMQ, OHL, WHL) et de l'Europe (KHL, SHL, Liiga, National League), avec le suivi de tes joueurs préférés.
 
 ## Les fichiers
 
