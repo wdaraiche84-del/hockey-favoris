@@ -277,7 +277,7 @@ async function rendreUne() {
 }
 
 // ---- 6 b. À la une : les articles du hockey ---------------------
-const NOMS_CAT = { blessure: "Blessure", suspension: "Suspension", transaction: "Transaction", bagarre: "Bagarre", nouvelle: "Nouvelle" };
+const NOMS_CAT = { blessure: "Blessure", suspension: "Suspension", transaction: "Transaction", nouvelle: "Nouvelle" };
 let filtreBuzz = "tout";
 D.nouvelles = null;
 function ilYa(date) {
@@ -320,41 +320,12 @@ function categorieDe(titre, source = "") {
   return "nouvelle";
 }
 
-// ---- Bagarres : on garde seulement les spectaculaires --------------
-D.bagarres = {};
-function raisonSpectaculaire(b) {
-  const joueurs = b.qui.map((q) => (q.id && D.parId.get(q.id)) || D.joueurs.find((j) => j.lig === b.lig && simplifier(j.nom) === simplifier(q.nom)));
-  if (joueurs.some((j) => j && j.pos === "G")) return "🧤 Un gardien jette les gants!";
-  if (b.nbMatch >= 3) return `💥 Bagarre générale : ${b.nbMatch} combats dans le match`;
-  // Le Canadien : on veut tout voir
-  const duCH = b.qui.find((q) => q.eq === "MTL");
-  if (duCH) return `🔵 ${duCH.nom} (Canadien) jette les gants`;
-  return null;
-}
-async function bagarresSpectaculaires() {
-  // LNH seulement, et seulement quand la LNH est choisie : les articles des autres ligues gardent toute la place
-  const ligues = ligue === "lnh" && D.charge.lnh ? ["lnh"] : [];
-  for (const l of ligues) if (!D.bagarres[l]) D.bagarres[l] = lireJson("data/bagarres.json").catch(() => []);
-  const toutes = (await Promise.all(ligues.map((l) => D.bagarres[l]))).flat().filter((b) => b.date >= decaler(AUJ, -7));
-  return toutes.map((b) => ({ ...b, raison: raisonSpectaculaire(b) })).filter((b) => b.raison)
-    .map((b) => ({ ...b, genre: "bagarre", cat: "bagarre", date: b.debut || b.date }));
-}
-function carteBagarre(x, taille) {
-  const qui = x.qui.map((q) => `${q.nom}${q.eq ? ` (${q.eq})` : ""}`).join(" et ");
-  const titre = x.qui.length > 1 ? `Les gants tombent : ${qui}` : `Bagarre pour ${qui}`;
-  const cible = x.qui.find((q) => q.id && D.parId.get(q.id));
-  return `<button class="article article-${taille} fond-bagarre" ${cible ? `data-fiche="${cible.id}"` : ""}>
-    <span class="article-visuel"><span class="article-eq">${x.qui[0]?.eq || "🥊"}</span>
-      <span class="article-tags"><span class="cat cat-bagarre">Bagarre</span><span class="tag-ligue petit">${LIGUES[x.lig]?.nom || ""}</span></span></span>
-    <span class="article-texte"><strong>${echapper(titre)}</strong><small>${echapper(x.raison)}<br>${echapper(courtEq(x.ext))} @ ${echapper(courtEq(x.dom))} · ${dateLongue(String(x.date).slice(0, 10))}</small></span>
-  </button>`;
-}
-// Les nouvelles et bagarres du Canadien de Montréal ont la priorité
-const parleDuCH = (x) => (x.genre === "bagarre" ? x.qui.some((q) => q.eq === "MTL") : /canadien|\bCH\b|Habs|St-Louis|Hughes|Rocket de Laval/i.test(x.titre || "")) ? 1 : 0;
-const carte = (x, taille) => (x.genre === "bagarre" ? carteBagarre(x, taille) : carteArticle(x, taille));
+// Les nouvelles du Canadien de Montréal ont la priorité (LNH)
+const parleDuCH = (x) => (/canadien|\bCH\b|Habs|St-Louis|Hughes/i.test(x.titre || "") ? 1 : 0);
+const carte = carteArticle;
 async function rendreBuzz() {
   if (!D.nouvelles) D.nouvelles = lireJson("data/nouvelles.json").catch(() => []);
-  const tout = [...(await D.nouvelles).filter((x) => x.cat !== "bagarre").map((x) => ({ ...x, cat: categorieDe(x.titre, x.source) })), ...(await bagarresSpectaculaires())];
+  const tout = (await D.nouvelles).filter((x) => x.cat !== "bagarre" && !/bagarre|gants|\bfights?\b/i.test(x.titre)).map((x) => ({ ...x, cat: categorieDe(x.titre, x.source) }));
   // La ligue choisie d'abord, puis le reste
   // Seulement les articles de la ligue choisie (les anciens articles sans ligue comptent pour la LNH)
   const liste = tout.filter((x) => (x.lig || "lnh") === ligue)
@@ -368,7 +339,7 @@ async function rendreBuzz() {
   $("articles").innerHTML = `
     <div class="une-haut">${carte(vedette, "grande")}<div class="une-cotes">${cotes.map((x) => carte(x, "moyenne")).join("")}</div></div>
     ${grille.length ? `<div class="grille-articles">${grille.map((x) => carte(x, "petite")).join("")}</div>` : ""}
-    ${plus.length ? `<h3 class="groupe-titre">Plus de nouvelles</h3><ul class="buzz">${plus.filter((x) => x.genre !== "bagarre").map((x) => `<li class="buzz-item"><span class="cat cat-${NOMS_CAT[x.cat] ? x.cat : "nouvelle"}">${NOMS_CAT[x.cat] || "Nouvelle"}</span>
+    ${plus.length ? `<h3 class="groupe-titre">Plus de nouvelles</h3><ul class="buzz">${plus.map((x) => `<li class="buzz-item"><span class="cat cat-${NOMS_CAT[x.cat] ? x.cat : "nouvelle"}">${NOMS_CAT[x.cat] || "Nouvelle"}</span>
       <a class="buzz-texte" href="${echapper(x.lien)}" target="_blank" rel="noopener noreferrer"><strong>${echapper(x.titre)}</strong><small>${echapper(x.source)} · ${ilYa(x.date)} ↗</small></a></li>`).join("")}</ul>` : ""}`;
 }
 $("filtres-buzz").addEventListener("click", (e) => {
