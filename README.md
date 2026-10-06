@@ -18,7 +18,7 @@ Scores, classement, meneurs et stats de la LNH, de la LAH, des ligues junior (LH
 | `data/ligues/` | Les données de la LAH, de la LHJMQ, de l'OHL, de la WHL, de la Liiga et de la KHL |
 | `scripts/maj-donnees.mjs` | Le robot qui va chercher les données des 32 équipes de la LNH |
 | `scripts/maj-autres-ligues.mjs` | Le robot de la LAH et des juniors |
-| `scripts/maj-europe.mjs` | Le robot de la Liiga (complet) et de la KHL (scores et classement) |
+| `scripts/maj-europe.mjs` | Le robot de la Liiga (complet) et de la KHL (complets) |
 | `scripts/maj-nouvelles.mjs` | Le robot des articles (section « À la une ») |
 | `.github/workflows/maj-donnees.yml` | Dit à GitHub de lancer le robot toutes les 30 minutes environ |
 | `relais/` | Le relais optionnel pour le direct à la seconde (voir `relais/LISEZMOI.md`) |

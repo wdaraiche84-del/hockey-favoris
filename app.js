@@ -42,7 +42,7 @@ const LIGUES = {
   lhjmq: { nom: "LHJMQ", long: "Junior · Québec et Maritimes" },
   ohl:   { nom: "OHL",   long: "Junior · Ontario" },
   whl:   { nom: "WHL",   long: "Junior · Ouest canadien et américain" },
-  khl:   { nom: "KHL",   long: "Russie · scores et classement", sansJoueurs: true },
+  khl:   { nom: "KHL",   long: "Russie", sansPlusMoins: true },
   liiga: { nom: "Liiga", long: "Finlande", pointsSeulement: true },
 };
 const NOMS_CONF = { Eastern: "Association de l'Est", Western: "Association de l'Ouest" };
@@ -648,9 +648,10 @@ async function htmlMatchParMatch(j) {
   else {
     const avecTemps = !gardien && joues.some((m) => pts[m.id][j.id][5]);
     const simple = !!LIGUES[j.lig]?.pointsSeulement; // Liiga : seulement buts et passes
+    const pmCol = !LIGUES[j.lig]?.sansPlusMoins; // KHL : pas de +/- match par match
     const tete = gardien
       ? `<th>Date</th><th>Adv.</th><th>Rés.</th><th>Déc.</th><th>Arrêts</th><th>Tirs</th><th>BC</th><th>% arr.</th>`
-      : `<th>Date</th><th>Adv.</th><th>Rés.</th><th>B</th><th>A</th><th>PTS</th>${simple ? "" : `<th>+/-</th><th>Tirs</th><th>PUN</th>${avecTemps ? "<th>TG</th>" : ""}`}`;
+      : `<th>Date</th><th>Adv.</th><th>Rés.</th><th>B</th><th>A</th><th>PTS</th>${simple ? "" : `${pmCol ? "<th>+/-</th>" : ""}<th>Tirs</th><th>PUN</th>${avecTemps ? "<th>TG</th>" : ""}`}`;
     const tot = [0, 0, 0, 0, 0, 0];
     const lignes = joues.map((m) => {
       const l = pts[m.id][j.id], r = resultatPour(m, j.eq);
@@ -665,15 +666,15 @@ async function htmlMatchParMatch(j) {
         return `<tr>${debut}<td>${DECISIONS[dec] || "–"}</td><td>${sv}</td><td>${sa}</td><td>${ga}</td><td>${sa ? (sv / sa).toFixed(3).replace(/^0/, "") : "–"}</td></tr>`;
       }
       const [b, a, pm, tirs, pun, tg] = estGardienLigne(l) ? [0, 0, 0, 0, 0, ""] : l;
-      tot[0] += b; tot[1] += a; tot[2] += pm; tot[3] += tirs; tot[4] += pun;
+      tot[0] += b; tot[1] += a; tot[2] += pm || 0; tot[3] += tirs; tot[4] += pun;
       const fort = b + a > 0 ? ' class="fort"' : "";
-      return `<tr${fort}>${debut}<td>${b}</td><td>${a}</td><td class="pts">${b + a}</td>${simple ? "" : `<td>${signe(pm)}</td><td>${tirs}</td><td>${pun}</td>${avecTemps ? `<td>${tg || "–"}</td>` : ""}`}</tr>`;
+      return `<tr${fort}>${debut}<td>${b}</td><td>${a}</td><td class="pts">${b + a}</td>${simple ? "" : `${pmCol ? `<td>${signe(pm)}</td>` : ""}<td>${tirs}</td><td>${pun}</td>${avecTemps ? `<td>${tg || "–"}</td>` : ""}`}</tr>`;
     }).join("");
     const total = gardien
       ? `<tr class="total"><td colspan="4">Total · ${pluriel(joues.length, "match")}</td><td>${tot[0]}</td><td>${tot[1]}</td><td>${tot[2]}</td><td>${tot[1] ? (tot[0] / tot[1]).toFixed(3).replace(/^0/, "") : "–"}</td></tr>`
-      : `<tr class="total"><td colspan="3">Total · ${pluriel(joues.length, "match")}</td><td>${tot[0]}</td><td>${tot[1]}</td><td class="pts">${tot[0] + tot[1]}</td>${simple ? "" : `<td>${signe(tot[2])}</td><td>${tot[3]}</td><td>${tot[4]}</td>${avecTemps ? "<td></td>" : ""}`}</tr>`;
+      : `<tr class="total"><td colspan="3">Total · ${pluriel(joues.length, "match")}</td><td>${tot[0]}</td><td>${tot[1]}</td><td class="pts">${tot[0] + tot[1]}</td>${simple ? "" : `${pmCol ? `<td>${signe(tot[2])}</td>` : ""}<td>${tot[3]}</td><td>${tot[4]}</td>${avecTemps ? "<td></td>" : ""}`}</tr>`;
     h += `<div class="defile"><table class="tableau journal"><thead><tr>${tete}</tr></thead><tbody>${lignes}${total}</tbody></table></div>
-      <p class="petit-gris">${gardien ? "Déc. : décision (V, D, DP) · BC : buts contre. " : simple ? "" : `+/- : différentiel · PUN : minutes de punition${avecTemps ? " · TG : temps de glace" : ""}. `}Le match le plus récent est en haut.</p>`;
+      <p class="petit-gris">${gardien ? "Déc. : décision (V, D, DP) · BC : buts contre. " : simple ? "" : `${pmCol ? "+/- : différentiel · " : ""}PUN : minutes de punition${avecTemps ? " · TG : temps de glace" : ""}. `}Le match le plus récent est en haut.</p>`;
   }
   if (prochains.length) {
     h += `<h3>Prochains matchs</h3><div class="prochains">${prochains.map((m) =>
