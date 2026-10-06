@@ -51,6 +51,19 @@ async function lireJson(f, defaut) { try { return JSON.parse(await readFile(f, "
 const n = (v) => (v === "" || v == null ? 0 : Number(v));
 const dec = (v, d) => (v === "" || v == null || isNaN(Number(v)) ? null : +Number(v).toFixed(d));
 
+// Associe les bagarreurs deux par deux (un de chaque équipe), sans doublon
+function apparier(combats) {
+  const vus = new Set();
+  const restants = combats.filter((c) => { const k = c.nom + "|" + c.eq; if (!c.nom || vus.has(k)) return false; vus.add(k); return true; });
+  const paires = [];
+  while (restants.length) {
+    const a = restants.shift();
+    const i = restants.findIndex((b) => b.eq !== a.eq);
+    paires.push(i >= 0 ? [a, restants.splice(i, 1)[0]] : [a]);
+  }
+  return paires;
+}
+
 async function uneLigue(lig, conf) {
   const mk = (view, extra = {}) => lire({ feed: "modulekit", view, key: conf.cle, client_code: lig, ...extra }).then((x) => x.SiteKit || {});
   const dossier = `data/ligues/${lig}`;
@@ -160,8 +173,8 @@ async function uneLigue(lig, conf) {
   }
 
   // 7 b. Bagarres (le site n'affiche ensuite que les plus spectaculaires)
-  const bagTraites = new Set(await lireJson(`${dossier}/bagarres-traites.json`, []));
-  const bagarres = await lireJson(`${dossier}/bagarres.json`, []);
+  const bagTraites = new Set(await lireJson(`${dossier}/bagarres-traites-v2.json`, []));
+  const bagarres = bagTraites.size ? await lireJson(`${dossier}/bagarres.json`, []) : [];
   for (const m of calendrier) {
     if (m.etat !== "fini" || bagTraites.has(m.id)) continue;
     try {
@@ -172,9 +185,10 @@ async function uneLigue(lig, conf) {
         const i = p.player_penalized_info || p.player_penalized || {};
         return { nom: `${i.first_name || ""} ${i.last_name || ""}`.trim(), id: i.player_id ? `${lig}-${i.player_id}` : undefined, eq: p.home === "1" ? equipes[m.dom]?.abr : equipes[m.ext]?.abr };
       };
-      for (let k = 0; k < combats.length; k += 2) {
-        const qui = combats.slice(k, k + 2).map(quiDe).filter((x) => x.nom);
-        if (qui.length) bagarres.push({ lig, match: m.id, date: m.date, debut: m.debut, dom: m.dom, ext: m.ext, periode: n(combats[k].period_id || combats[k].period), temps: combats[k].time || "", nbMatch: Math.ceil(combats.length / 2), qui });
+      const paires = apparier(combats.map((p) => ({ ...quiDe(p), periode: n(p.period_id || p.period), temps: p.time || "" })));
+      for (const qui of paires) {
+        bagarres.push({ lig, match: m.id, date: m.date, debut: m.debut, dom: m.dom, ext: m.ext, periode: qui[0].periode, temps: qui[0].temps,
+          nbMatch: paires.length, qui: qui.map(({ nom, id, eq }) => ({ nom, id, eq })) });
       }
       bagTraites.add(m.id);
     } catch (e) { console.warn(lig, "bagarres", m.id, e.message); }
@@ -191,7 +205,7 @@ async function uneLigue(lig, conf) {
   await ecrire(`${dossier}/calendrier.json`, calendrier);
   for (const cle of Object.keys(equipes)) await ecrire(`${dossier}/points/${cle}.json`, points[cle]);
   await ecrire(`${dossier}/traites-v2.json`, [...traites].sort());
-  await ecrire(`${dossier}/bagarres-traites.json`, [...bagTraites].sort());
+  await ecrire(`${dossier}/bagarres-traites-v2.json`, [...bagTraites].sort());
   await ecrire(`${dossier}/bagarres.json`, bagarres.sort((a, b) => (b.debut || b.date).localeCompare(a.debut || a.date)));
   const ancien = await lireJson(`${dossier}/infos.json`, null);
   const contenu = { saison: saison.season_name, equipes, joueurs, classement };

@@ -277,7 +277,7 @@ async function rendreUne() {
 }
 
 // ---- 6 b. À la une : les articles du hockey ---------------------
-const NOMS_CAT = { blessure: "Blessure", suspension: "Suspension", transaction: "Transaction", nouvelle: "Nouvelle" };
+const NOMS_CAT = { blessure: "Blessure", suspension: "Suspension", transaction: "Transaction", bagarre: "Bagarre", nouvelle: "Nouvelle" };
 let filtreBuzz = "tout";
 D.nouvelles = null;
 function ilYa(date) {
@@ -309,21 +309,59 @@ function carteArticle(x, taille) {
     <span class="article-texte"><strong>${echapper(x.titre)}</strong><small>${echapper(x.source)} · ${ilYa(x.date)}</small></span>
   </a>`;
 }
+// ---- Bagarres : on garde seulement les spectaculaires --------------
+D.bagarres = {};
+const grosNoms = new Set(GROS_NOMS.map(simplifier));
+function raisonSpectaculaire(b) {
+  const joueurs = b.qui.map((q) => (q.id && D.parId.get(q.id)) || D.joueurs.find((j) => j.lig === b.lig && simplifier(j.nom) === simplifier(q.nom)));
+  if (joueurs.some((j) => j && j.pos === "G")) return "🧤 Un gardien jette les gants!";
+  if (b.nbMatch >= 3) return `💥 Bagarre générale : ${b.nbMatch} combats dans le match`;
+  // Le Canadien (et son club-école, le Rocket de Laval) : on veut tout voir
+  const duCH = b.qui.find((q) => (b.lig === "lnh" && q.eq === "MTL") || (b.lig === "ahl" && q.eq === "LAV"));
+  if (duCH) return `🔵 ${duCH.nom} ${b.lig === "lnh" ? "(Canadien)" : "(Rocket de Laval)"} jette les gants`;
+  const vedette = b.qui.find((q) => grosNoms.has(simplifier(q.nom)));
+  if (vedette) return `⭐ ${vedette.nom} jette les gants`;
+  // Un des 25 meilleurs pointeurs de sa ligue
+  const top = new Set(D.joueurs.filter((j) => j.lig === b.lig && j.s).sort((x, y) => y.s.pts - x.s.pts).slice(0, 25).map((j) => j.id));
+  const star = joueurs.find((j) => j && top.has(j.id));
+  if (star) return `⭐ ${star.nom}, un des meilleurs pointeurs, jette les gants`;
+  return null;
+}
+async function bagarresSpectaculaires() {
+  const ligues = Object.keys(LIGUES).filter((l) => D.charge[l]);
+  for (const l of ligues) if (!D.bagarres[l]) D.bagarres[l] = lireJson(l === "lnh" ? "data/bagarres.json" : `data/ligues/${l}/bagarres.json`).catch(() => []);
+  const toutes = (await Promise.all(ligues.map((l) => D.bagarres[l]))).flat().filter((b) => b.date >= decaler(AUJ, -7));
+  return toutes.map((b) => ({ ...b, raison: raisonSpectaculaire(b) })).filter((b) => b.raison)
+    .map((b) => ({ ...b, genre: "bagarre", cat: "bagarre", date: b.debut || b.date }));
+}
+function carteBagarre(x, taille) {
+  const qui = x.qui.map((q) => `${q.nom}${q.eq ? ` (${q.eq})` : ""}`).join(" et ");
+  const titre = x.qui.length > 1 ? `Les gants tombent : ${qui}` : `Bagarre pour ${qui}`;
+  const cible = x.qui.find((q) => q.id && D.parId.get(q.id));
+  return `<button class="article article-${taille} fond-bagarre" ${cible ? `data-fiche="${cible.id}"` : ""}>
+    <span class="article-visuel"><span class="article-eq">${x.qui[0]?.eq || "🥊"}</span>
+      <span class="article-tags"><span class="cat cat-bagarre">Bagarre</span><span class="tag-ligue petit">${LIGUES[x.lig]?.nom || ""}</span></span></span>
+    <span class="article-texte"><strong>${echapper(titre)}</strong><small>${echapper(x.raison)}<br>${echapper(courtEq(x.ext))} @ ${echapper(courtEq(x.dom))} · ${dateLongue(String(x.date).slice(0, 10))}</small></span>
+  </button>`;
+}
+// Les nouvelles et bagarres du Canadien de Montréal ont la priorité
+const parleDuCH = (x) => (x.genre === "bagarre" ? x.qui.some((q) => q.eq === "MTL") : /canadien|\bCH\b|Habs|St-Louis|Hughes|Rocket de Laval/i.test(x.titre || "")) ? 1 : 0;
+const carte = (x, taille) => (x.genre === "bagarre" ? carteBagarre(x, taille) : carteArticle(x, taille));
 async function rendreBuzz() {
   if (!D.nouvelles) D.nouvelles = lireJson("data/nouvelles.json").catch(() => []);
-  const tout = (await D.nouvelles).filter((x) => x.cat !== "bagarre");
+  const tout = [...(await D.nouvelles).filter((x) => x.cat !== "bagarre"), ...(await bagarresSpectaculaires())];
   // La ligue choisie d'abord, puis le reste
   const liste = tout.filter((x) => filtreBuzz === "tout" || x.cat === filtreBuzz)
-    .sort((a, b) => (b.lig === ligue) - (a.lig === ligue) || String(b.date).localeCompare(String(a.date)))
+    .sort((a, b) => (b.lig === ligue) - (a.lig === ligue) || parleDuCH(b) - parleDuCH(a) || String(b.date).localeCompare(String(a.date)))
     .slice(0, 21);
   if (!liste.length) { $("articles").innerHTML = `<p class="vide">Rien de ce côté pour l'instant.</p>`; return; }
   // Mise en page de site de sports : 1 grande + 2 moyennes, une grille de cartes, puis « Plus de nouvelles »
   const [vedette, ...reste] = liste;
   const cotes = reste.slice(0, 2), grille = reste.slice(2, 8), plus = reste.slice(8);
   $("articles").innerHTML = `
-    <div class="une-haut">${carteArticle(vedette, "grande")}<div class="une-cotes">${cotes.map((x) => carteArticle(x, "moyenne")).join("")}</div></div>
-    ${grille.length ? `<div class="grille-articles">${grille.map((x) => carteArticle(x, "petite")).join("")}</div>` : ""}
-    ${plus.length ? `<h3 class="groupe-titre">Plus de nouvelles</h3><ul class="buzz">${plus.map((x) => `<li class="buzz-item"><span class="cat cat-${NOMS_CAT[x.cat] ? x.cat : "nouvelle"}">${NOMS_CAT[x.cat] || "Nouvelle"}</span>
+    <div class="une-haut">${carte(vedette, "grande")}<div class="une-cotes">${cotes.map((x) => carte(x, "moyenne")).join("")}</div></div>
+    ${grille.length ? `<div class="grille-articles">${grille.map((x) => carte(x, "petite")).join("")}</div>` : ""}
+    ${plus.length ? `<h3 class="groupe-titre">Plus de nouvelles</h3><ul class="buzz">${plus.filter((x) => x.genre !== "bagarre").map((x) => `<li class="buzz-item"><span class="cat cat-${NOMS_CAT[x.cat] ? x.cat : "nouvelle"}">${NOMS_CAT[x.cat] || "Nouvelle"}</span>
       <a class="buzz-texte" href="${echapper(x.lien)}" target="_blank" rel="noopener noreferrer"><strong>${echapper(x.titre)}</strong><small>${echapper(x.source)} · ${ilYa(x.date)} ↗</small></a></li>`).join("")}</ul>` : ""}`;
 }
 $("filtres-buzz").addEventListener("click", (e) => {

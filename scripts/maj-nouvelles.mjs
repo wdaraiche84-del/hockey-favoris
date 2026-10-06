@@ -12,7 +12,8 @@ import { readFile, writeFile } from "node:fs/promises";
 
 const RECHERCHES = [
   "LNH hockey", "LNH blessure", "LNH échange OR transaction", "LNH suspension",
-  "Canadien de Montréal", "LHJMQ", "LAH hockey Rocket", "KHL hockey",
+  "Canadien de Montréal", "Canadiens Montréal blessure", "Canadiens Montréal alignement", "Martin St-Louis Canadien",
+  "Kent Hughes Canadien", "Rocket de Laval", "LHJMQ", "KHL hockey",
 ];
 const CATEGORIES = [
   ["blessure", /bless|injur|\bIR\b|à l'écart|absen|opér[ée]|commotion|rétabli|retour au jeu|infirmerie/i],
