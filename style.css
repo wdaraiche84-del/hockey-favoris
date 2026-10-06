@@ -412,3 +412,33 @@ table.tableau { width: 100%; border-collapse: collapse; font-size: .85rem; }
 /* Le nom MonTrio garde ses majuscules telles quelles */
 .logo-texte { text-transform: none; font-size: 1.6rem; letter-spacing: .01em; }
 @media (max-width: 640px) { .logo-texte { font-size: 1.3rem; } }
+
+/* ---- Le buzz ---- */
+.buzz { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; }
+.buzz-item { display: flex; align-items: flex-start; gap: 8px; padding: 10px 2px; border-top: 1px solid var(--ligne); }
+.buzz-item:first-child { border-top: 0; }
+.buzz-texte { flex: 1; min-width: 0; text-decoration: none; color: inherit; display: block; }
+.buzz-texte strong { display: block; font-size: .95rem; line-height: 1.3; }
+a.buzz-texte:hover strong { color: var(--accent); text-decoration: underline; }
+.buzz-texte small { color: var(--texte-doux); font-size: .76rem; }
+.cat { flex-shrink: 0; font-size: .64rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; border-radius: 5px; padding: 3px 7px; margin-top: 2px; min-width: 78px; text-align: center; background: var(--carte-2); color: var(--texte-doux); border: 1px solid var(--ligne); }
+.cat-blessure { background: #FEF3C7; color: #92400E; border-color: #FDE68A; }
+.cat-bagarre { background: #FEE2E2; color: #991B1B; border-color: #FECACA; }
+.cat-suspension { background: #EDE9FE; color: #5B21B6; border-color: #DDD6FE; }
+.cat-transaction { background: #DBEAFE; color: #1E40AF; border-color: #BFDBFE; }
+.buzz-item .tag-ligue.petit { margin-top: 3px; }
+
+/* ---- Fiche : match par match ---- */
+.tableau.journal th, .tableau.journal td { text-align: right; white-space: nowrap; }
+.tableau.journal th:nth-child(-n+3), .tableau.journal td:nth-child(-n+3) { text-align: left; }
+.tableau.journal tr.fort td { background: var(--accent-pale); }
+.tableau.journal tr.total td { font-weight: 800; border-top: 2px solid var(--texte-doux); background: var(--carte-2); }
+.tableau.journal td.res { font-weight: 700; }
+.prochains { display: flex; flex-direction: column; gap: 6px; }
+.prochain-match { display: grid; grid-template-columns: 150px 1fr auto; gap: 10px; padding: 8px 10px; border-radius: 8px; background: var(--carte-2); font-size: .88rem; }
+@media (max-width: 640px) {
+  .cat { min-width: 0; }
+  .prochain-match { grid-template-columns: 1fr auto; }
+  .prochain-match span:nth-child(2) { grid-column: 1 / -1; grid-row: 2; color: var(--texte-doux); }
+}
+.tableau.journal tr.total td:not(:first-child) { text-align: right; }

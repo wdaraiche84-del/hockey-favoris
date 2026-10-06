@@ -12,11 +12,12 @@ Scores, classement, meneurs et stats de la LNH, de la LAH et des ligues junior (
 | `style.css` | L'apparence (couleurs, thème sombre, version téléphone) |
 | `app.js` | Ce qui réagit aux clics et affiche les données |
 | `config.js` | Les réglages (adresse du relais pour le direct) |
-| `donnees.js` | Ce que la LNH ne publie pas : les trios, les joueurs hors LNH |
+| `donnees.js` | Ce qu'aucune source ne publie : les joueurs hors des ligues suivies |
 | `data/` | Les données de la LNH, mises à jour automatiquement par le robot |
 | `data/ligues/` | Les données de la LAH, de la LHJMQ, de l'OHL et de la WHL |
 | `scripts/maj-donnees.mjs` | Le robot qui va chercher les données des 32 équipes de la LNH |
 | `scripts/maj-autres-ligues.mjs` | Le robot de la LAH et des juniors |
+| `scripts/maj-nouvelles.mjs` | Le robot des manchettes (section « Le buzz ») |
 | `.github/workflows/maj-donnees.yml` | Dit à GitHub de lancer le robot toutes les 30 minutes environ |
 | `relais/` | Le relais optionnel pour le direct à la seconde (voir `relais/LISEZMOI.md`) |
 
@@ -24,6 +25,6 @@ Scores, classement, meneurs et stats de la LNH, de la LAH et des ligues junior (
 
 - **Stats, résultats, calendrier, effectifs, classement** : automatiques. Pour forcer une mise à jour, va dans l'onglet **Actions**, choisis « Mise à jour des stats », puis « Run workflow ».
 - **Scores pendant les matchs** : aux 20 secondes une fois le relais installé.
-- **Trios et paires** : à la main, dans `donnees.js` (la LNH ne les publie pas).
+- **Le buzz** : manchettes de Google Actualités (titre, source et lien seulement) et bagarres repérées dans les sommaires de match.
 
 Site non officiel, sans lien avec la LNH ni aucune de ses équipes.

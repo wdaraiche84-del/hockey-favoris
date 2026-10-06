@@ -15,7 +15,7 @@ const RECHERCHES = [
   "Canadien de Montréal", "LHJMQ", "LAH hockey Rocket", "KHL hockey",
 ];
 const CATEGORIES = [
-  ["blessure", /bless|injur|ir\b|à l'écart|absent pour|opér[ée]|commotion|rétabli/i],
+  ["blessure", /bless|injur|\bIR\b|à l'écart|absen|opér[ée]|commotion|rétabli|retour au jeu|infirmerie/i],
   ["bagarre", /bagarre|combat|jette les gants|gants tombent|fight/i],
   ["suspension", /suspen|amende|sanction|audience disciplinaire/i],
   ["transaction", /échang|trade|signe|contrat|prolongation de contrat|rappel|cédé|ballottage|waiver|acquiert|acquis|congédi|embauch/i],

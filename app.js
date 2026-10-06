@@ -107,9 +107,6 @@ function joueur(id, eqPrefere = "MTL") {
   const candidats = D.joueurs.filter((j) => j.lig === "lnh" && (slug(j.nom) === s || slug(nomDeFamille(j)) === s));
   return candidats.find((j) => j.eq === eqPrefere) || candidats[0] || null;
 }
-function joueurDansEquipe(s, eq) {
-  return D.joueurs.find((j) => j.eq === eq && (slug(j.nom) === s || slug(nomDeFamille(j)) === s)) || null;
-}
 
 // ---- 2. Les matchs ------------------------------------------
 const estFini = (m) => m.etat === "fini";
@@ -169,7 +166,7 @@ async function choisirLigue(k) {
   try { await charger(k); } catch (e) { montrerErreur(`Les données de la ${LIGUES[k].nom} n'ont pas pu être chargées pour l'instant.`); }
   document.body.classList.remove("chargement");
   equipeChoisie = null;
-  rafraichir(); rendreUne(); rendreMiseAJour();
+  rafraichir(); rendreUne(); rendreBuzz(); rendreMiseAJour();
 }
 $("choix-ligue").addEventListener("click", (e) => { const b = e.target.closest("[data-ligue]"); if (b) choisirLigue(b.dataset.ligue); });
 function montrerErreur(t) { $("erreur").hidden = false; $("erreur").textContent = t; setTimeout(() => ($("erreur").hidden = true), 8000); }
@@ -207,7 +204,7 @@ async function rendrePageScores() {
     const joue = estFini(m) || estDirect(m);
     const pts = joue ? { ...(await points(m.dom))[m.id], ...(await points(m.ext))[m.id] } : {};
     const lesMiens = favs.filter((j) => j.eq === m.dom || j.eq === m.ext);
-    const etoiles = Object.entries(pts).map(([id, [b, a]]) => ({ j: D.parId.get(id), b, a }))
+    const etoiles = Object.entries(pts).filter(([, l]) => ptsLigne(l) > 0).map(([id, [b, a]]) => ({ j: D.parId.get(id), b, a }))
       .filter((x) => x.j).sort((x, y) => (y.b + y.a) - (x.b + x.a) || y.b - x.b).slice(0, 3);
     const ligne = (eq, score, gagne) => `<div class="gs-eq ${estFini(m) && !gagne ? "perd" : ""}">
       <span class="gs-abr">${abr(eq)}</span><span class="gs-nom">${echapper(nomEq(eq))}</span><span class="gs-score">${joue ? score : ""}</span></div>`;
@@ -254,7 +251,7 @@ async function rendreUne() {
       const ligne = (await points(eq))[m.id] || {};
       for (const pid in ligne) {
         const j = D.parId.get(pid);
-        if (j && j.eq === eq) perfs.push({ j, m, b: ligne[pid][0], a: ligne[pid][1] });
+        if (j && j.eq === eq && ptsLigne(ligne[pid]) > 0) perfs.push({ j, m, b: ligne[pid][0], a: ligne[pid][1] });
       }
     }
   }
@@ -279,6 +276,57 @@ async function rendreUne() {
     </button></li>`).join("");
 }
 
+// ---- 6 b. Le buzz : nouvelles + bagarres repérées dans les matchs
+const NOMS_CAT = { blessure: "Blessure", bagarre: "Bagarre", suspension: "Suspension", transaction: "Transaction", nouvelle: "Nouvelle" };
+let filtreBuzz = "tout";
+D.nouvelles = null; D.evenements = {};
+function ilYa(date) {
+  const min = Math.round((Date.now() - new Date(date)) / 60000);
+  if (min < 60) return `il y a ${Math.max(1, min)} min`;
+  if (min < 1440) return `il y a ${Math.round(min / 60)} h`;
+  const j = Math.round(min / 1440);
+  return j === 1 ? "hier" : `il y a ${j} jours`;
+}
+async function chargerBuzz() {
+  if (!D.nouvelles) D.nouvelles = lireJson("data/nouvelles.json").catch(() => []);
+  const ligues = Object.keys(LIGUES).filter((l) => D.charge[l]);
+  for (const l of ligues) if (!D.evenements[l]) D.evenements[l] = lireJson(l === "lnh" ? "data/evenements.json" : `data/ligues/${l}/evenements.json`).catch(() => []);
+  const nouvelles = await D.nouvelles;
+  const bagarres = (await Promise.all(ligues.map((l) => D.evenements[l]))).flat()
+    .filter((e) => e.date >= decaler(AUJ, -3));
+  return [
+    ...nouvelles.map((n) => ({ ...n, genre: "nouvelle" })),
+    ...bagarres.map((e) => ({ ...e, cat: "bagarre", genre: "bagarre", date: e.debut || e.date })),
+  ].sort((a, b) => String(b.date).localeCompare(String(a.date)));
+}
+function htmlBuzz(x) {
+  const tag = `<span class="cat cat-${x.cat}">${NOMS_CAT[x.cat] || "Nouvelle"}</span>`;
+  const lig = x.lig && LIGUES[x.lig] ? `<span class="tag-ligue petit">${LIGUES[x.lig].nom}</span>` : "";
+  if (x.genre === "bagarre") {
+    const qui = x.qui.map((q) => echapper(q.nom) + (q.eq ? ` (${echapper(q.eq)})` : "")).join(" et ");
+    const titre = x.qui.length > 1 ? `Les gants tombent : ${qui}` : `Bagarre pour ${qui}`;
+    return `<li class="buzz-item">${tag}${lig}<div class="buzz-texte"><strong>${titre}</strong>
+      <small>${echapper(courtEq(x.ext))} @ ${echapper(courtEq(x.dom))}${x.periode ? ` · ${x.periode}${x.periode === 1 ? "re" : "e"} période${x.temps ? ` à ${x.temps}` : ""}` : ""} · ${dateLongue(String(x.date).slice(0, 10))}</small></div></li>`;
+  }
+  return `<li class="buzz-item">${tag}${lig}<a class="buzz-texte" href="${echapper(x.lien)}" target="_blank" rel="noopener noreferrer">
+    <strong>${echapper(x.titre)}</strong><small>${echapper(x.source)} · ${ilYa(x.date)} ↗</small></a></li>`;
+}
+async function rendreBuzz() {
+  const tout = await chargerBuzz();
+  // La ligue choisie d'abord, puis le reste
+  const liste = tout.filter((x) => filtreBuzz === "tout" || x.cat === filtreBuzz)
+    .sort((a, b) => (b.lig === ligue) - (a.lig === ligue) || String(b.date).localeCompare(String(a.date)))
+    .slice(0, filtreBuzz === "tout" ? 12 : 20);
+  $("buzz").innerHTML = liste.length ? liste.map(htmlBuzz).join("") : `<li class="vide">Rien de ce côté pour l'instant.</li>`;
+}
+$("filtres-buzz").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-buzz]");
+  if (!b) return;
+  filtreBuzz = b.dataset.buzz;
+  document.querySelectorAll("[data-buzz]").forEach((x) => x.classList.toggle("actif", x === b));
+  rendreBuzz();
+});
+
 // ---- 7. Ce soir pour tes favoris (toutes les ligues) ---------
 async function rendreSoir() {
   const favs = favorisObjets(), eqs = equipesFavorites();
@@ -299,7 +347,8 @@ async function rendreSoir() {
       <div class="soir-tete"><strong><span class="tag-ligue petit">${LIGUES[ligueDe(m.dom)].nom}</span> ${echapper(courtEq(m.ext))} @ ${echapper(courtEq(m.dom))}</strong><span>${statut}</span></div>
       <div class="soir-joueurs">${lesMiens.map((j) => {
         const p = pts[j.id];
-        return `<button class="puce-joueur ${p ? "chaud" : ""}" data-fiche="${j.id}">${echapper(p ? `🔥 ${nomDeFamille(j)} : ${p[0]} B, ${p[1]} A` : nomDeFamille(j))}</button>`;
+        const txt = estGardienLigne(p) ? `🧤 ${nomDeFamille(j)} : ${p[1]} arrêts sur ${p[2]}` : ptsLigne(p) > 0 ? `🔥 ${nomDeFamille(j)} : ${p[0]} B, ${p[1]} A` : nomDeFamille(j);
+        return `<button class="puce-joueur ${ptsLigne(p) > 0 || estGardienLigne(p) ? "chaud" : ""}" data-fiche="${j.id}">${echapper(txt)}</button>`;
       }).join("")}</div>
     </div>`;
   }
@@ -516,48 +565,57 @@ $("fermer-effectif").onclick = () => { equipeChoisie = null; rendreEquipes(); re
 function rendreBienvenue() { $("bienvenue").hidden = memoire("bienvenue-vue") === "1"; }
 $("fermer-bienvenue").onclick = () => { memoire("bienvenue-vue", "1"); rendreBienvenue(); };
 
-// ---- 12. Fiche d'un joueur ------------------------------------
-function caseJoueur(j, idChoisi, etiquette) {
-  if (!j) return `<div class="coequipier"><small>${etiquette || ""}</small><span>—</span></div>`;
-  return `<button class="coequipier ${j.id === idChoisi ? "lui" : ""}" data-fiche="${j.id}">
-    <small>${etiquette || j.pos} · #${j.no ?? "–"}</small><span>${echapper(j.nom)}</span></button>`;
-}
-function htmlEquipe(j) {
-  const effectif = D.joueurs.filter((x) => x.eq === j.eq);
-  const f = FORMATIONS[j.eq];
-  let h = `<div class="formation">`;
-  if (f) {
-    const places = new Set();
-    const trouve = (s) => { const x = joueurDansEquipe(s, j.eq); if (x) places.add(x.id); return x; };
-    f.trios.forEach((t, i) => { h += `<div class="rangee"><span class="etiquette">${i + 1}${i ? "e" : "er"} trio</span>${t.map((s) => caseJoueur(trouve(s), j.id)).join("")}</div>`; });
-    f.paires.forEach((p, i) => { h += `<div class="rangee deux"><span class="etiquette">${i + 1}${i ? "e" : "re"} paire</span>${p.map((s) => caseJoueur(trouve(s), j.id)).join("")}</div>`; });
-    h += `<div class="rangee deux"><span class="etiquette">Gardiens</span>${f.gardiens.map((s) => caseJoueur(trouve(s), j.id)).join("")}</div>`;
-    const autres = effectif.filter((x) => !places.has(x.id));
-    if (autres.length) h += `<div class="rangee libre"><span class="etiquette">Autres</span><div class="groupe">${autres.map((x) => caseJoueur(x, j.id)).join("")}</div></div>`;
-  } else {
-    for (const [pos, nom] of [["C", "Centres"], ["AG", "Ailiers gauches"], ["AD", "Ailiers droits"], ["AV", "Attaquants"], ["D", "Défenseurs"], ["G", "Gardiens"]]) {
-      const groupe = effectif.filter((x) => x.pos === pos);
-      if (groupe.length) h += `<div class="rangee libre"><span class="etiquette">${nom}</span><div class="groupe">${groupe.map((x) => caseJoueur(x, j.id)).join("")}</div></div>`;
-    }
-  }
-  return h + `</div>${f?.note ? `<p class="petit-gris">${f.note}. Les trios changent souvent.</p>` : `<p class="petit-gris">Effectif actuel, par position.</p>`}`;
-}
-async function htmlSaison(j) {
+// ---- 12. Fiche d'un joueur : stats match par match -------------
+// Format d'une ligne de match (voir les robots) :
+//   patineur [buts, passes, +/-, tirs, punitions, temps de glace]
+//   gardien  ["G", arrêts, tirs reçus, buts accordés, décision, temps]
+const estGardienLigne = (l) => Array.isArray(l) && l[0] === "G";
+const ptsLigne = (l) => (!l || estGardienLigne(l) ? 0 : (l[0] || 0) + (l[1] || 0));
+const signe = (n) => (n > 0 ? `+${n}` : `${n}`);
+const DECISIONS = { W: "V", L: "D", O: "DP" };
+function dateCourte(t) { const d = versDate(t); return `${d.getDate()} ${MOIS_COURT[d.getMonth()]}`; }
+async function htmlMatchParMatch(j) {
   const pts = await points(j.eq);
-  let h = `<div class="saison">`, mois = -1;
-  for (const m of matchsDe(j.eq)) {
-    const d = versDate(m.date);
-    if (d.getMonth() !== mois) { mois = d.getMonth(); h += `<div class="mois">${MOIS[mois]} ${d.getFullYear()}</div>`; }
-    let res = `<span class="res">${heureDe(m)}</span>`;
-    if (estFini(m) || estDirect(m)) {
-      const r = resultatPour(m, j.eq), p = (pts[m.id] || {})[j.id];
-      res = `<span class="res ${r.classe}">${estDirect(m) ? '<span class="badge-direct">DIRECT</span> ' : ""}${r.texte}${p ? ` · ${p[0]} B, ${p[1]} A` : ""}</span>`;
-    }
-    const dom = m.dom === j.eq;
-    h += `<div class="ligne-match ${estFini(m) ? "passe" : ""}"><span>${dateLongue(m.date)}</span>
-      <span class="lieu ${dom ? "" : "ext"}">${dom ? "DOM" : "ÉTR"}</span><span>${echapper(nomEq(adversaire(m, j.eq)))}${m.series ? " · Séries" : ""}</span>${res}</div>`;
+  const tous = matchsDe(j.eq);
+  const joues = tous.filter((m) => (estFini(m) || estDirect(m)) && pts[m.id]?.[j.id]).reverse();
+  const prochains = tous.filter((m) => !estFini(m) && !estDirect(m) && m.date >= AUJ).slice(0, 5);
+  const gardien = j.pos === "G";
+  let h = "";
+  if (!joues.length) h += `<p class="vide">Pas encore de match joué cette saison.</p>`;
+  else {
+    const avecTemps = !gardien && joues.some((m) => pts[m.id][j.id][5]);
+    const tete = gardien
+      ? `<th>Date</th><th>Adv.</th><th>Rés.</th><th>Déc.</th><th>Arrêts</th><th>Tirs</th><th>BC</th><th>% arr.</th>`
+      : `<th>Date</th><th>Adv.</th><th>Rés.</th><th>B</th><th>A</th><th>PTS</th><th>+/-</th><th>Tirs</th><th>PUN</th>${avecTemps ? "<th>TG</th>" : ""}`;
+    const tot = [0, 0, 0, 0, 0, 0];
+    const lignes = joues.map((m) => {
+      const l = pts[m.id][j.id], r = resultatPour(m, j.eq);
+      const adv = `${m.dom === j.eq ? "vs" : "@"} ${abr(adversaire(m, j.eq))}`;
+      const debut = `<td>${dateCourte(m.date)}</td><td>${adv}</td><td class="res ${r.classe}">${estDirect(m) ? "● " : ""}${r.texte}</td>`;
+      if (gardien) {
+        const [, sv, sa, ga, decBrute, temps] = estGardienLigne(l) ? l : ["G", 0, 0, 0, "", ""];
+        // Certaines ligues ne donnent pas la décision : on la déduit si le gardien a joué presque tout le match
+        const minutes = parseInt(String(temps).split(":")[0], 10) || 0;
+        const dec = decBrute || (estFini(m) && minutes >= 50 ? (r.classe === "v" ? "W" : m.fin ? "O" : "L") : "");
+        tot[0] += sv; tot[1] += sa; tot[2] += ga;
+        return `<tr>${debut}<td>${DECISIONS[dec] || "–"}</td><td>${sv}</td><td>${sa}</td><td>${ga}</td><td>${sa ? (sv / sa).toFixed(3).replace(/^0/, "") : "–"}</td></tr>`;
+      }
+      const [b, a, pm, tirs, pun, tg] = estGardienLigne(l) ? [0, 0, 0, 0, 0, ""] : l;
+      tot[0] += b; tot[1] += a; tot[2] += pm; tot[3] += tirs; tot[4] += pun;
+      const fort = b + a > 0 ? ' class="fort"' : "";
+      return `<tr${fort}>${debut}<td>${b}</td><td>${a}</td><td class="pts">${b + a}</td><td>${signe(pm)}</td><td>${tirs}</td><td>${pun}</td>${avecTemps ? `<td>${tg || "–"}</td>` : ""}</tr>`;
+    }).join("");
+    const total = gardien
+      ? `<tr class="total"><td colspan="4">Total · ${pluriel(joues.length, "match")}</td><td>${tot[0]}</td><td>${tot[1]}</td><td>${tot[2]}</td><td>${tot[1] ? (tot[0] / tot[1]).toFixed(3).replace(/^0/, "") : "–"}</td></tr>`
+      : `<tr class="total"><td colspan="3">Total · ${pluriel(joues.length, "match")}</td><td>${tot[0]}</td><td>${tot[1]}</td><td class="pts">${tot[0] + tot[1]}</td><td>${signe(tot[2])}</td><td>${tot[3]}</td><td>${tot[4]}</td>${avecTemps ? "<td></td>" : ""}</tr>`;
+    h += `<div class="defile"><table class="tableau journal"><thead><tr>${tete}</tr></thead><tbody>${lignes}${total}</tbody></table></div>
+      <p class="petit-gris">${gardien ? "Déc. : décision (V, D, DP) · BC : buts contre" : `+/- : différentiel · PUN : minutes de punition${avecTemps ? " · TG : temps de glace" : ""}`}. Le match le plus récent est en haut.</p>`;
   }
-  return h + `</div>`;
+  if (prochains.length) {
+    h += `<h3>Prochains matchs</h3><div class="prochains">${prochains.map((m) =>
+      `<div class="prochain-match"><strong>${m.date === AUJ ? "Ce soir" : dateLongue(m.date)}</strong><span>${m.dom === j.eq ? "vs" : "@"} ${echapper(nomEq(adversaire(m, j.eq)))}</span><span>${heureDe(m)}</span></div>`).join("")}</div>`;
+  }
+  return h;
 }
 async function ouvrirFiche(id) {
   const j = joueur(id);
@@ -570,8 +628,7 @@ async function ouvrirFiche(id) {
     if (j.s) corps += `<p class="petit-gris" style="text-align:center">Différentiel : ${j.s.pm > 0 ? "+" : ""}${j.s.pm}</p>`;
   }
   if (D.equipes[j.eq]) {
-    corps += `<h3>Son équipe : ${echapper(nomEq(j.eq))}</h3>${htmlEquipe(j)}`;
-    corps += `<h3>Calendrier de sa saison</h3><div id="fiche-saison"><p class="vide">Chargement…</p></div>`;
+    corps += `<h3>Match par match</h3><div id="fiche-saison"><p class="vide">Chargement…</p></div>`;
   } else {
     corps += `<p class="note-fiche">${echapper(j.note || "Informations à venir.")}</p>`;
   }
@@ -585,7 +642,7 @@ async function ouvrirFiche(id) {
     <div class="fiche-corps">${corps}</div>`;
   $("fiche-fond").hidden = false;
   $("fiche-fond").scrollTop = 0;
-  if (D.equipes[j.eq]) $("fiche-saison").innerHTML = await htmlSaison(j);
+  if (D.equipes[j.eq]) $("fiche-saison").innerHTML = await htmlMatchParMatch(j);
 }
 function fermerFiche() { $("fiche-fond").hidden = true; }
 $("fiche-fond").addEventListener("click", (e) => { if (e.target.id === "fiche-fond" || e.target.closest(".fermer")) fermerFiche(); });
@@ -664,7 +721,12 @@ async function directLnh(eqs) {
         const e = box?.playerByGameStats?.[cote];
         if (!e) continue;
         const ligne = {};
-        for (const p of [...(e.forwards || []), ...(e.defense || [])]) if (p.goals || p.assists) ligne[String(p.playerId)] = [p.goals || 0, p.assists || 0];
+        for (const p of [...(e.forwards || []), ...(e.defense || [])]) ligne[String(p.playerId)] = [p.goals || 0, p.assists || 0, p.plusMinus || 0, p.sog ?? 0, p.pim || 0, p.toi || ""];
+        for (const g of e.goalies || []) {
+          if (!g.toi || g.toi === "00:00") continue;
+          const [sv, sa] = String(g.saveShotsAgainst || "0/0").split("/").map(Number);
+          ligne[String(g.playerId)] = ["G", sv || 0, sa || 0, g.goalsAgainst ?? 0, g.decision || "", g.toi];
+        }
         (await points(eq))[m.id] = ligne;
         change = true;
       }
@@ -764,6 +826,7 @@ async function demarrer() {
   rafraichir();
   rendreMiseAJour();
   rendreUne();
+  rendreBuzz();
   setInterval(tourDirect, SECONDES_DIRECT * 1000);
   tourDirect();
   setInterval(() => {

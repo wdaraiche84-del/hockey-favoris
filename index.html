@@ -87,12 +87,26 @@
         <button class="btn accent" data-ouvrir-recherche>🔍 Chercher un joueur maintenant</button>
       </section>
       <div class="grille-2">
+        <div class="pile">
         <section class="bloc une">
           <div class="titre-section"><h2>À la une <span class="tag-ligue" data-nom-ligue></span></h2><span id="une-date" class="sur-titre"></span></div>
           <div id="une"></div>
           <ul id="manchettes" class="manchettes"></ul>
           <p class="petit-gris">Résumés générés automatiquement à partir des statistiques officielles des matchs.</p>
         </section>
+        <section class="bloc">
+          <div class="titre-section"><h2>Le buzz</h2>
+            <div id="filtres-buzz" class="onglets petits" role="tablist">
+              <button class="onglet actif" data-buzz="tout">Tout</button>
+              <button class="onglet" data-buzz="blessure">Blessures</button>
+              <button class="onglet" data-buzz="bagarre">Bagarres</button>
+              <button class="onglet" data-buzz="transaction">Transactions</button>
+            </div>
+          </div>
+          <ul id="buzz" class="buzz"></ul>
+          <p class="petit-gris">Les manchettes viennent de Google Actualités : un clic ouvre l'article complet sur le site du média. Les bagarres sont repérées automatiquement dans les sommaires de match.</p>
+        </section>
+        </div>
         <div class="pile">
           <section class="bloc">
             <div class="titre-section"><h2>Ce soir pour tes favoris</h2><a class="lien-plus" href="#/favoris">Mes favoris ›</a></div>
