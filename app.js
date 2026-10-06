@@ -42,7 +42,7 @@ const LIGUES = {
   lhjmq: { nom: "LHJMQ", long: "Junior · Québec et Maritimes" },
   ohl:   { nom: "OHL",   long: "Junior · Ontario" },
   whl:   { nom: "WHL",   long: "Junior · Ouest canadien et américain" },
-  khl:   { nom: "KHL",   long: "Russie · scores et classement (stats des joueurs à venir)", sansJoueurs: true },
+  khl:   { nom: "KHL",   long: "Russie · scores et classement", sansJoueurs: true },
   liiga: { nom: "Liiga", long: "Finlande", pointsSeulement: true },
 };
 const NOMS_CONF = { Eastern: "Association de l'Est", Western: "Association de l'Ouest" };
@@ -643,7 +643,7 @@ async function htmlMatchParMatch(j) {
       ? `<tr class="total"><td colspan="4">Total · ${pluriel(joues.length, "match")}</td><td>${tot[0]}</td><td>${tot[1]}</td><td>${tot[2]}</td><td>${tot[1] ? (tot[0] / tot[1]).toFixed(3).replace(/^0/, "") : "–"}</td></tr>`
       : `<tr class="total"><td colspan="3">Total · ${pluriel(joues.length, "match")}</td><td>${tot[0]}</td><td>${tot[1]}</td><td class="pts">${tot[0] + tot[1]}</td>${simple ? "" : `<td>${signe(tot[2])}</td><td>${tot[3]}</td><td>${tot[4]}</td>${avecTemps ? "<td></td>" : ""}`}</tr>`;
     h += `<div class="defile"><table class="tableau journal"><thead><tr>${tete}</tr></thead><tbody>${lignes}${total}</tbody></table></div>
-      <p class="petit-gris">${gardien ? "Déc. : décision (V, D, DP) · BC : buts contre" : `+/- : différentiel · PUN : minutes de punition${avecTemps ? " · TG : temps de glace" : ""}`}. Le match le plus récent est en haut.</p>`;
+      <p class="petit-gris">${gardien ? "Déc. : décision (V, D, DP) · BC : buts contre. " : simple ? "" : `+/- : différentiel · PUN : minutes de punition${avecTemps ? " · TG : temps de glace" : ""}. `}Le match le plus récent est en haut.</p>`;
   }
   if (prochains.length) {
     h += `<h3>Prochains matchs</h3><div class="prochains">${prochains.map((m) =>

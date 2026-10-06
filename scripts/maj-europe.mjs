@@ -99,7 +99,7 @@ async function liiga() {
   // Classement (la Liiga donne 3 points par victoire en temps réglementaire)
   const classement = (tableau.season || []).map((t) => {
     const cle = cleDe[t.teamId] || cleDe[String(t.teamId).split(":")[0]];
-    return cle && { eq: cle, pj: t.games ?? 0, v: (t.wins ?? 0) + (t.overtimeWins ?? 0), d: t.losses ?? 0, dp: (t.overtimeLosses ?? 0) + (t.ties ?? 0),
+    return cle && { eq: cle, pj: t.games ?? 0, v: (t.wins ?? 0) + (t.overtimeWins ?? 0), d: t.losses ?? 0, dp: t.overtimeLosses ?? 0, // « ties » = matchs allés en prolongation, déjà comptés ailleurs
       pts: t.points ?? 0, bp: t.goals ?? 0, bc: t.goalsAgainst ?? 0, div: "Liiga", conf: "Liiga", serie: "" };
   }).filter(Boolean);
   await enregistrer("liiga", `${saison - 1}-${String(saison).slice(2)}`, equipes, joueurs, classement, calendrier, points);
