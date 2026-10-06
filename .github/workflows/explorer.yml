@@ -16,6 +16,8 @@ jobs:
         with:
           node-version: 20
       - run: node scripts/explorer.mjs > explo.txt 2>&1 || true
+        env:
+          APISPORTS_KEY: ${{ secrets.APISPORTS_KEY }}
       - name: Ranger le résultat sur une branche à part
         run: |
           git config user.name "robot-stats"
