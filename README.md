@@ -8,7 +8,8 @@ Scores, classement, meneurs et stats de la LNH, de la LAH et des ligues junior (
 
 | Fichier | À quoi il sert |
 |---|---|
-| `index.html` | La structure du site : 6 pages (À la une, Scores, Mes favoris, Classement, Meneurs, Joueurs) |
+| `index.html` | La structure du site : 7 pages (À la une, Scores, Mes favoris, Classement, Meneurs, Joueurs, Québécois) |
+| `manifest.webmanifest`, `sw.js`, `icones/` | Ce qui permet d'installer MonTrio comme une application sur le téléphone |
 | `style.css` | L'apparence (couleurs, thème sombre, version téléphone) |
 | `app.js` | Ce qui réagit aux clics et affiche les données |
 | `config.js` | Les réglages (adresse du relais pour le direct) |

@@ -485,3 +485,37 @@ a.buzz-texte:hover strong { color: var(--accent); text-decoration: underline; }
 }
 
 button.article { font: inherit; text-align: left; padding: 0; cursor: pointer; width: 100%; }
+
+/* ---- Bandeau d'installation de l'app ---- */
+.installer { display: flex; align-items: center; gap: 12px; border: 1px solid var(--accent); }
+.installer[hidden] { display: none; }
+.installer-icone img { display: block; border-radius: 11px; }
+.installer-texte { flex: 1; min-width: 0; }
+.installer-texte strong { display: block; }
+.installer-texte span { font-size: .85rem; color: var(--texte-doux); }
+@media (max-width: 640px) { .installer { flex-wrap: wrap; } .installer-texte { flex-basis: calc(100% - 64px); } }
+/* L'app installée sur iPhone : on laisse de la place sous l'encoche */
+@supports (padding: env(safe-area-inset-top)) { .entete { padding-top: env(safe-area-inset-top); } }
+
+/* ---- Page Les Québécois ---- */
+.qc-tete { background: linear-gradient(135deg, #0B2A6F 0%, #1E3A8A 60%, #0F172A 100%); color: #fff; }
+.qc-tete .titre-section { border-color: rgba(255, 255, 255, .2); }
+.qc-tete .titre-section h2::after { background: #fff; }
+.qc-tete .sur-titre, .qc-tete .aide { color: #C7D2FE; }
+.qc-compteurs { display: flex; flex-wrap: wrap; gap: 10px; }
+.qc-compteur { background: rgba(255, 255, 255, .1); border-radius: 10px; padding: 10px 16px; min-width: 92px; text-align: center; }
+.qc-compteur b { display: block; font-family: var(--titre); font-size: 2rem; line-height: 1; }
+.qc-compteur span { font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; color: #C7D2FE; }
+.qc-compteur.total { background: #fff; color: #1E3A8A; } .qc-compteur.total span { color: #1E3A8A; }
+.qc-liste { list-style: none; padding: 0; margin: 0 0 6px; }
+.qc-liste li { display: flex; align-items: center; gap: 10px; padding: 7px 4px; border-top: 1px solid var(--ligne); cursor: pointer; }
+.qc-liste li:first-child { border-top: 0; }
+.qc-liste li:hover { background: var(--carte-2); }
+.qc-liste .nom { flex: 1; min-width: 0; font-weight: 600; font-size: .9rem; }
+.qc-liste .nom small { display: block; font-weight: 500; color: var(--texte-doux); font-size: .75rem; }
+.qc-ligne { font-size: .82rem; font-weight: 700; white-space: nowrap; color: var(--texte-doux); }
+.qc-ligne.chaud { color: var(--accent); }
+.qc-detail { font-size: .78rem; color: var(--texte-doux); white-space: nowrap; }
+#qc-onglets { flex-wrap: wrap; margin-bottom: 10px; }
+.page-quebecois .barre-ligues .choix-ligue { opacity: .45; pointer-events: none; }
+@media (max-width: 640px) { .qc-compteur { min-width: 0; flex: 1 1 28%; padding: 8px; } .qc-compteur b { font-size: 1.5rem; } }

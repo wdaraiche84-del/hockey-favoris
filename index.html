@@ -19,6 +19,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <!-- Pour installer MonTrio comme une application sur le téléphone -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0B1120">
+  <link rel="apple-touch-icon" href="icones/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="MonTrio">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <script>
     // Applique le thème (clair ou sombre) avant l'affichage, pour éviter un flash
     try { const t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
@@ -37,6 +44,7 @@
         <a href="#/classement" data-lien="classement">Classement</a>
         <a href="#/meneurs" data-lien="meneurs">Meneurs</a>
         <a href="#/joueurs" data-lien="joueurs">Joueurs</a>
+        <a href="#/quebecois" data-lien="quebecois">⚜️ Québécois</a>
       </nav>
       <div class="entete-droite">
         <button id="ouvrir-recherche" class="btn-recherche" aria-label="Chercher un joueur"><span aria-hidden="true">🔍</span><span class="btn-recherche-texte">Chercher un joueur</span></button>
@@ -85,6 +93,14 @@
           <li><b>3</b><div><strong>Ajoute-les à tes favoris ⭐</strong><span>Leurs stats et leurs matchs t'attendront dans <a href="#/favoris">Mes favoris</a>.</span></div></li>
         </ol>
         <button class="btn accent" data-ouvrir-recherche>🔍 Chercher un joueur maintenant</button>
+      </section>
+      <!-- Bandeau « Installe l'app » (téléphone, si pas déjà installée) -->
+      <section id="installer" class="bloc installer" hidden>
+        <span class="installer-icone"><img src="icones/icone-192.png" alt="" width="48" height="48"></span>
+        <div class="installer-texte"><strong>Installe MonTrio sur ton téléphone</strong>
+          <span id="installer-aide">Ajoute-le à ton écran d'accueil : il s'ouvrira comme une vraie application.</span></div>
+        <button id="installer-ok" class="btn accent">Installer</button>
+        <button id="installer-non" class="btn leger" aria-label="Plus tard">Plus tard</button>
       </section>
       <div class="grille-2">
         <div class="pile">
@@ -189,6 +205,27 @@
         <ul id="resultats" class="resultats grand"></ul>
       </section>
     </div>
+    <!-- ========== PAGE 7 : Les Québécois partout ========== -->
+    <div class="page" data-page="quebecois">
+      <section class="bloc qc-tete">
+        <div class="titre-section"><h2>⚜️ Les Québécois partout</h2><span class="sur-titre">Toutes les ligues</span></div>
+        <p class="aide">Tous les joueurs nés au Québec, de la LNH aux juniors, au même endroit.</p>
+        <div id="qc-compteurs" class="qc-compteurs"></div>
+      </section>
+      <div class="grille-2">
+        <section class="bloc">
+          <div class="titre-section"><h2>Leur dernière soirée</h2></div>
+          <div id="qc-soiree"></div>
+        </section>
+        <section class="bloc">
+          <div class="titre-section"><h2>Les meilleurs cette saison</h2></div>
+          <div id="qc-onglets" class="onglets petits" role="tablist"></div>
+          <ol id="qc-meneurs" class="meneurs"></ol>
+          <h3 class="groupe-titre">Gardiens</h3>
+          <ol id="qc-gardiens" class="meneurs"></ol>
+        </section>
+      </div>
+    </div>
   </main>
 
   <footer class="pied">
@@ -204,6 +241,7 @@
     <a href="#/classement" data-lien="classement"><span>🏆</span>Classement</a>
     <a href="#/meneurs" data-lien="meneurs"><span>📊</span>Meneurs</a>
     <a href="#/joueurs" data-lien="joueurs"><span>🔍</span>Joueurs</a>
+    <a href="#/quebecois" data-lien="quebecois"><span>⚜️</span>Québec</a>
   </nav>
 
   <!-- ===== Recherche (s'ouvre par-dessus la page) ===== -->

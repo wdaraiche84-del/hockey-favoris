@@ -1,0 +1,22 @@
+{
+  "name": "MonTrio · Hockey",
+  "short_name": "MonTrio",
+  "description": "Tes joueurs de hockey préférés, toutes les ligues, au même endroit.",
+  "lang": "fr-CA",
+  "start_url": "./#/accueil",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0B1120",
+  "theme_color": "#0B1120",
+  "icons": [
+    { "src": "icones/icone-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icones/icone-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icones/icone-masquable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Scores", "url": "./#/scores" },
+    { "name": "Mes favoris", "url": "./#/favoris" },
+    { "name": "Les Québécois", "url": "./#/quebecois" }
+  ]
+}
