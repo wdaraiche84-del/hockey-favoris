@@ -309,6 +309,17 @@ function carteArticle(x, taille) {
     <span class="article-texte"><strong>${echapper(x.titre)}</strong><small>${echapper(x.source)} · ${ilYa(x.date)}</small></span>
   </a>`;
 }
+// Même classement que le robot des nouvelles (on l'applique aussi aux articles déjà reçus)
+// Une vraie transaction : un geste concret, pas une rumeur ni une question
+const TRANSACTION = /\b(échangé|échangés|échange \w+ (à|aux|contre)|acquiert|acquis|obtient|obtenu|cède|cédé|signe|a signé|paraphe|prolonge|prolongation de contrat|contrat (de|d'une durée)|soumis au ballottage|plac\w*\s.{0,40}?au ballottage|réclamé|rappelé|rappelle|retranché|libéré|congédié|embauché|nommé)\b/i;
+const SPECULATION = /\?|rumeur|pourrai(t|ent)|surprise|choix|intéress|cible|possible|spécul|envisag|aimerai(t|ent)|songe|candidat|serait|devrai(t|ent)|options?\b/i;
+function categorieDe(titre, source = "") {
+  if (/bless|injur|\bIR\b|à l'écart|absen|opér[ée]|commotion|rétabli|retour au jeu|infirmerie/i.test(titre)) return "blessure";
+  if (/suspen|amende|sanction|audience disciplinaire/i.test(titre)) return "suspension";
+  if (TRANSACTION.test(titre) && !SPECULATION.test(titre) && !/rumeur/i.test(source)) return "transaction";
+  return "nouvelle";
+}
+
 // ---- Bagarres : on garde seulement les spectaculaires --------------
 D.bagarres = {};
 const grosNoms = new Set(GROS_NOMS.map(simplifier));
@@ -349,7 +360,7 @@ const parleDuCH = (x) => (x.genre === "bagarre" ? x.qui.some((q) => q.eq === "MT
 const carte = (x, taille) => (x.genre === "bagarre" ? carteBagarre(x, taille) : carteArticle(x, taille));
 async function rendreBuzz() {
   if (!D.nouvelles) D.nouvelles = lireJson("data/nouvelles.json").catch(() => []);
-  const tout = [...(await D.nouvelles).filter((x) => x.cat !== "bagarre"), ...(await bagarresSpectaculaires())];
+  const tout = [...(await D.nouvelles).filter((x) => x.cat !== "bagarre").map((x) => ({ ...x, cat: categorieDe(x.titre, x.source) })), ...(await bagarresSpectaculaires())];
   // La ligue choisie d'abord, puis le reste
   const liste = tout.filter((x) => filtreBuzz === "tout" || x.cat === filtreBuzz)
     .sort((a, b) => (b.lig === ligue) - (a.lig === ligue) || parleDuCH(b) - parleDuCH(a) || String(b.date).localeCompare(String(a.date)))

@@ -1,5 +1,5 @@
 // =============================================================
-// LE ROBOT DES NOUVELLES (section « Le buzz »)
+// LE ROBOT DES NOUVELLES (section « À la une »)
 // Va chercher les manchettes du hockey sur Google Actualités, en
 // français. On garde seulement le titre, la source, la date et le
 // lien : le visiteur lit l'article complet sur le site d'origine.
@@ -15,11 +15,15 @@ const RECHERCHES = [
   "Canadien de Montréal", "Canadiens Montréal blessure", "Canadiens Montréal alignement", "Martin St-Louis Canadien",
   "Kent Hughes Canadien", "Rocket de Laval", "LHJMQ", "KHL hockey",
 ];
-const CATEGORIES = [
-  ["blessure", /bless|injur|\bIR\b|à l'écart|absen|opér[ée]|commotion|rétabli|retour au jeu|infirmerie/i],
-  ["suspension", /suspen|amende|sanction|audience disciplinaire/i],
-  ["transaction", /échang|trade|signe|contrat|prolongation de contrat|rappel|cédé|ballottage|waiver|acquiert|acquis|congédi|embauch/i],
-];
+// Une vraie transaction : un geste concret, pas une rumeur ni une question
+const TRANSACTION = /\b(échangé|échangés|échange \w+ (à|aux|contre)|acquiert|acquis|obtient|obtenu|cède|cédé|signe|a signé|paraphe|prolonge|prolongation de contrat|contrat (de|d'une durée)|soumis au ballottage|plac\w*\s.{0,40}?au ballottage|réclamé|rappelé|rappelle|retranché|libéré|congédié|embauché|nommé)\b/i;
+const SPECULATION = /\?|rumeur|pourrai(t|ent)|surprise|choix|intéress|cible|possible|spécul|envisag|aimerai(t|ent)|songe|candidat|serait|devrai(t|ent)|options?\b/i;
+function categorieDe(titre, source = "") {
+  if (/bless|injur|\bIR\b|à l'écart|absen|opér[ée]|commotion|rétabli|retour au jeu|infirmerie/i.test(titre)) return "blessure";
+  if (/suspen|amende|sanction|audience disciplinaire/i.test(titre)) return "suspension";
+  if (TRANSACTION.test(titre) && !SPECULATION.test(titre) && !/rumeur/i.test(source)) return "transaction";
+  return "nouvelle";
+}
 const LIGUES = [["lnh", /\b(LNH|NHL)\b/], ["ahl", /\b(LAH|AHL)\b|Rocket de Laval/], ["lhjmq", /\b(LHJMQ|QMJHL)\b/], ["ohl", /\bOHL\b/], ["whl", /\bWHL\b/], ["khl", /\b(KHL|LKH)\b/]];
 
 const decoder = (t) => t.replace(/<!\[CDATA\[|\]\]>/g, "").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").trim();
@@ -45,7 +49,7 @@ for (const q of RECHERCHES) {
       if (/bagarre|jette les gants|gants tombent|\bfight/i.test(n.titre)) continue; // pas de bagarres sur le site
       const cle = n.titre.toLowerCase().replace(/[^a-zà-ÿ0-9]+/g, " ").trim().slice(0, 80);
       if (!n.titre || tous.has(cle)) continue;
-      n.cat = (CATEGORIES.find(([, re]) => re.test(n.titre)) || ["nouvelle"])[0];
+      n.cat = categorieDe(n.titre, n.source);
       const l = LIGUES.find(([, re]) => re.test(n.titre));
       if (l) n.lig = l[0];
       tous.set(cle, n);
