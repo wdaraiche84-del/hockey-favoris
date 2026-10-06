@@ -322,7 +322,6 @@ function categorieDe(titre, source = "") {
 
 // ---- Bagarres : on garde seulement les spectaculaires --------------
 D.bagarres = {};
-const grosNoms = new Set(GROS_NOMS.map(simplifier));
 function raisonSpectaculaire(b) {
   const joueurs = b.qui.map((q) => (q.id && D.parId.get(q.id)) || D.joueurs.find((j) => j.lig === b.lig && simplifier(j.nom) === simplifier(q.nom)));
   if (joueurs.some((j) => j && j.pos === "G")) return "🧤 Un gardien jette les gants!";
@@ -330,17 +329,11 @@ function raisonSpectaculaire(b) {
   // Le Canadien : on veut tout voir
   const duCH = b.qui.find((q) => q.eq === "MTL");
   if (duCH) return `🔵 ${duCH.nom} (Canadien) jette les gants`;
-  const vedette = b.qui.find((q) => grosNoms.has(simplifier(q.nom)));
-  if (vedette) return `⭐ ${vedette.nom} jette les gants`;
-  // Un des 25 meilleurs pointeurs de sa ligue
-  const top = new Set(D.joueurs.filter((j) => j.lig === b.lig && j.s).sort((x, y) => y.s.pts - x.s.pts).slice(0, 25).map((j) => j.id));
-  const star = joueurs.find((j) => j && top.has(j.id));
-  if (star) return `⭐ ${star.nom}, un des meilleurs pointeurs, jette les gants`;
   return null;
 }
 async function bagarresSpectaculaires() {
-  // LNH seulement : dans la LAH et les juniors, les bagarres sont trop fréquentes
-  const ligues = ["lnh"].filter((l) => D.charge[l]);
+  // LNH seulement, et seulement quand la LNH est choisie : les articles des autres ligues gardent toute la place
+  const ligues = ligue === "lnh" && D.charge.lnh ? ["lnh"] : [];
   for (const l of ligues) if (!D.bagarres[l]) D.bagarres[l] = lireJson("data/bagarres.json").catch(() => []);
   const toutes = (await Promise.all(ligues.map((l) => D.bagarres[l]))).flat().filter((b) => b.date >= decaler(AUJ, -7));
   return toutes.map((b) => ({ ...b, raison: raisonSpectaculaire(b) })).filter((b) => b.raison)
