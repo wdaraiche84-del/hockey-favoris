@@ -10,13 +10,15 @@
 const SOURCE = "https://api-web.nhle.com";
 // Seules ces adresses sont relayées (le relais ne sert à rien d'autre)
 const PERMIS = [/^\/v1\/score\/now$/, /^\/v1\/gamecenter\/\d+\/boxscore$/];
-const SITE = "https://wdaraiche84-del.github.io";
+// Les adresses du site qui ont le droit d'utiliser le relais
+const SITES = ["https://montriohockey.ca", "https://www.montriohockey.ca", "https://wdaraiche84-del.github.io"];
 
 export default {
   async fetch(requete, env, ctx) {
     const url = new URL(requete.url);
+    const origine = requete.headers.get("Origin");
     const entetes = {
-      "Access-Control-Allow-Origin": SITE,
+      "Access-Control-Allow-Origin": SITES.includes(origine) ? origine : SITES[0],
       "Access-Control-Allow-Methods": "GET, OPTIONS",
       "Vary": "Origin",
     };
