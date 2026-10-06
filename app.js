@@ -42,6 +42,8 @@ const LIGUES = {
   lhjmq: { nom: "LHJMQ", long: "Junior · Québec et Maritimes" },
   ohl:   { nom: "OHL",   long: "Junior · Ontario" },
   whl:   { nom: "WHL",   long: "Junior · Ouest canadien et américain" },
+  khl:   { nom: "KHL",   long: "Russie · scores et classement (stats des joueurs à venir)", sansJoueurs: true },
+  liiga: { nom: "Liiga", long: "Finlande", pointsSeulement: true },
 };
 const NOMS_CONF = { Eastern: "Association de l'Est", Western: "Association de l'Ouest" };
 const NOMS_DIV = { Atlantic: "Division Atlantique", Metropolitan: "Division Métropolitaine", Central: "Division Centrale", Pacific: "Division Pacifique" };
@@ -151,7 +153,7 @@ function ajouter(id) { if (!favoris.includes(id)) favoris.push(id); sauverFavori
 function retirer(id) { favoris = favoris.filter((f) => f !== id); sauverFavoris(); rafraichir(); }
 
 // ---- 4. Choix de la ligue ------------------------------------
-const GROUPES_LIGUES = [["Pro", ["lnh", "ahl"]], ["Junior", ["lhjmq", "ohl", "whl"]]];
+const GROUPES_LIGUES = [["Pro", ["lnh", "ahl"]], ["Junior", ["lhjmq", "ohl", "whl"]], ["Europe", ["khl", "liiga"]]];
 function rendreChoixLigue() {
   $("choix-ligue").innerHTML = GROUPES_LIGUES.map(([g, ls]) => `<div class="groupe-ligues"><span class="groupe-nom">${g}</span>${ls.map((k) =>
     `<button class="puce-ligue ${k === ligue ? "actif" : ""}" data-ligue="${k}" role="tab" aria-selected="${k === ligue}" title="${LIGUES[k].long}">${LIGUES[k].nom}</button>`).join("")}</div>`).join("");
@@ -504,6 +506,12 @@ function htmlMeneurs(liste, aff) {
     <span class="val">${aff(j)}</span></li>`).join("");
 }
 function rendreMeneurs() {
+  if (LIGUES[ligue].sansJoueurs) {
+    const msg = `<li class="vide">Les stats des joueurs de la ${LIGUES[ligue].nom} arrivent bientôt.</li>`;
+    $("mini-meneurs").innerHTML = msg;
+    $("grille-meneurs").innerHTML = `<section class="bloc"><div class="titre-section"><h2>Meneurs <span class="tag-ligue">${LIGUES[ligue].nom}</span></h2></div><p class="vide">Les stats des joueurs de la ${LIGUES[ligue].nom} ne sont pas encore offertes : pour l'instant, on suit le calendrier, les scores et le classement.</p></section>`;
+    return;
+  }
   $("mini-meneurs").innerHTML = htmlMeneurs(listeMeneurs(5, patineur, (j) => j.s.pts), (j) => j.s.pts);
   const maxPj = Math.max(1, ...(D.classement[ligue] || []).map((t) => t.pj));
   const gardien = (j) => j.g && j.g.pj >= Math.max(1, Math.floor(maxPj / 3));
@@ -567,7 +575,8 @@ function rendreResultats() {
   if (!equipeChoisie) return;
   $("titre-effectif").textContent = nomEq(equipeChoisie);
   const liste = D.joueurs.filter((j) => j.eq === equipeChoisie).sort((a, b) => ORDRE_POS.indexOf(a.pos) - ORDRE_POS.indexOf(b.pos) || (a.no ?? 99) - (b.no ?? 99));
-  $("resultats").innerHTML = liste.map(ligneJoueur).join("");
+  $("resultats").innerHTML = liste.length ? liste.map(ligneJoueur).join("")
+    : `<li class="vide">Les joueurs de la ${LIGUES[ligueDe(equipeChoisie)]?.nom || "ligue"} arrivent bientôt : pour l'instant, on a seulement le calendrier, les scores et le classement.</li>`;
   if (!$("recherche-fond").hidden) rendreRecherche();
 }
 function rendreEquipes() {
@@ -604,12 +613,14 @@ async function htmlMatchParMatch(j) {
   const prochains = tous.filter((m) => !estFini(m) && !estDirect(m) && m.date >= AUJ).slice(0, 5);
   const gardien = j.pos === "G";
   let h = "";
-  if (!joues.length) h += `<p class="vide">Pas encore de match joué cette saison.</p>`;
+  if (LIGUES[j.lig]?.pointsSeulement) h += `<p class="petit-gris">Pour la ${LIGUES[j.lig].nom}, on affiche seulement les matchs où ${echapper(nomDeFamille(j))} a fait des points (buts et passes).</p>`;
+  if (!joues.length) h += `<p class="vide">${LIGUES[j.lig]?.pointsSeulement ? "Pas encore de point cette saison." : "Pas encore de match joué cette saison."}</p>`;
   else {
     const avecTemps = !gardien && joues.some((m) => pts[m.id][j.id][5]);
+    const simple = !!LIGUES[j.lig]?.pointsSeulement; // Liiga : seulement buts et passes
     const tete = gardien
       ? `<th>Date</th><th>Adv.</th><th>Rés.</th><th>Déc.</th><th>Arrêts</th><th>Tirs</th><th>BC</th><th>% arr.</th>`
-      : `<th>Date</th><th>Adv.</th><th>Rés.</th><th>B</th><th>A</th><th>PTS</th><th>+/-</th><th>Tirs</th><th>PUN</th>${avecTemps ? "<th>TG</th>" : ""}`;
+      : `<th>Date</th><th>Adv.</th><th>Rés.</th><th>B</th><th>A</th><th>PTS</th>${simple ? "" : `<th>+/-</th><th>Tirs</th><th>PUN</th>${avecTemps ? "<th>TG</th>" : ""}`}`;
     const tot = [0, 0, 0, 0, 0, 0];
     const lignes = joues.map((m) => {
       const l = pts[m.id][j.id], r = resultatPour(m, j.eq);
@@ -626,11 +637,11 @@ async function htmlMatchParMatch(j) {
       const [b, a, pm, tirs, pun, tg] = estGardienLigne(l) ? [0, 0, 0, 0, 0, ""] : l;
       tot[0] += b; tot[1] += a; tot[2] += pm; tot[3] += tirs; tot[4] += pun;
       const fort = b + a > 0 ? ' class="fort"' : "";
-      return `<tr${fort}>${debut}<td>${b}</td><td>${a}</td><td class="pts">${b + a}</td><td>${signe(pm)}</td><td>${tirs}</td><td>${pun}</td>${avecTemps ? `<td>${tg || "–"}</td>` : ""}</tr>`;
+      return `<tr${fort}>${debut}<td>${b}</td><td>${a}</td><td class="pts">${b + a}</td>${simple ? "" : `<td>${signe(pm)}</td><td>${tirs}</td><td>${pun}</td>${avecTemps ? `<td>${tg || "–"}</td>` : ""}`}</tr>`;
     }).join("");
     const total = gardien
       ? `<tr class="total"><td colspan="4">Total · ${pluriel(joues.length, "match")}</td><td>${tot[0]}</td><td>${tot[1]}</td><td>${tot[2]}</td><td>${tot[1] ? (tot[0] / tot[1]).toFixed(3).replace(/^0/, "") : "–"}</td></tr>`
-      : `<tr class="total"><td colspan="3">Total · ${pluriel(joues.length, "match")}</td><td>${tot[0]}</td><td>${tot[1]}</td><td class="pts">${tot[0] + tot[1]}</td><td>${signe(tot[2])}</td><td>${tot[3]}</td><td>${tot[4]}</td>${avecTemps ? "<td></td>" : ""}</tr>`;
+      : `<tr class="total"><td colspan="3">Total · ${pluriel(joues.length, "match")}</td><td>${tot[0]}</td><td>${tot[1]}</td><td class="pts">${tot[0] + tot[1]}</td>${simple ? "" : `<td>${signe(tot[2])}</td><td>${tot[3]}</td><td>${tot[4]}</td>${avecTemps ? "<td></td>" : ""}`}</tr>`;
     h += `<div class="defile"><table class="tableau journal"><thead><tr>${tete}</tr></thead><tbody>${lignes}${total}</tbody></table></div>
       <p class="petit-gris">${gardien ? "Déc. : décision (V, D, DP) · BC : buts contre" : `+/- : différentiel · PUN : minutes de punition${avecTemps ? " · TG : temps de glace" : ""}`}. Le match le plus récent est en haut.</p>`;
   }
@@ -758,7 +769,7 @@ async function directLnh(eqs) {
   return change;
 }
 async function directAutre(lig) {
-  if (htBloque[lig]) return false;
+  if (htBloque[lig] || !CLES_HT[lig]) return false; // Liiga et KHL : mises à jour par le robot seulement
   let donnees;
   try {
     const url = "https://lscluster.hockeytech.com/feed/?" + new URLSearchParams({ feed: "modulekit", view: "scorebar", key: CLES_HT[lig], client_code: lig, numberofdaysahead: 0, numberofdaysback: 1, fmt: "json", lang: "fr" });
