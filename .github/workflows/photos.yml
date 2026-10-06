@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ["images/photos/credits.json"]
+    paths: ["images/photos/credits.json", ".github/workflows/photos.yml"]
 permissions:
   contents: write
 jobs:
@@ -17,9 +17,11 @@ jobs:
         run: |
           for ligne in $(jq -r '.[] | "\(.f)|\(.id)"' images/photos/credits.json); do
             f="${ligne%%|*}"; id="${ligne#*|}"
-            curl -sSL --fail "https://unsplash.com/photos/${id}/download?force=true&w=1000" -o "images/photos/${f}.jpg" || echo "ÉCHEC ${f}"
+            code=$(curl -sSL -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/126 Safari/537.36" -w "%{http_code} %{url_effective}" "https://unsplash.com/photos/${id}/download?force=true&w=1000" -o "images/photos/${f}.jpg")
+            echo "${f} ${code} $(file -b images/photos/${f}.jpg | cut -c1-60)" >> images/photos/journal.txt
+            file images/photos/${f}.jpg | grep -q JPEG || rm -f images/photos/${f}.jpg
           done
-          ls -la images/photos
+          cat images/photos/journal.txt
       - name: Enregistrer
         run: |
           git config user.name "robot-stats"

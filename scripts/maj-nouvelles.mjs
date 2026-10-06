@@ -33,6 +33,9 @@ function categorieDe(titre, source = "") {
 }
 const LIGUES = [["ahl", /\b(LAH|AHL)\b|Rocket de Laval|Laval Rocket/], ["lnh", /\b(LNH|NHL)\b/], ["lhjmq", /\b(LHJMQ|QMJHL)\b/], ["ohl", /\bOHL\b/], ["whl", /\bWHL\b/], ["khl", /\b(KHL|LKH)\b/]];
 
+// Paris sportifs, cotes, casinos : on n'en veut pas dans les articles
+const JEU = /\bparis? sportifs?\b|\bpari\b|\bparie[rz]?\b|parieu|mise-o-jeu|mises? sportives?|\bcotes?\b|\bodds\b|\bbet(s|ting|tor)?\b|rue ?des ?joueurs|odds scanner|prédiction|prediction|pronostic|parlay|sportsbook|bookmak|casino|draftkings|fanduel|betmgm|bet365|betway|bet99|betrivers|caesars sportsbook|pointsbet|fanatics sportsbook|loto-québec|covers\.com|action network|pickswise|oddsshark|sportsline|dimers|\bprops?\b/i;
+
 const decoder = (t) => t.replace(/<!\[CDATA\[|\]\]>/g, "").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").trim();
 const champ = (bloc, nom) => { const m = bloc.match(new RegExp(`<${nom}[^>]*>([\\s\\S]*?)</${nom}>`)); return m ? decoder(m[1]) : ""; };
 
@@ -55,6 +58,7 @@ for (const r of RECHERCHES) {
   try {
     for (const n of await chercher(r)) {
       if (/bagarre|jette les gants|gants tombent|\bfights?\b/i.test(n.titre)) continue; // pas de bagarres dans les articles
+      if (JEU.test(n.titre) || JEU.test(n.source)) continue; // pas de paris sportifs ni de casinos
       const cle = n.titre.toLowerCase().replace(/[^a-zà-ÿ0-9]+/g, " ").trim().slice(0, 80);
       if (!n.titre || tous.has(cle)) continue;
       n.cat = categorieDe(n.titre, n.source);

@@ -325,9 +325,11 @@ function categorieDe(titre, source = "") {
 // Les nouvelles du Canadien de Montréal ont la priorité (LNH)
 const parleDuCH = (x) => (/canadien|\bCH\b|Habs|St-Louis|Hughes/i.test(x.titre || "") ? 1 : 0);
 const carte = carteArticle;
+// Paris sportifs, cotes, casinos : jamais dans les articles
+const JEU = /\bparis? sportifs?\b|\bpari\b|\bparie[rz]?\b|parieu|mise-o-jeu|mises? sportives?|\bcotes?\b|\bodds\b|\bbet(s|ting|tor)?\b|rue ?des ?joueurs|odds scanner|prédiction|prediction|pronostic|parlay|sportsbook|bookmak|casino|draftkings|fanduel|betmgm|bet365|betway|bet99|betrivers|caesars sportsbook|pointsbet|fanatics sportsbook|loto-québec|covers\.com|action network|pickswise|oddsshark|sportsline|dimers|\bprops?\b/i;
 async function rendreBuzz() {
   if (!D.nouvelles) D.nouvelles = lireJson("data/nouvelles.json").catch(() => []);
-  const tout = (await D.nouvelles).filter((x) => x.cat !== "bagarre" && !/bagarre|gants|\bfights?\b/i.test(x.titre)).map((x) => ({ ...x, cat: categorieDe(x.titre, x.source) }));
+  const tout = (await D.nouvelles).filter((x) => x.cat !== "bagarre" && !/bagarre|gants|\bfights?\b/i.test(x.titre) && !JEU.test(x.titre) && !JEU.test(x.source || "")).map((x) => ({ ...x, cat: categorieDe(x.titre, x.source) }));
   // La ligue choisie d'abord, puis le reste
   // Seulement les articles de la ligue choisie (les anciens articles sans ligue comptent pour la LNH)
   const liste = tout.filter((x) => (x.lig || "lnh") === ligue)
