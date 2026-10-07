@@ -681,7 +681,7 @@ async function ouvrirFiche(id) {
 function fermerFiche() {
   const ouverte = !$("fiche-fond").hidden;
   $("fiche-fond").hidden = true;
-  if (ouverte && (/^#\/(joueur|equipe|match|comparer)\//.test(location.hash) || adresseJolie())) {
+  if (ouverte && (/^#\/(joueur|equipe|match|comparer)\/|^#\/a-propos/.test(location.hash) || adresseJolie())) {
     if (history.state?.montrio) history.back(); // retire l'adresse de la fenêtre (comme le bouton Retour)
     else history.replaceState(null, "", document.baseURI.replace(/#.*$/, "") + "#/" + (pageActuelle || "accueil"));
   }

@@ -882,3 +882,6 @@ button.score-carte:hover { background: #333; }
 .seulement-grand { display: none; }
 @media (min-width: 1400px) { .seulement-grand { display: block; } }
 .meneurs.records li::before { display: none; content: none; }
+.texte-long p { line-height: 1.6; margin: 0 0 10px; }
+.texte-long h3 { margin-top: 22px; }
+.texte-long .mini-titre { margin-top: 14px; }

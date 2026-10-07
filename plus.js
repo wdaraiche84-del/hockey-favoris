@@ -38,6 +38,7 @@ function montrerModale(html) {
 function routeModale() {
   const e = modaleActuelle;
   if (!e || e.t === "lexique") return null;
+  if (e.t === "apropos") return "a-propos";
   return e.t === "comparer" ? (e.id2 ? `comparer/${e.id}/${e.id2}` : null) : `${e.t}/${e.id}`;
 }
 // Adresses lisibles, comme les grands sites : lnh/joueur/nick-suzuki/8480018/
@@ -53,6 +54,7 @@ function cheminJoli(type, id) {
 function adresseModale() {
   const e = modaleActuelle;
   if (!e || e.t === "lexique") return null;
+  if (e.t === "apropos") return "#/a-propos";
   if (e.t === "comparer") return e.id2 ? `#/comparer/${e.id}/${e.id2}` : null;
   return cheminJoli(e.t, e.id) || `#/${e.t}/${e.id}`;
 }
@@ -61,7 +63,7 @@ function majAdresse() {
   if (!r) return;
   const url = new URL(r, document.baseURI).href;
   if (url === location.href) return;
-  const dejaModale = /^#\/(joueur|equipe|match|comparer)\//.test(location.hash) || adresseJolie();
+  const dejaModale = /^#\/(joueur|equipe|match|comparer|a-propos)/.test(location.hash) || adresseJolie();
   if (dejaModale) history.replaceState(history.state, "", url);
   else history.pushState({ montrio: true }, "", url);
 }
@@ -969,6 +971,7 @@ function ouvrirDepuisAdresse() {
     });
     return true;
   }
+  if (/^#\/a-propos/.test(location.hash)) { if (pageActuelle === null) allerA("accueil"); ouvrirAPropos(); return true; }
   const x = /^#\/(joueur|equipe|match|comparer)\/([^/]+)(?:\/([^/]+))?/.exec(decodeURIComponent(location.hash));
   if (!x) return false;
   const [, type, id, id2] = x;
@@ -1109,6 +1112,47 @@ document.addEventListener("click", (e) => {
   if (b.dataset.scoresLigue) { e.preventDefault(); choisirLigue(b.dataset.scoresLigue); location.hash = "#/scores"; }
   else { scoresTout = true; memoire("scores-tout", "1"); rendrePageScores(); }
 });
+
+
+// ---- À propos et confidentialité (Loi 25 du Québec) -------------
+// Adresse : #/a-propos. Pour ajouter un courriel de contact plus tard : remplir CONTACT ci-dessous.
+const CONTACT = "";
+const MAJ_CONFIDENTIALITE = "7 octobre 2026";
+function ouvrirAPropos() {
+  noterModale({ t: "apropos", id: "x" });
+  const contact = CONTACT ? `<a href="mailto:${CONTACT}">${CONTACT}</a>` : "une adresse de contact sera ajoutée sous peu";
+  montrerModale(`<div class="fiche-haut">${boutonRetour()}<div><h2>À propos</h2><p>MonTrioHockey : le hockey de toutes les ligues, en français.</p></div><button class="fermer" aria-label="Fermer">✕</button></div>
+  <div class="fiche-corps texte-long">
+    <h3>Le site</h3>
+    <p>MonTrioHockey est un site de fan indépendant, fait au Québec. Il regroupe les scores, les classements, les stats et des récits de match pour 9 ligues : LNH, LAH, LHJMQ, OHL, WHL, KHL, SHL, Liiga et National League. Ajoute tes joueurs préférés à tes favoris et suis leurs matchs, peu importe où ils jouent.</p>
+    <h3>D'où viennent les données</h3>
+    <p>Les statistiques proviennent des données publiques des ligues. Elles sont mises à jour automatiquement environ aux 30 minutes, et en direct pendant les matchs. Les récits, les 3 étoiles et les performances sont écrits automatiquement par MonTrioHockey à partir de ces statistiques. Malgré nos efforts, une erreur peut se glisser : les sites officiels des ligues font foi.</p>
+    <p>MonTrioHockey n'est affilié à aucune ligue ni à aucune équipe. Les noms des ligues et des équipes appartiennent à leurs propriétaires respectifs.</p>
+
+    <h3 id="confidentialite">Confidentialité</h3>
+    <p class="petit-gris">Politique de confidentialité · mise à jour le ${MAJ_CONFIDENTIALITE}</p>
+    <p><b>En bref : pas de compte, pas de publicité, pas de suivi.</b> Nous ne recueillons ni ton nom, ni ton courriel, ni ta position.</p>
+    <h4 class="mini-titre">Ce qui reste sur ton appareil</h4>
+    <p>Pour que le site se souvienne de tes choix, ton navigateur garde quelques réglages <b>sur ton appareil seulement</b> : tes favoris, la ligue choisie, le mode clair ou sombre et tes préférences d'affichage. Ces informations ne nous sont jamais envoyées. Tu peux les effacer en tout temps avec le bouton ci-dessous ou dans les réglages de ton navigateur.</p>
+    <h4 class="mini-titre">Les alertes de buts (si tu les actives)</h4>
+    <p>Si tu actives les alertes, ton navigateur crée une adresse de notification anonyme. Nous la gardons avec la liste de tes joueurs favoris de la LNH (et de leurs équipes), seulement pour t'envoyer les alertes. Aucun nom ni courriel n'y est rattaché. Quand tu désactives les alertes, ces informations sont supprimées.</p>
+    <h4 class="mini-titre">Les services utilisés</h4>
+    <p>Le site est hébergé par <b>GitHub Pages</b>. Le direct et les alertes passent par <b>Cloudflare</b>. Les polices de caractères viennent de <b>Google Fonts</b>. Comme pour tout site Web, ces services reçoivent l'adresse IP de ton appareil pour pouvoir t'envoyer les pages. Ils appliquent leurs propres politiques de confidentialité. Nous n'utilisons aucun outil de publicité ni de statistiques de visites qui te suit d'un site à l'autre.</p>
+    <h4 class="mini-titre">Tes droits</h4>
+    <p>Comme le prévoit la Loi 25 du Québec, tu peux demander à savoir quels renseignements te concernent, les faire corriger ou les faire supprimer. Puisque presque tout reste sur ton appareil, tu peux le faire toi-même en tout temps. Pour toute question : ${contact}.</p>
+    <div class="fiche-outils"><button class="btn fantome" id="effacer-donnees">🗑️ Effacer mes données sur cet appareil</button></div>
+    <p class="petit-gris">Si cette politique change, la date en haut de cette section sera mise à jour.</p>
+  </div>`);
+  $("effacer-donnees").onclick = async () => {
+    if (!confirm("Effacer tes favoris et tes réglages sur cet appareil? Les alertes de buts seront aussi désactivées.")) return;
+    try { const sub = await abonnementPush(false); if (sub) { await fetch(`${RELAIS}/alertes/desabonner`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ abonnement: sub.toJSON() }) }); await sub.unsubscribe(); } } catch (e) {}
+    try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
+    try { for (const k of await caches.keys()) await caches.delete(k); } catch (e) {}
+    toast("C'est fait : tes données sont effacées de cet appareil.");
+    setTimeout(() => { location.href = location.pathname; }, 1200);
+  };
+}
+document.addEventListener("click", (e) => { if (e.target.closest("[data-a-propos]")) { e.preventDefault(); ouvrirAPropos(); } });
 
 // ---- Démarrage ---------------------------------------------------
 rendreBoutonAlertes();
