@@ -168,6 +168,8 @@ async function corpsMatchJoue(m) {
   const vide = !Object.keys(lignes[0][1]).length && !Object.keys(lignes[1][1]).length;
   let h = "";
   if (vide) return `<p class="vide">${estDirect(m) ? "Les statistiques des joueurs arrivent au fil du match." : "Les statistiques détaillées de ce match ne sont pas encore disponibles. Reviens un peu plus tard!"}</p>`;
+  // Le récit du match, écrit automatiquement
+  if (estFini(m)) h += `<h3>Le récit</h3><p class="recit">${recitMatch(m, lignes)}</p><p class="petit-gris">Écrit automatiquement par MonTrio à partir des statistiques officielles.</p>`;
   // Les 3 étoiles
   const etoiles = troisEtoiles(m, lignes);
   if (etoiles.length) {
@@ -202,6 +204,57 @@ async function corpsMatchJoue(m) {
   h += htmlFaceAFace(m);
   return h;
 }
+// ---- Récit automatique d'un match, en français ----------------
+// Articles selon le nom court : « les Canadiens », « le Lightning », « l'Avalanche »
+function article(eq) {
+  const n = courtEq(eq).trim();
+  // En Europe, les équipes portent surtout un nom de ville : pas d'article (« Fribourg-Gottéron », « de Lausanne »)
+  if (["khl", "shl", "liiga", "nl"].includes(ligueDe(eq))) {
+    const voy = /^[aeiouhéèêàâîôûAEIOUHÉÈÖÜ]/.test(n);
+    return { le: n, du: `${voy ? "d'" : "de "}${n}`, au: `à ${n}`, pl: false };
+  }
+  if (/s$/i.test(n)) return { le: `les ${n}`, du: `des ${n}`, au: `aux ${n}`, pl: true };
+  if (/^[aeiouhéèêàâîôûAEIOUHÉÈ]/.test(n)) return { le: `l'${n}`, du: `de l'${n}`, au: `à l'${n}`, pl: false };
+  return { le: `le ${n}`, du: `du ${n}`, au: `au ${n}`, pl: false };
+}
+const majuscule = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+const JOURS_LONGS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+function recitMatch(m, lignes) {
+  const gagnantDom = m.sd > m.se, W = gagnantDom ? m.dom : m.ext, L = gagnantDom ? m.ext : m.dom;
+  const sw = Math.max(m.sd, m.se), sl = Math.min(m.sd, m.se), ecart = sw - sl;
+  const aW = article(W), aL = article(L), v = (a, sing, plur) => (a.pl ? plur : sing);
+  const jour = JOURS_LONGS[versDate(m.date).getDay()], lieu = gagnantDom ? "devant ses partisans" : "sur la route";
+  let p1;
+  if (m.fin === "SO") p1 = `${majuscule(aW.le)} ${v(aW, "l'a", "l'ont")} emporté ${sw}-${sl} en tirs de barrage contre ${aL.le}, ${jour}, ${lieu}.`;
+  else if (m.fin === "OT") p1 = `${majuscule(aW.le)} ${v(aW, "a", "ont")} eu besoin de la prolongation pour venir à bout ${aL.du} ${sw}-${sl}, ${jour}, ${lieu}.`;
+  else if (sl === 0) p1 = `${majuscule(aW.le)} ${v(aW, "a", "ont")} blanchi ${aL.le} ${sw}-0, ${jour}, ${lieu}.`;
+  else if (ecart >= 3) p1 = `${majuscule(aW.le)} ${v(aW, "a", "ont")} dominé ${aL.le} ${sw}-${sl}, ${jour}, ${lieu}.`;
+  else p1 = `${majuscule(aW.le)} ${v(aW, "a", "ont")} eu le dessus sur ${aL.le} ${sw}-${sl}, ${jour}, ${lieu}.`;
+  const lig = Object.fromEntries(lignes);
+  const meilleurs = (eq) => Object.entries(lig[eq] || {}).filter(([, l]) => !estGardienLigne(l) && ptsLigne(l) > 0)
+    .map(([id, l]) => ({ j: D.parId.get(id), b: l[0], a: l[1] })).filter((x) => x.j).sort((a, b) => (b.b + b.a) - (a.b + a.a) || b.b - a.b);
+  const fait = (x) => [x.b ? pluriel(x.b, "but") : "", x.a ? pluriel(x.a, "passe") : ""].filter(Boolean).join(" et ");
+  const phrases = [p1];
+  const [h1, h2] = meilleurs(W);
+  if (h1) {
+    if (h1.b >= 3) phrases.push(`${h1.j.nom} a réussi un tour du chapeau${h1.a ? ` en plus d'ajouter ${pluriel(h1.a, "passe")}` : ""}.`);
+    else phrases.push(`${h1.j.nom} a mené la charge avec ${fait(h1)}${h2 && h2.b + h2.a >= 2 ? `, ${/^[aeiouhéèêàâîôûAEIOUHÉÈ]/.test(h2.j.nom) ? "tandis qu'" : "tandis que "}${h2.j.nom} a ajouté ${fait(h2)}` : ""}.`);
+  }
+  const [p] = meilleurs(L);
+  if (p && p.b + p.a >= 2) phrases.push(`Du côté ${aL.du}, ${p.j.nom} a récolté ${fait(p)} dans la défaite.`);
+  const gardien = Object.entries(lig[W] || {}).filter(([, l]) => estGardienLigne(l) && l[2]).map(([id, l]) => ({ j: D.parId.get(id), sv: l[1], sa: l[2] })).filter((x) => x.j).sort((a, b) => b.sa - a.sa)[0];
+  if (gardien) phrases.push(sl === 0 ? `${gardien.j.nom} a signé le blanchissage en bloquant ${pluriel(gardien.sv, "tir")}.` : `Devant le filet, ${gardien.j.nom} a repoussé ${gardien.sv} des ${gardien.sa} tirs dirigés vers lui.`);
+  const tirs = (eq) => Object.values(lig[eq === m.dom ? m.ext : m.dom] || {}).filter(estGardienLigne).reduce((s, l) => s + (l[2] || 0), 0);
+  const tW = tirs(W), tL = tirs(L);
+  if (tW && tL && Math.abs(tW - tL) >= 10) {
+    if (tW > tL) phrases.push(`${majuscule(aW.le)} ${v(aW, "a", "ont")} aussi eu nettement l'avantage au chapitre des tirs, ${tW}-${tL}.`);
+    else phrases.push(`${majuscule(aL.le)} ${v(aL, "a", "ont")} pourtant obtenu beaucoup plus de tirs, ${tL}-${tW}, sans réussir à en profiter.`);
+  }
+  const b = bilan(W);
+  phrases.push(`${majuscule(aW.le)} ${v(aW, "présente", "présentent")} maintenant une fiche de ${fmtBilan(b.tous)}.`);
+  return phrases.map(echapper).join(" ");
+}
+
 function htmlFaceAFace(m) {
   const autres = D.cal.filter((x) => x !== m && ((x.dom === m.dom && x.ext === m.ext) || (x.dom === m.ext && x.ext === m.dom)));
   if (!autres.length) return "";
@@ -641,6 +694,47 @@ rendreBuzz = async function () {
   const anglais = !["lnh", "lhjmq"].includes(ligue);
   $("note-articles").textContent = `Les articles viennent de Google Actualités : un clic ouvre l'article complet sur le site du média.${anglais ? ` Pour ${laLigue(ligue)}, la plupart des médias écrivent en anglais.` : ""}`;
 };
+
+// ---- La semaine en bref (accueil) -------------------------------
+let jetonSemaine = 0;
+async function rendreSemaine() {
+  const jeton = ++jetonSemaine, lig = ligue, debut = decaler(AUJ, -7);
+  const ms = matchsLigue(lig).filter((m) => estFini(m) && m.date >= debut && m.date <= AUJ);
+  const boite = $("semaine");
+  if (!ms.length) { boite.innerHTML = `<p class="vide">Aucun match dans les 7 derniers jours.</p>`; return; }
+  const joueurs = new Map(), equipes = new Map();
+  for (const m of ms) {
+    for (const eq of [m.dom, m.ext]) {
+      const e = equipes.get(eq) || { eq, v: 0, d: 0, bp: 0, bc: 0 };
+      const { nous, eux } = scorePour(m, eq);
+      if (nous > eux) e.v++; else e.d++;
+      e.bp += nous; e.bc += eux; equipes.set(eq, e);
+      const ligne = (await points(eq))[m.id] || {};
+      for (const [id, l] of Object.entries(ligne)) {
+        const j = D.parId.get(id); if (!j) continue;
+        const x = joueurs.get(id) || { j, pj: 0, b: 0, a: 0, sv: 0, sa: 0, v: 0 };
+        x.pj++;
+        if (estGardienLigne(l)) { x.sv += l[1]; x.sa += l[2]; if (nous > eux && l[2] >= 15) x.v++; } else { x.b += l[0]; x.a += l[1]; }
+        joueurs.set(id, x);
+      }
+    }
+  }
+  if (jeton !== jetonSemaine) return;
+  const tous = [...joueurs.values()];
+  const top = tous.filter((x) => x.j.pos !== "G" && x.b + x.a > 0).sort((a, b) => (b.b + b.a) - (a.b + a.a) || b.b - a.b || a.pj - b.pj).slice(0, 5);
+  const g = tous.filter((x) => x.j.pos === "G" && x.sa >= 40).sort((a, b) => b.sv / b.sa - a.sv / a.sa)[0];
+  const e = [...equipes.values()].sort((a, b) => b.v - a.v || (b.bp - b.bc) - (a.bp - a.bc))[0];
+  const mdm = [...ms].sort((a, b) => (b.sd + b.se + (b.fin ? 2 : 0)) - (a.sd + a.se + (a.fin ? 2 : 0)))[0];
+  const carte = (titre, attr, grand, petit) => `<button class="sem-carte" ${attr}><small>${titre}</small><b>${grand}</b><span>${petit}</span></button>`;
+  boite.innerHTML = `<div class="sem-cartes">
+    ${top[0] ? carte("Joueur de la semaine", `data-fiche="${top[0].j.id}"`, echapper(top[0].j.nom), `${abr(top[0].j.eq)} · ${top[0].b} B, ${top[0].a} A en ${pluriel(top[0].pj, "match")}`) : ""}
+    ${g ? carte("Gardien de la semaine", `data-fiche="${g.j.id}"`, echapper(g.j.nom), `${abr(g.j.eq)} · ${pct3(g.sv / g.sa)} en ${pluriel(g.pj, "match")}`) : ""}
+    ${e ? carte("Équipe de la semaine", `data-equipe-fiche="${e.eq}"`, echapper(nomEq(e.eq)), `${e.v}-${e.d} · ${signe(e.bp - e.bc)} au différentiel`) : ""}
+    ${mdm ? carte("Match de la semaine", `data-match="${mdm.id}"`, `${abr(mdm.ext)} ${mdm.se} – ${mdm.sd} ${abr(mdm.dom)}${suffixeFin(mdm)}`, dateLongue(mdm.date)) : ""}</div>
+    ${top.length ? `<h4 class="mini-titre sem-titre">Top 5 des pointeurs</h4><ol class="meneurs">${top.map((x) => `<li data-fiche="${x.j.id}"><span class="nom">${echapper(x.j.nom)}${favoris.includes(x.j.id) ? " ⭐" : ""}<small>${echapper(courtEq(x.j.eq))} · ${x.b} B, ${x.a} A en ${pluriel(x.pj, "match")}</small></span><span class="val">${x.b + x.a}</span></li>`).join("")}</ol>` : ""}`;
+}
+const rendreUneBase = rendreUne;
+rendreUne = async function () { await rendreUneBase(); rendreSemaine(); };
 
 // ---- Démarrage ---------------------------------------------------
 rendreBoutonAlertes();

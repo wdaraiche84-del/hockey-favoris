@@ -758,3 +758,13 @@ button.score-carte:hover { background: #2B3647; }
 .sc-eq.vide { cursor: default; display: block; color: var(--texte-doux); }
 .sc-eq:hover:not(.vide) b { color: var(--accent); }
 @media (max-width: 640px) { .affiches { grid-template-columns: 1fr; } .tableau-series { grid-template-columns: repeat(4, 180px); } }
+.recit { font-size: 1rem; line-height: 1.65; margin: 0; }
+/* ---- La semaine en bref ---- */
+.sem-cartes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.sem-carte { border: 1px solid var(--ligne); background: var(--carte-2); border-radius: 10px; padding: 10px 12px; text-align: left; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sem-carte:hover { border-color: var(--accent); }
+.sem-carte small { font-size: .66rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--accent); }
+.sem-carte b { font-family: var(--titre); font-size: 1.25rem; line-height: 1.1; }
+.sem-carte span { font-size: .78rem; color: var(--texte-doux); }
+.sem-titre { margin-top: 14px; }
+@media (max-width: 640px) { .sem-cartes { grid-template-columns: 1fr; } }
