@@ -44,11 +44,15 @@ jobs:
         run: node scripts/maj-europe.mjs
         continue-on-error: true
 
+      - name: Préparer les liens de partage (un aperçu par joueur, équipe et match)
+        run: node scripts/maj-partage.mjs
+        continue-on-error: true
+
       - name: Enregistrer les nouvelles données
         run: |
           git config user.name "robot-stats"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data
+          git add data j e m
           if git diff --staged --quiet; then
             echo "Rien de nouveau."
           else

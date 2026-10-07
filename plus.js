@@ -611,7 +611,12 @@ function toast(texte, duree = 4000) {
   setTimeout(() => t.remove(), duree + 400);
 }
 async function partager(chemin, titre) {
-  const url = `${location.origin}${location.pathname}#/${chemin}`;
+  // Joueurs, équipes et matchs ont leur propre petite page de partage (j/, e/, m/) :
+  // l'aperçu dans Messenger, Discord ou un texto montre alors le bon nom et les bonnes stats.
+  const base = `${location.origin}${location.pathname.replace(/[^/]*$/, "")}`;
+  const [type, id] = chemin.split("/");
+  const court = { joueur: "j", equipe: "e", match: "m" }[type];
+  const url = court && !chemin.includes("/", chemin.indexOf("/") + 1) ? `${base}${court}/${encodeURIComponent(id)}` : `${base}#/${chemin}`;
   try {
     if (navigator.share && matchMedia("(pointer: coarse)").matches) { await navigator.share({ title: titre, url }); return; }
     await navigator.clipboard.writeText(url);
