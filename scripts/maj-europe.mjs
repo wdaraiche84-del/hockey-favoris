@@ -187,7 +187,9 @@ async function nl() {
   }
   const classement = tableau.map((t) => {
     const cle = parId[String(t.teamId)], f = fiches[cle] || { v: 0, d: 0, dp: 0 };
-    return { eq: cle, pj: t.gp || f.v + f.d + f.dp, v: f.v, d: f.d, dp: f.dp, pts: t.po || 0, bp: t.g || 0, bc: t.ga || 0, div: "National League", conf: "National League", serie: serieDe(cle) };
+    const pc = (v) => (v == null || v < 0 ? null : +(v / 100).toFixed(3));
+    return { eq: cle, pj: t.gp || f.v + f.d + f.dp, v: f.v, d: f.d, dp: f.dp, pts: t.po || 0, bp: t.g || 0, bc: t.ga || 0, div: "National League", conf: "National League", serie: serieDe(cle),
+      av: pc(t.ppgEfficiency), dn: pc(t.pkEfficiency), tpm: t.soggp != null ? +t.soggp.toFixed(1) : null, tcm: t.sagp != null ? +t.sagp.toFixed(1) : null, mj: pc(t.faceOffsPercentage) };
   });
   // Joueurs et stats de la saison
   const joueurs = [], parNo = {};

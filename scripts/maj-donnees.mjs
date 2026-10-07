@@ -140,6 +140,19 @@ async function principal() {
       vr: t.regulationWins ?? null,
     }));
   } catch (e) { console.warn("Classement :", e.message); }
+  // Stats d'équipe : avantage et désavantage numérique, tirs par match, mises au jeu
+  try {
+    const st = await lire(`/standings/now`);
+    const parNom = Object.fromEntries((st.standings || []).map((t) => [texte(t.teamName).toLowerCase(), texte(t.teamAbbrev)]));
+    const exp = encodeURIComponent(`gameTypeId=2 and seasonId=${saison}`);
+    const r = await fetch(`https://api.nhle.com/stats/rest/en/team/summary?cayenneExp=${exp}`, { headers: { "User-Agent": "hockey-favoris (site de fan)" } });
+    for (const t of (r.ok ? (await r.json()).data : []) || []) {
+      const c = classement.find((x) => x.eq === parNom[String(t.teamFullName).toLowerCase()]);
+      if (!c) continue;
+      const arr = (v, n) => (v == null ? null : +Number(v).toFixed(n));
+      Object.assign(c, { av: arr(t.powerPlayPct, 3), dn: arr(t.penaltyKillPct, 3), tpm: arr(t.shotsForPerGame, 1), tcm: arr(t.shotsAgainstPerGame, 1), mj: arr(t.faceoffWinPct, 3) });
+    }
+  } catch (e) { console.warn("Stats d'équipe :", e.message); }
 
   // Tableau des séries éliminatoires (seulement quand les séries ont commencé)
   let series = null;
@@ -158,6 +171,29 @@ async function principal() {
   // 4. Stats de chaque joueur, match par match (seulement les matchs pas encore traités)
   //    Patineur : [buts, passes, +/-, tirs, minutes de punition, temps de glace]
   //    Gardien  : ["G", arrêts, tirs reçus, buts accordés, décision (W/L/O), temps de jeu]
+  // Déroulement d'un match terminé : buts période par période, 3 étoiles officielles → data/sommaires/ID.json
+  await mkdir("data/sommaires", { recursive: true });
+  async function deroulement(id) {
+    const l = await lire(`/gamecenter/${id}/landing`);
+    const per = (l.summary?.scoring || []).map((p) => ({
+      n: p.periodDescriptor?.number, type: p.periodDescriptor?.periodType || "REG",
+      buts: (p.goals || []).map((g) => ({
+        t: g.timeInPeriod, eq: texte(g.teamAbbrev), id: String(g.playerId), nom: `${texte(g.firstName)} ${texte(g.lastName)}`.trim(),
+        passes: (g.assists || []).map((a) => [String(a.playerId), `${texte(a.firstName)} ${texte(a.lastName)}`.trim()]),
+        force: g.strength || "ev", mod: g.goalModifier && g.goalModifier !== "none" ? g.goalModifier : "", se: g.awayScore, sd: g.homeScore, tir: g.shotType || "",
+      })),
+    }));
+    const etoiles = (l.summary?.threeStars || []).map((x) => String(x.playerId));
+    await writeFile(`data/sommaires/${id}.json`, JSON.stringify({ per, etoiles }));
+  }
+  const dejaSommaire = new Set((await import("node:fs/promises").then((f) => f.readdir("data/sommaires"))).map((f) => f.replace(".json", "")));
+  let rattrapage = 0;
+  for (const m of calendrier) {
+    if (m.etat !== "fini" || dejaSommaire.has(String(m.id)) || rattrapage >= 150) continue;
+    try { await deroulement(m.id); rattrapage++; } catch (e) { console.warn("Déroulement", m.id, e.message); }
+  }
+  if (rattrapage) console.log(`Déroulements de match : ${rattrapage} ajoutés.`);
+
   const traites = new Set(await lireJson("data/traites-v2.json", []));
   const points = {};
   for (const eq of Object.keys(EQUIPES)) points[eq] = traites.size ? await lireJson(`data/points/${eq}.json`, {}) : {};

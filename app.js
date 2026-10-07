@@ -452,6 +452,7 @@ function rendreClassement() {
   $("vue-series").hidden = ligue !== "lnh";
   if (vueClassement === "series" && ligue !== "lnh") { vueClassement = "conf"; document.querySelectorAll("[data-vue]").forEach((x) => x.classList.toggle("actif", x.dataset.vue === "conf")); }
   if (vueClassement === "series") { $("tables-classement").classList.add("une-col"); return rendreSeries(); }
+  if (vueClassement === "stats") { $("tables-classement").classList.add("une-col"); return rendreStatsEquipes(); }
   if (!c.length) { $("tables-classement").innerHTML = `<p class="vide">Classement à venir.</p>`; return; }
   let h = "";
   if (vueClassement === "ligue") h = tableClassement(`Toute ${laLigue(ligue)}`, c);

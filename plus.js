@@ -244,13 +244,21 @@ async function corpsMatchJoue(m) {
   // Le récit du match, écrit automatiquement
   if (estFini(m)) h += `<h3>Le récit</h3><p class="recit">${recitMatch(m, lignes)}</p><p class="petit-gris">Écrit automatiquement par MonTrioHockey à partir des statistiques officielles.</p>`;
   // Les 3 étoiles
-  const etoiles = troisEtoiles(m, lignes);
+  // LNH : le déroulement du match (buts période par période) et les 3 étoiles officielles
+  const som = ligueDe(m.dom) === "lnh" && estFini(m) ? await lireJson(`data/sommaires/${m.id}.json`).catch(() => null) : null;
+  let etoiles = troisEtoiles(m, lignes), officielles = false;
+  if (som?.etoiles?.length) {
+    const toutes = Object.fromEntries(lignes.flatMap(([eq, ligne]) => Object.entries(ligne).map(([id, l]) => [id, { eq, l }])));
+    const off = som.etoiles.map((id) => ({ j: D.parId.get(id), ...toutes[id] })).filter((x) => x.j && x.l);
+    if (off.length) { etoiles = off; officielles = true; }
+  }
   if (etoiles.length) {
     h += `<h3>Les 3 étoiles</h3><div class="etoiles">${etoiles.map((x, i) => `<button class="etoile" data-fiche="${x.j.id}">
       <span class="etoile-rang">${"★".repeat(3 - i)}</span><span class="numero">${x.j.no ?? "–"}</span>
       <span class="etoile-nom"><strong>${echapper(x.j.nom)}</strong><small>${abr(x.eq)} · ${texteLigne(x.l)}</small></span></button>`).join("")}</div>
-      <p class="petit-gris">Choisies automatiquement par MonTrioHockey selon les statistiques du match.</p>`;
+      <p class="petit-gris">${officielles ? "Les 3 étoiles officielles du match." : "Choisies automatiquement par MonTrioHockey selon les statistiques du match."}</p>`;
   }
+  if (som?.per?.some((x) => x.buts.length)) h += htmlDeroulement(m, som);
   // Le match en chiffres
   const tot = (ligne, k) => Object.values(ligne).filter((l) => !estGardienLigne(l)).reduce((s, l) => s + (Number(l[k]) || 0), 0);
   const tirsContre = (ligne) => Object.values(ligne).filter(estGardienLigne).reduce((s, l) => s + (l[2] || 0), 0);
@@ -331,6 +339,21 @@ function recitMatch(m, lignes) {
   return phrases.map(echapper).join(" ");
 }
 
+const NOMS_PERIODE = (x) => (x.type === "SO" ? "Tirs de barrage" : x.type === "OT" ? "Prolongation" : `${x.n === 1 ? "1re" : `${x.n}e`} période`);
+const FORCE = { pp: "AN", sh: "DN", ev: "" };
+function htmlDeroulement(m, som) {
+  return `<h3>Déroulement</h3><div class="deroulement">${som.per.map((x) => `<div class="periode"><h4>${NOMS_PERIODE(x)}</h4>
+    ${x.buts.length ? x.buts.map((g) => {
+      const j = D.parId.get(g.id);
+      const nom = j ? `<button class="lien-joueur" data-fiche="${j.id}">${echapper(g.nom)}</button>` : echapper(g.nom);
+      const passes = g.passes.map(([id, n]) => (D.parId.get(id) ? `<button class="lien-joueur" data-fiche="${id}">${echapper(n)}</button>` : echapper(n))).join(", ");
+      const etiq = [FORCE[g.force], g.mod === "empty-net" ? "filet désert" : g.mod === "penalty-shot" ? "tir de pénalité" : ""].filter(Boolean).join(" · ");
+      return `<div class="but-ligne"><span class="but-temps">${x.type === "SO" ? "" : g.t}</span><span class="but-eq">${abr(g.eq)}</span>
+        <span class="but-texte">${nom}${passes ? ` <small>(${passes})</small>` : x.type === "SO" ? "" : " <small>(sans aide)</small>"}${etiq ? ` <span class="but-etiq">${etiq}</span>` : ""}</span>
+        <span class="but-score">${g.se}-${g.sd}</span></div>`;
+    }).join("") : `<p class="vide">Aucun but.</p>`}</div>`).join("")}</div>
+    <p class="petit-gris">Score affiché : ${abr(m.ext)}-${abr(m.dom)} · AN : avantage numérique · DN : désavantage numérique.</p>`;
+}
 function htmlFaceAFace(m) {
   const autres = D.cal.filter((x) => x !== m && ((x.dom === m.dom && x.ext === m.ext) || (x.dom === m.ext && x.ext === m.dom)));
   if (!autres.length) return "";
@@ -391,7 +414,10 @@ async function ouvrirEquipe(eq, opt = {}) {
     ${r?.groupe ? tuile(ieme(r.groupeRang), echapper(r.groupe.replace(/^Association de l'|^Division /, ""))) : ""}
     ${tuile(t?.pts ?? "–", "points")}${tuile(fmtBilan(b.tous), "fiche V-D-DP")}
     ${tuile(`${diff > 0 ? "+" : ""}${diff}`, `diff. (${t?.bp ?? 0} BP, ${t?.bc ?? 0} BC)`)}
-    ${tuile(fmtBilan(b.dom), "à domicile")}${tuile(fmtBilan(b.ext), "à l'étranger")}${tuile(serieFr(t?.serie), "séquence")}</div>`;
+    ${tuile(fmtBilan(b.dom), "à domicile")}${tuile(fmtBilan(b.ext), "à l'étranger")}${tuile(serieFr(t?.serie), "séquence")}
+    ${t?.av != null ? tuile(pctFr(t.av), "avantage numérique") : ""}${t?.dn != null ? tuile(pctFr(t.dn), "désavantage numérique") : ""}
+    ${t?.tpm != null ? tuile(dec(t.tpm, 1), "tirs par match") : ""}${t?.tcm != null ? tuile(dec(t.tcm, 1), "tirs accordés par match") : ""}
+    ${t?.mj != null ? tuile(pctFr(t.mj), "mises au jeu gagnées") : ""}</div>`;
   h += `<h3>10 derniers matchs <small class="sous-titre">${fmtBilan(b.dix)}</small></h3>${pastillesForme(eq, 10)}`;
   // Meneurs de l'équipe
   const pat = effectif.filter((j) => j.s && j.s.pj).sort((a, c) => c.s.pts - a.s.pts || c.s.b - a.s.b);
@@ -605,6 +631,37 @@ function htmlTableauSeries(series) {
   const rondes = [...new Set(series.map((x) => x.ronde))].sort();
   return `<div class="table-bloc"><h3>Séries éliminatoires</h3><div class="tableau-series">${rondes.map((r) => `<div class="ronde"><h4>${RONDES[r] || `Ronde ${r}`}</h4>${series.filter((x) => x.ronde === r).map(carte).join("")}</div>`).join("")}</div></div>`;
 }
+// ---- Classement : stats d'équipe (triables) ----------------------
+let triStats = { col: "pts", sens: -1 };
+function rendreStatsEquipes() {
+  const c = D.classement[ligue] || [];
+  const par = (t, k) => (t.pj ? t[k] / t.pj : null);
+  const cols = [
+    ["pts", "PTS", (t) => t.pts, (v) => v],
+    ["bpm", "BP/m", (t) => par(t, "bp"), (v) => dec(v)],
+    ["bcm", "BC/m", (t) => par(t, "bc"), (v) => dec(v), true],
+    ["av", "AN %", (t) => t.av, (v) => pctFr(v)],
+    ["dn", "DN %", (t) => t.dn, (v) => pctFr(v)],
+    ["tpm", "Tirs/m", (t) => t.tpm, (v) => dec(v, 1)],
+    ["tcm", "Tirs c./m", (t) => t.tcm, (v) => dec(v, 1), true],
+    ["mj", "MAJ %", (t) => t.mj, (v) => pctFr(v)],
+  ].filter(([k, , f]) => c.some((t) => f(t) != null));
+  const col = cols.find((x) => x[0] === triStats.col) || cols[0];
+  const liste = [...c].sort((a, b) => ((col[2](b) ?? -1e9) - (col[2](a) ?? -1e9)) * (triStats.sens < 0 ? 1 : -1));
+  const eqs = equipesFavorites();
+  $("tables-classement").innerHTML = `<div class="table-bloc"><h3>Stats d'équipe · ${LIGUES[ligue].nom}</h3><div class="defile"><table class="tableau stats-eq"><thead><tr><th>#</th><th>Équipe</th><th>PJ</th>
+    ${cols.map(([k, t]) => `<th><button class="tri ${k === col[0] ? "actif" : ""}" data-tri="${k}">${t}${k === col[0] ? (triStats.sens < 0 ? " ▼" : " ▲") : ""}</button></th>`).join("")}</tr></thead><tbody>
+    ${liste.map((t, i) => `<tr class="${eqs.includes(t.eq) ? "favori" : ""}"><td>${i + 1}</td><td class="eq"><button class="lien-equipe" data-equipe-fiche="${t.eq}"><span class="abr">${abr(t.eq)}</span> <span class="nom-long">${echapper(courtEq(t.eq))}</span></button></td><td>${t.pj}</td>
+      ${cols.map(([k, , f, fmt]) => `<td class="${k === col[0] ? "pts" : ""}">${f(t) == null ? "–" : fmt(f(t))}</td>`).join("")}</tr>`).join("")}</tbody></table></div></div>
+    <p class="petit-gris">Touche un titre de colonne pour trier. BP/m, BC/m : buts pour et contre par match · AN : avantage numérique (% des occasions converties) · DN : désavantage numérique (% des pénalités écoulées sans but) · Tirs c./m : tirs accordés par match · MAJ : mises au jeu gagnées.</p>`;
+}
+$("tables-classement").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-tri]");
+  if (!b) return;
+  triStats = { col: b.dataset.tri, sens: triStats.col === b.dataset.tri ? -triStats.sens : -1 };
+  rendreStatsEquipes();
+});
+
 async function rendreSeries() {
   if (seriesLnh === undefined) seriesLnh = matchsLigue("lnh").some((m) => m.series) ? await lireJson("data/series.json").catch(() => null) : null;
   if (vueClassement !== "series" || ligue !== "lnh") return;

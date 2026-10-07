@@ -122,7 +122,8 @@ async function uneLigue(lig, conf) {
     const cle = parIdEquipe[r.team_id] || `${lig}_${r.team_code}`;
     if (!equipes[cle]) continue;
     equipes[cle].conf = assoc;
-    classement.push({ eq: cle, pj: n(r.games_played), v: n(r.wins), d: n(r.losses), dp: n(r.ot_losses) + n(r.shootout_losses),
+    classement.push({ av: r.power_play_pct ? +(n(r.power_play_pct) / 100).toFixed(3) : null, dn: r.penalty_kill_pct ? +(n(r.penalty_kill_pct) / 100).toFixed(3) : null,
+      eq: cle, pj: n(r.games_played), v: n(r.wins), d: n(r.losses), dp: n(r.ot_losses) + n(r.shootout_losses),
       pts: n(r.points), bp: n(r.goals_for), bc: n(r.goals_against), div: equipes[cle].div, conf: assoc,
       serie: (r.streak_wl || "").replace(/^(\d+)([WL])$/, "$2$1") });
   }
