@@ -11,30 +11,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MonTrio · Tes joueurs de hockey, toutes les ligues</title>
-  <meta name="description" content="MonTrio : scores en direct, classements, meneurs et stats match par match de la LNH, de la LAH, de la LHJMQ, de l'OHL, de la WHL, de la KHL, de la SHL, de la Liiga et de la National League. En français, avec le suivi de tes joueurs préférés.">
+  <title>MonTrioHockey · Le hockey de toutes les ligues, en français</title>
+  <meta name="description" content="MonTrioHockey : scores en direct, classements, meneurs et stats match par match de la LNH, de la LAH, de la LHJMQ, de l'OHL, de la WHL, de la KHL, de la SHL, de la Liiga et de la National League. En français, avec le suivi de tes joueurs préférés.">
   <link rel="canonical" href="https://wdaraiche84-del.github.io/hockey-favoris/">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="fr_CA">
-  <meta property="og:site_name" content="MonTrio">
-  <meta property="og:title" content="MonTrio · Le hockey de toutes les ligues, en français">
+  <meta property="og:site_name" content="MonTrioHockey">
+  <meta property="og:title" content="MonTrioHockey · Le hockey de toutes les ligues, en français">
   <meta property="og:description" content="Scores, classements et stats de la LNH aux juniors et à l'Europe. Suis tes joueurs préférés au même endroit.">
   <meta property="og:url" content="https://wdaraiche84-del.github.io/hockey-favoris/">
   <meta property="og:image" content="https://wdaraiche84-del.github.io/hockey-favoris/icones/apercu.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"MonTrio","inLanguage":"fr-CA","url":"https://wdaraiche84-del.github.io/hockey-favoris/","description":"Scores, classements et stats de hockey de toutes les ligues, en français."}</script>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%230D9488%22/%3E%3Ctext x=%2232%22 y=%2243%22 font-family=%22Arial,sans-serif%22 font-weight=%22900%22 font-size=%2230%22 text-anchor=%22middle%22 fill=%22white%22%3EMT%3C/text%3E%3C/svg%3E">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"MonTrioHockey","inLanguage":"fr-CA","url":"https://wdaraiche84-del.github.io/hockey-favoris/","description":"Scores, classements et stats de hockey de toutes les ligues, en français."}</script>
+  <link rel="icon" href="icones/logo.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <!-- Pour installer MonTrio comme une application sur le téléphone -->
+  <!-- Pour installer MonTrioHockey comme une application sur le téléphone -->
   <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#0B1120">
+  <meta name="theme-color" content="#111111">
   <link rel="apple-touch-icon" href="icones/apple-touch-icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="MonTrio">
+  <meta name="apple-mobile-web-app-title" content="MonTrioHockey">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <script>
     // Applique le thème (clair ou sombre) avant l'affichage, pour éviter un flash
@@ -46,7 +46,7 @@
   <!-- ===== En-tête ===== -->
   <header class="entete">
     <div class="entete-int">
-      <a class="logo" href="#/accueil"><span class="logo-pastille" aria-hidden="true">MT</span><span class="logo-texte">Mon<b>Trio</b></span></a>
+      <a class="logo" href="#/accueil" aria-label="MonTrioHockey, accueil"><img class="logo-marque" src="icones/logo.svg" alt="" width="38" height="38"><span class="logo-texte">MonTrio<b>Hockey</b></span></a>
       <nav class="nav-haut" aria-label="Pages">
         <a href="#/accueil" data-lien="accueil">À la une</a>
         <a href="#/scores" data-lien="scores">Scores</a>
@@ -57,7 +57,7 @@
       </nav>
       <div class="entete-droite">
         <button id="ouvrir-recherche" class="btn-recherche" aria-label="Chercher un joueur"><span aria-hidden="true">🔍</span><span class="btn-recherche-texte">Chercher un joueur</span></button>
-        <button id="installer-pc" class="btn-installer" hidden title="Installer MonTrio comme une application sur cet ordinateur">⬇ Installer l'app</button>
+        <button id="installer-pc" class="btn-installer" hidden title="Installer MonTrioHockey comme une application sur cet ordinateur">⬇ Installer l'app</button>
         <span id="maj-badge" class="maj-badge"></span>
         <button id="theme" class="icone" aria-label="Changer de thème" title="Mode clair / sombre">◐</button>
       </div>
@@ -94,7 +94,7 @@
       <!-- Carte de bienvenue (premier passage seulement) -->
       <section id="bienvenue" class="bloc bienvenue" hidden>
         <div class="bienvenue-tete">
-          <h2>Bienvenue sur MonTrio! 👋</h2>
+          <h2>Bienvenue sur MonTrioHockey! 👋</h2>
           <button id="fermer-bienvenue" class="btn leger">J'ai compris</button>
         </div>
         <ol class="etapes">
@@ -107,7 +107,7 @@
       <!-- Bandeau « Installe l'app » (téléphone, si pas déjà installée) -->
       <section id="installer" class="bloc installer" hidden>
         <span class="installer-icone"><img src="icones/icone-192.png" alt="" width="48" height="48"></span>
-        <div class="installer-texte"><strong>Installe MonTrio sur ton téléphone</strong>
+        <div class="installer-texte"><strong>Installe MonTrioHockey sur ton téléphone</strong>
           <span id="installer-aide">Ajoute-le à ton écran d'accueil : il s'ouvrira comme une vraie application.</span></div>
         <button id="installer-ok" class="btn accent">Installer</button>
         <button id="installer-non" class="btn leger" aria-label="Plus tard">Plus tard</button>
@@ -117,7 +117,7 @@
         <section class="bloc">
           <div class="titre-section"><h2>Les récits de la soirée <span class="tag-ligue" data-nom-ligue></span></h2><span id="recits-date" class="sur-titre"></span></div>
           <div id="recits"></div>
-          <p class="petit-gris">Récits écrits automatiquement par MonTrio à partir des statistiques officielles. Touche un match pour voir son sommaire complet.</p>
+          <p class="petit-gris">Récits écrits automatiquement par MonTrioHockey à partir des statistiques officielles. Touche un match pour voir son sommaire complet.</p>
         </section>
         <section class="bloc une">
           <div class="titre-section"><h2>Performances <span class="tag-ligue" data-nom-ligue></span></h2><span id="une-date" class="sur-titre"></span></div>

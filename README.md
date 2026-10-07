@@ -1,4 +1,4 @@
-# MonTrio
+# MonTrioHockey
 
 Tes joueurs de hockey préférés, toutes les ligues, au même endroit.
 
@@ -9,7 +9,7 @@ Scores, classement, meneurs et stats de la LNH, de la LAH, des ligues junior (LH
 | Fichier | À quoi il sert |
 |---|---|
 | `index.html` | La structure du site : 6 pages (À la une, Scores, Mes favoris, Classement, Meneurs, Joueurs) |
-| `manifest.webmanifest`, `sw.js`, `icones/` | Ce qui permet d'installer MonTrio comme une application sur le téléphone |
+| `manifest.webmanifest`, `sw.js`, `icones/` | Ce qui permet d'installer MonTrioHockey comme une application sur le téléphone |
 | `style.css` | L'apparence (couleurs, thème sombre, version téléphone) |
 | `app.js` | Ce qui réagit aux clics et affiche les données |
 | `plus.js` | Les fenêtres de détail : sommaire de match, fiche d'équipe, comparateur, joueurs en feu, alertes, lexique |

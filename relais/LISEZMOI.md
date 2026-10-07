@@ -1,4 +1,4 @@
-# Le relais de MonTrio (Cloudflare Workers, gratuit)
+# Le relais de MonTrioHockey (Cloudflare Workers, gratuit)
 
 Le relais fait deux choses :
 
@@ -6,7 +6,7 @@ Le relais fait deux choses :
    toutes les 20 secondes pendant les matchs de la LNH.
 2. **Les alertes sur le téléphone** : une notification quand un de tes
    favoris de la LNH marque ou obtient une passe, quand ton équipe marque,
-   et le résultat final — même quand MonTrio est fermé.
+   et le résultat final — même quand MonTrioHockey est fermé.
 
 ## Mettre le code à jour (à faire chaque fois que `relais/worker.js` change)
 
@@ -40,5 +40,5 @@ d'envoi la première fois et la garde dans son espace KV.
 
 Largement suffisant pour commencer : le relais n'écrit dans son espace que
 lorsqu'un but est marqué ou qu'un match se termine.
-Sur iPhone, les alertes fonctionnent seulement si MonTrio est installé sur
+Sur iPhone, les alertes fonctionnent seulement si MonTrioHockey est installé sur
 l'écran d'accueil (iOS 16.4 ou plus récent).

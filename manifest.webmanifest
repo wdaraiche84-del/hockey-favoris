@@ -1,14 +1,14 @@
 {
-  "name": "MonTrio · Hockey",
-  "short_name": "MonTrio",
+  "name": "MonTrioHockey",
+  "short_name": "MonTrioHockey",
   "description": "Scores, classements et stats de hockey de toutes les ligues (LNH, LAH, juniors, Europe), en français.",
   "lang": "fr-CA",
   "start_url": "./#/accueil",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0B1120",
-  "theme_color": "#0B1120",
+  "background_color": "#111111",
+  "theme_color": "#111111",
   "icons": [
     {
       "src": "icones/icone-192.png",

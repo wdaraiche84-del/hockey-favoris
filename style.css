@@ -5,18 +5,20 @@
    couleur d'accent partout, change seulement --accent.
    ============================================================= */
 :root {
-  --accent: #0D9488;
-  --accent-fonce: #0F766E;
-  --accent-pale: #CCFBF1;
+  --accent: #EA580C;
+  --accent-fonce: #C2410C;
+  --accent-pale: #FFEDD5;
+  --accent-clair: #FDBA74;   /* accent sur fond foncé (logo, liens dans l'en-tête) */
+  --accent-pale-sombre: #4A2410;
   --direct: #E5484D;
   --vert: #16A34A;
   --rouge-res: #DC2626;
 
-  --entete: #0B1120;
-  --bandeau: #111827;
-  --bandeau-carte: #1F2937;
+  --entete: #111111;
+  --bandeau: #1A1A1A;
+  --bandeau-carte: #2A2A2A;
   --bandeau-texte: #F9FAFB;
-  --bandeau-doux: #9CA3AF;
+  --bandeau-doux: #A3A3A3;
 
   --fond: #F3F4F6;
   --carte: #FFFFFF;
@@ -32,13 +34,13 @@
 /* Thème sombre : automatique selon l'appareil, ou choisi avec le bouton ◐ */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --fond: #0B1120; --carte: #141B2D; --carte-2: #1A2338; --texte: #F3F4F6; --texte-doux: #9CA3AF;
-    --ligne: #263048; --accent-pale: #134E4A; --ombre: 0 1px 3px rgba(0, 0, 0, .4); color-scheme: dark;
+    --fond: #0F0F10; --carte: #19191B; --carte-2: #222225; --texte: #F5F5F4; --texte-doux: #A8A29E;
+    --ligne: #2E2E33; --accent-pale: var(--accent-pale-sombre); --accent: #F97316; --accent-fonce: #EA580C; --ombre: 0 1px 3px rgba(0, 0, 0, .4); color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --fond: #0B1120; --carte: #141B2D; --carte-2: #1A2338; --texte: #F3F4F6; --texte-doux: #9CA3AF;
-  --ligne: #263048; --accent-pale: #134E4A; --ombre: 0 1px 3px rgba(0, 0, 0, .4); color-scheme: dark;
+  --fond: #0F0F10; --carte: #19191B; --carte-2: #222225; --texte: #F5F5F4; --texte-doux: #A8A29E;
+  --ligne: #2E2E33; --accent-pale: var(--accent-pale-sombre); --accent: #F97316; --accent-fonce: #EA580C; --ombre: 0 1px 3px rgba(0, 0, 0, .4); color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -54,7 +56,7 @@ a { color: inherit; }
 .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; flex-shrink: 0; }
 .logo-pastille { font-family: var(--titre); font-weight: 800; background: var(--accent); border-radius: 8px; padding: 4px 7px; font-size: 1.05rem; letter-spacing: .04em; }
 .logo-texte { font-family: var(--titre); font-size: 1.45rem; font-weight: 700; text-transform: uppercase; }
-.logo-texte b { color: #5EEAD4; font-weight: 800; }
+.logo-texte b { color: var(--accent-clair); font-weight: 800; }
 .nav-haut { display: flex; gap: 4px; flex: 1; }
 .nav-haut a { text-decoration: none; font-weight: 600; font-size: .9rem; padding: 8px 12px; border-radius: 8px; color: #D1D5DB; }
 .nav-haut a:hover { background: rgba(255, 255, 255, .08); color: #fff; }
@@ -157,7 +159,7 @@ a { color: inherit; }
 .une-hero { display: grid; grid-template-columns: 220px 1fr; gap: 18px; border: 0; background: none; padding: 0; text-align: left; width: 100%; }
 .une-visuel {
   border-radius: 10px; min-height: 170px; position: relative; overflow: hidden; color: #fff;
-  background: linear-gradient(135deg, #0F172A 0%, #1E293B 55%, var(--accent-fonce) 130%);
+  background: linear-gradient(135deg, #171717 0%, #262626 55%, var(--accent-fonce) 130%);
   display: flex; align-items: flex-end; padding: 14px;
 }
 .une-visuel .gros-no { position: absolute; right: 10px; top: -10px; font-family: var(--titre); font-weight: 800; font-size: 7.5rem; opacity: .16; line-height: 1; }
@@ -189,7 +191,7 @@ a { color: inherit; }
 .cartes { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
 .carte-joueur { border-radius: 10px; overflow: hidden; border: 1px solid var(--ligne); background: var(--carte); display: flex; flex-direction: column; animation: apparait .25s ease-out; }
 @keyframes apparait { from { opacity: 0; transform: translateY(6px); } }
-.carte-joueur .haut { background: linear-gradient(135deg, #1E293B, #0F172A); color: #fff; padding: 12px; display: flex; align-items: center; gap: 10px; }
+.carte-joueur .haut { background: linear-gradient(135deg, #262626, #171717); color: #fff; padding: 12px; display: flex; align-items: center; gap: 10px; }
 .numero { font-family: var(--titre); font-weight: 800; font-size: 1.35rem; width: 44px; height: 44px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; flex-shrink: 0; }
 .carte-joueur h3 { font-size: 1.2rem; line-height: 1.05; }
 .carte-joueur .equipe { font-size: .75rem; opacity: .8; }
@@ -263,7 +265,7 @@ table.tableau { width: 100%; border-collapse: collapse; font-size: .85rem; }
 .fiche-fond { position: fixed; inset: 0; background: rgba(2, 6, 23, .65); display: flex; align-items: flex-start; justify-content: center; padding: 24px 12px; overflow-y: auto; z-index: 40; }
 .fiche-fond[hidden] { display: none; }
 .fiche { background: var(--carte); border-radius: var(--rayon); width: 100%; max-width: 760px; overflow: hidden; animation: apparait .2s ease-out; }
-.fiche-haut { background: linear-gradient(135deg, #0F172A, #1E293B 70%, var(--accent-fonce) 160%); color: #fff; padding: 22px; display: flex; align-items: center; gap: 16px; position: relative; }
+.fiche-haut { background: linear-gradient(135deg, #171717, #262626 70%, var(--accent-fonce) 160%); color: #fff; padding: 22px; display: flex; align-items: center; gap: 16px; position: relative; }
 .fiche-haut .numero { width: 68px; height: 68px; font-size: 2.1rem; }
 .fiche-haut h2 { font-size: 2.1rem; text-transform: uppercase; }
 .fiche-haut p { margin: 2px 0 0; opacity: .85; }
@@ -363,7 +365,7 @@ table.tableau { width: 100%; border-collapse: collapse; font-size: .85rem; }
   display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(255, 255, 255, .22);
   background: rgba(255, 255, 255, .08); color: #fff; border-radius: 99px; padding: 7px 16px 7px 12px; font-weight: 600; font-size: .88rem;
 }
-.btn-recherche:hover { border-color: var(--accent); background: rgba(13, 148, 136, .25); }
+.btn-recherche:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 25%, transparent); }
 
 .groupe-ligues { display: flex; align-items: center; gap: 5px; padding-right: 10px; margin-right: 4px; border-right: 1px solid rgba(255, 255, 255, .12); }
 .groupe-ligues:last-child { border-right: 0; }
@@ -452,10 +454,10 @@ a.buzz-texte:hover strong { color: var(--accent); text-decoration: underline; }
 .article:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(15, 23, 42, .12); }
 .article:hover strong { color: var(--accent); }
 .article-visuel { position: relative; display: block; overflow: hidden; color: #fff;
-  background: linear-gradient(135deg, #0F172A 0%, #1E293B 55%, var(--teinte, var(--accent-fonce)) 150%); }
+  background: linear-gradient(135deg, #171717 0%, #262626 55%, var(--teinte, var(--accent-fonce)) 150%); }
 .article-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .4s; }
 .article:hover .article-photo { transform: scale(1.04); }
-.avec-photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(2,6,23,.45) 0%, rgba(2,6,23,.05) 45%, color-mix(in srgb, var(--teinte, #0F172A) 35%, rgba(2,6,23,.35)) 100%); }
+.avec-photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(2,6,23,.45) 0%, rgba(2,6,23,.05) 45%, color-mix(in srgb, var(--teinte, #171717) 35%, rgba(2,6,23,.35)) 100%); }
 .avec-photo .article-tags, .avec-photo .article-eq { z-index: 1; }
 .avec-photo .article-eq { opacity: .2; text-shadow: 0 2px 12px rgba(0,0,0,.4); }
 .article-credit { position: absolute; left: 10px; bottom: 6px; z-index: 1; font-size: .6rem; color: rgba(255,255,255,.75); text-shadow: 0 1px 2px #000; max-width: 45%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -477,8 +479,8 @@ a.buzz-texte:hover strong { color: var(--accent); text-decoration: underline; }
 .article-grande .article-eq { font-size: 12rem; }
 .article-grande .article-texte { position: relative; z-index: 1; text-shadow: 0 2px 10px rgba(0,0,0,.5); margin-top: auto; padding: 22px; color: #fff; background: linear-gradient(transparent, rgba(2, 6, 23, .85)); flex: 0; }
 .article-grande .article-texte strong { font-family: var(--titre); font-size: 2.1rem; line-height: 1.05; }
-.article-grande .article-texte small { color: #CBD5E1; }
-.article-grande:hover strong { color: #5EEAD4; }
+.article-grande .article-texte small { color: #D6D3D1; }
+.article-grande:hover strong { color: var(--accent-clair); }
 .article-moyenne .article-visuel { height: 120px; } .article-moyenne .article-eq { font-size: 4.5rem; bottom: -14px; }
 .article-moyenne .article-texte strong { font-size: 1rem; }
 .article-petite .article-visuel { height: 120px; } .article-petite .article-eq { font-size: 6rem; }
@@ -510,7 +512,7 @@ button.article { font: inherit; text-align: left; padding: 0; cursor: pointer; w
 
 
 /* ---- Bouton « Installer l'app » (ordinateur) ---- */
-.btn-installer { border: 1px solid var(--accent); background: transparent; color: #5EEAD4; border-radius: 99px; padding: 7px 14px; font-weight: 600; font-size: .82rem; white-space: nowrap; }
+.btn-installer { border: 1px solid var(--accent); background: transparent; color: var(--accent-clair); border-radius: 99px; padding: 7px 14px; font-weight: 600; font-size: .82rem; white-space: nowrap; }
 .btn-installer:hover { background: var(--accent); color: #fff; }
 .btn-installer[hidden] { display: none; }
 @media (max-width: 1100px) { .btn-installer { padding: 7px 10px; } }
@@ -536,7 +538,7 @@ button.article { font: inherit; text-align: left; padding: 0; cursor: pointer; w
 .lien-equipe { border: 0; background: none; padding: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
 .lien-equipe:hover .nom-long, .lien-equipe:hover .abr { color: var(--accent); text-decoration: underline; }
 .lien-equipe.clair { color: #fff; text-decoration: underline; text-decoration-color: rgba(255, 255, 255, .4); text-underline-offset: 3px; }
-.lien-equipe.clair:hover { color: #5EEAD4; }
+.lien-equipe.clair:hover { color: var(--accent-clair); }
 .tableau td.plus { color: var(--vert); font-weight: 700; } .tableau td.moins { color: var(--rouge-res); }
 .tableau tr[data-match], .tableau tr[data-fiche], .prochain-match[data-match] { cursor: pointer; }
 .tableau tr[data-match]:hover td, .tableau tr[data-fiche]:hover td { background: var(--carte-2); }
@@ -565,24 +567,24 @@ button.article { font: inherit; text-align: left; padding: 0; cursor: pointer; w
 .interrupteur { display: inline-flex; align-items: center; gap: 6px; font-size: .85rem; font-weight: 600; cursor: pointer; user-select: none; }
 .interrupteur input { accent-color: var(--accent); width: 16px; height: 16px; }
 button.score-carte { color: var(--bandeau-texte); font: inherit; cursor: pointer; }
-button.score-carte:hover { background: #2B3647; }
+button.score-carte:hover { background: #333; }
 
 /* Sommaire d'un match */
 .match-haut { flex-direction: column; align-items: stretch; gap: 12px; }
-.match-entete { font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; font-weight: 700; color: #CBD5E1; padding-right: 40px; }
+.match-entete { font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; font-weight: 700; color: #D6D3D1; padding-right: 40px; }
 .match-equipes { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; }
 .me-cote-bloc { display: flex; align-items: center; gap: 12px; }
 .me-cote-bloc.dom { flex-direction: row-reverse; text-align: right; }
 .me-equipe { border: 0; background: none; color: #fff; display: flex; flex-direction: column; padding: 0; text-align: inherit; cursor: pointer; min-width: 0; }
 .me-equipe:hover .me-nom { text-decoration: underline; }
 .me-equipe.perd { opacity: .65; }
-.me-cote { font-size: .66rem; text-transform: uppercase; letter-spacing: .08em; color: #94A3B8; font-weight: 700; }
+.me-cote { font-size: .66rem; text-transform: uppercase; letter-spacing: .08em; color: #A8A29E; font-weight: 700; }
 .me-abr { font-family: var(--titre); font-size: 2.3rem; font-weight: 800; line-height: 1; }
 .me-nom { font-size: .85rem; }
-.me-bilan { font-size: .72rem; color: #94A3B8; }
-.me-score { font-family: var(--titre); font-size: 3.4rem; font-weight: 800; line-height: 1; color: #94A3B8; }
+.me-bilan { font-size: .72rem; color: #A8A29E; }
+.me-score { font-family: var(--titre); font-size: 3.4rem; font-weight: 800; line-height: 1; color: #A8A29E; }
 .me-score.gagne { color: #fff; }
-.me-tiret { font-family: var(--titre); font-size: 1.6rem; color: #64748B; }
+.me-tiret { font-family: var(--titre); font-size: 1.6rem; color: #78716C; }
 .etoiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .etoile { border: 1px solid var(--ligne); background: var(--carte-2); border-radius: 10px; padding: 10px; display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; align-items: center; text-align: left; }
 .etoile:hover { border-color: var(--accent); }
@@ -665,7 +667,7 @@ button.score-carte:hover { background: #2B3647; }
 
 /* Avis à l'écran */
 .toasts { position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%); z-index: 60; display: flex; flex-direction: column; gap: 8px; width: min(92vw, 440px); pointer-events: none; }
-.toast { background: #0F172A; color: #fff; border-left: 4px solid var(--accent); border-radius: 10px; padding: 12px 14px; font-weight: 600; font-size: .9rem; box-shadow: 0 10px 30px rgba(0, 0, 0, .3); animation: apparait .25s ease-out; transition: opacity .4s, transform .4s; }
+.toast { background: #171717; color: #fff; border-left: 4px solid var(--accent); border-radius: 10px; padding: 12px 14px; font-weight: 600; font-size: .9rem; box-shadow: 0 10px 30px rgba(0, 0, 0, .3); animation: apparait .25s ease-out; transition: opacity .4s, transform .4s; }
 .toast.part { opacity: 0; transform: translateY(8px); }
 
 /* Lexique */
@@ -785,3 +787,9 @@ button.score-carte:hover { background: #2B3647; }
 
 .meneurs-onglets { overflow-x: auto; scrollbar-width: none; }
 .meneurs-onglets .onglet { white-space: nowrap; }
+
+/* ---- Logo MonTrioHockey ---- */
+.logo-marque { display: block; width: 38px; height: 38px; border-radius: 9px; flex-shrink: 0; }
+.logo-pastille { display: none; }
+@media (max-width: 640px) { .logo-marque { width: 32px; height: 32px; } .logo-texte { font-size: 1.15rem !important; } }
+@media (max-width: 360px) { .logo-texte b { display: none; } }

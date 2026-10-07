@@ -648,7 +648,7 @@ async function ouvrirFiche(id) {
         <p class="fiche-boutons">${estFav ? `<button class="btn leger" data-retirer="${j.id}" data-garder>Retirer de mes favoris</button>`
           : `<button class="btn accent" data-ajouter="${j.id}" data-garder>+ Ajouter à mes favoris</button>`}
           ${j.s || j.g ? `<button class="btn fantome" data-comparer="${j.id}">⇄ Comparer</button>` : ""}
-          <button class="btn fantome" data-partager="joueur/${j.id}" data-titre="${echapper(j.nom)} · MonTrio">↗ Partager</button></p></div>
+          <button class="btn fantome" data-partager="joueur/${j.id}" data-titre="${echapper(j.nom)} · MonTrioHockey">↗ Partager</button></p></div>
       <button class="fermer" aria-label="Fermer">✕</button>
     </div>
     <div class="fiche-corps">${corps}</div>`;

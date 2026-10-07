@@ -158,7 +158,7 @@ async function ouvrirMatch(id, opt = {}) {
   const corps = joue ? await corpsMatchJoue(m) : corpsAvantMatch(m);
   if (modaleActuelle?.t !== "match" || modaleActuelle.id !== String(m.id)) return; // une autre fenêtre a été ouverte entre-temps
   const outils = `<div class="fiche-outils">
-    <button class="btn fantome" data-partager="match/${m.id}" data-titre="${echapper(abr(m.ext))} @ ${echapper(abr(m.dom))} · MonTrio">↗ Partager</button>
+    <button class="btn fantome" data-partager="match/${m.id}" data-titre="${echapper(abr(m.ext))} @ ${echapper(abr(m.dom))} · MonTrioHockey">↗ Partager</button>
 </div>`;
   $("fiche").querySelector(".fiche-corps").innerHTML = corps + outils;
 }
@@ -169,14 +169,14 @@ async function corpsMatchJoue(m) {
   let h = "";
   if (vide) return `<p class="vide">${estDirect(m) ? "Les statistiques des joueurs arrivent au fil du match." : "Les statistiques détaillées de ce match ne sont pas encore disponibles. Reviens un peu plus tard!"}</p>`;
   // Le récit du match, écrit automatiquement
-  if (estFini(m)) h += `<h3>Le récit</h3><p class="recit">${recitMatch(m, lignes)}</p><p class="petit-gris">Écrit automatiquement par MonTrio à partir des statistiques officielles.</p>`;
+  if (estFini(m)) h += `<h3>Le récit</h3><p class="recit">${recitMatch(m, lignes)}</p><p class="petit-gris">Écrit automatiquement par MonTrioHockey à partir des statistiques officielles.</p>`;
   // Les 3 étoiles
   const etoiles = troisEtoiles(m, lignes);
   if (etoiles.length) {
     h += `<h3>Les 3 étoiles</h3><div class="etoiles">${etoiles.map((x, i) => `<button class="etoile" data-fiche="${x.j.id}">
       <span class="etoile-rang">${"★".repeat(3 - i)}</span><span class="numero">${x.j.no ?? "–"}</span>
       <span class="etoile-nom"><strong>${echapper(x.j.nom)}</strong><small>${abr(x.eq)} · ${texteLigne(x.l)}</small></span></button>`).join("")}</div>
-      <p class="petit-gris">Choisies automatiquement par MonTrio selon les statistiques du match.</p>`;
+      <p class="petit-gris">Choisies automatiquement par MonTrioHockey selon les statistiques du match.</p>`;
   }
   // Le match en chiffres
   const tot = (ligne, k) => Object.values(ligne).filter((l) => !estGardienLigne(l)).reduce((s, l) => s + (Number(l[k]) || 0), 0);
@@ -311,7 +311,7 @@ async function ouvrirEquipe(eq, opt = {}) {
   const e = D.equipes[eq];
   let h = `<div class="fiche-haut equipe-haut">${boutonRetour()}<span class="numero equipe-pastille">${abr(eq)}</span>
     <div><h2>${echapper(nomEq(eq))}</h2><p><span class="tag-ligue petit">${LIGUES[lig].nom}</span> ${[e.conf, e.div].filter((x, i, a) => x && a.indexOf(x) === i && x !== LIGUES[lig].nom).map(echapper).join(" · ")}</p>
-      <p class="fiche-boutons">        <button class="btn fantome" data-partager="equipe/${eq}" data-titre="${echapper(nomEq(eq))} · MonTrio">↗ Partager</button></p></div>
+      <p class="fiche-boutons">        <button class="btn fantome" data-partager="equipe/${eq}" data-titre="${echapper(nomEq(eq))} · MonTrioHockey">↗ Partager</button></p></div>
     <button class="fermer" aria-label="Fermer">✕</button></div><div class="fiche-corps">`;
   h += `<div class="tuiles">
     ${tuile(r ? ieme(r.ligueRang) : "–", `rang · ${LIGUES[lig].nom}`)}
@@ -582,7 +582,7 @@ async function ouvrirComparaison(idA, idB, opt = {}) {
   const note = A.lig !== B.lig ? `<p class="note-fiche">Attention : ${echapper(nomDeFamille(A))} et ${echapper(nomDeFamille(B))} ne jouent pas dans la même ligue, alors les chiffres ne se comparent pas parfaitement.</p>` : "";
   montrerModale(haut("Comparaison") + `<div class="fiche-corps"><div class="cmp-tetes">${tete(A)}<span class="cmp-vs">VS</span>${tete(B)}</div>${note}<div class="cmp">${lignes}</div>
     <div class="fiche-outils"><button class="btn fantome" data-comparer="${A.id}">⇄ Changer de joueur</button>
-    <button class="btn fantome" data-partager="comparer/${A.id}/${B.id}" data-titre="${echapper(nomDeFamille(A))} vs ${echapper(nomDeFamille(B))} · MonTrio">↗ Partager</button></div></div>`);
+    <button class="btn fantome" data-partager="comparer/${A.id}/${B.id}" data-titre="${echapper(nomDeFamille(A))} vs ${echapper(nomDeFamille(B))} · MonTrioHockey">↗ Partager</button></div></div>`);
 }
 function rendreChoixComp(A) {
   const champ = $("comp-recherche"), boite = $("comp-resultats");
@@ -620,8 +620,8 @@ async function partager(chemin, titre) {
 }
 // Alertes de buts.
 //  · Si le relais a les alertes activées (et le téléphone le permet) : de vraies notifications,
-//    même quand MonTrio est fermé (LNH : buts de tes joueurs et de tes équipes, résultat final).
-//  · Sinon : un avis à l'écran pendant que MonTrio est ouvert.
+//    même quand MonTrioHockey est fermé (LNH : buts de tes joueurs et de tes équipes, résultat final).
+//  · Sinon : un avis à l'écran pendant que MonTrioHockey est ouvert.
 let alertesOn = memoire("alertes") === "1";
 const vus = new Map();
 let pushPossible = null; // null = pas encore vérifié
@@ -669,7 +669,7 @@ $("alertes").onclick = async () => {
   const iPhoneNav = /iphone|ipad/i.test(navigator.userAgent) && !estInstallee();
   if (activer && "Notification" in window && Notification.permission === "default") { try { await Notification.requestPermission(); } catch (e) {} }
   alertesOn = activer; memoire("alertes", alertesOn ? "1" : "0"); rendreBoutonAlertes();
-  if (activer && "Notification" in window && Notification.permission === "denied") toast("Les notifications sont bloquées pour ce site dans les réglages de ton navigateur ou de ton téléphone. Tu seras averti seulement pendant que MonTrio est ouvert.", 9000);
+  if (activer && "Notification" in window && Notification.permission === "denied") toast("Les notifications sont bloquées pour ce site dans les réglages de ton navigateur ou de ton téléphone. Tu seras averti seulement pendant que MonTrioHockey est ouvert.", 9000);
   if (!activer) {
     memoire("push-envoye", "");
     try { const sub = await abonnementPush(false); if (sub) { await fetch(`${RELAIS}/alertes/desabonner`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ abonnement: sub.toJSON() }) }); await sub.unsubscribe(); } } catch (e) {}
@@ -679,11 +679,11 @@ $("alertes").onclick = async () => {
     try {
       await abonnementPush(true); await synchroniserPush();
       const { joueurs, equipes } = favorisLnh();
-      return toast(joueurs.length ? `Alertes activées! Ton téléphone t'avertira quand tes favoris de la LNH marquent (${pluriel(equipes.length, "équipe")}), même si MonTrio est fermé.` : "Alertes activées. Ajoute des joueurs de la LNH à tes favoris pour recevoir leurs buts.", 7000);
+      return toast(joueurs.length ? `Alertes activées! Ton téléphone t'avertira quand tes favoris de la LNH marquent (${pluriel(equipes.length, "équipe")}), même si MonTrioHockey est fermé.` : "Alertes activées. Ajoute des joueurs de la LNH à tes favoris pour recevoir leurs buts.", 7000);
     } catch (e) {}
   }
-  if (iPhoneNav) return toast("Sur iPhone, installe d'abord MonTrio sur ton écran d'accueil pour recevoir des alertes même quand l'app est fermée. En attendant, tu seras averti pendant que MonTrio est ouvert.", 9000);
-  toast("Alertes activées : tu seras averti quand tes favoris marquent, tant que MonTrio reste ouvert.");
+  if (iPhoneNav) return toast("Sur iPhone, installe d'abord MonTrioHockey sur ton écran d'accueil pour recevoir des alertes même quand l'app est fermée. En attendant, tu seras averti pendant que MonTrioHockey est ouvert.", 9000);
+  toast("Alertes activées : tu seras averti quand tes favoris marquent, tant que MonTrioHockey reste ouvert.");
 };
 // Quand les favoris changent, on prévient le relais (s'il envoie les alertes)
 const ajouterBase = ajouter, retirerBase = retirer;
@@ -718,7 +718,7 @@ const LEXIQUE = [["PJ", "Parties (matchs) jouées"], ["B", "Buts"], ["A", "Passe
   ["(P)", "Match décidé en prolongation"], ["(TB)", "Match décidé en tirs de barrage"], ["BP / BC", "Buts pour / buts contre"], ["Diff", "Différence entre les buts pour et les buts contre"],
   ["Moy.", "Moyenne de buts accordés par match (gardiens)"], ["% arr.", "Pourcentage d'arrêts : arrêts divisés par les tirs reçus (.920 = 92 %)"], ["Déc.", "Décision du gardien : V, D ou DP"],
   ["Série", "Résultats de suite en cours (V3 = 3 victoires de suite, D2 = 2 défaites, DP1 = 1 défaite en prolongation)"], ["10 dern.", "Fiche des 10 derniers matchs (V-D-DP)"], ["Dom. / Ext.", "Fiche à domicile / à l'étranger"],
-  ["3 étoiles", "Les meilleurs du match, choisis automatiquement par MonTrio selon les stats"], ["En feu", "Les joueurs qui ont le plus de points dans les 5 derniers matchs de leur équipe"]];
+  ["3 étoiles", "Les meilleurs du match, choisis automatiquement par MonTrioHockey selon les stats"], ["En feu", "Les joueurs qui ont le plus de points dans les 5 derniers matchs de leur équipe"]];
 function ouvrirLexique() {
   noterModale({ t: "lexique", id: "x" });
   montrerModale(`<div class="fiche-haut"><div><h2>Lexique</h2><p>Les abréviations du hockey, expliquées simplement.</p></div><button class="fermer" aria-label="Fermer">✕</button></div>
@@ -731,7 +731,7 @@ document.addEventListener("click", (e) => {
   const b = e.target.closest("[data-retour],[data-partager],[data-comparer],[data-comparer-avec],[data-lexique]");
   if (!b) return;
   if (b.hasAttribute("data-retour")) revenir();
-  else if (b.dataset.partager) partager(b.dataset.partager, b.dataset.titre || "MonTrio");
+  else if (b.dataset.partager) partager(b.dataset.partager, b.dataset.titre || "MonTrioHockey");
   else if (b.dataset.comparer) ouvrirComparaison(b.dataset.comparer);
   else if (b.dataset.comparerAvec) ouvrirComparaison($("comp-resultats").dataset.a, b.dataset.comparerAvec);
   else if (b.hasAttribute("data-lexique")) ouvrirLexique();

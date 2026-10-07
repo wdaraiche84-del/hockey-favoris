@@ -1,12 +1,12 @@
 // =============================================================
 // LE « SERVICE WORKER » DE L'APPLICATION
-// C'est ce qui permet d'installer MonTrio sur le téléphone.
+// C'est ce qui permet d'installer MonTrioHockey sur le téléphone.
 // Règle simple : on demande toujours la version la plus récente
 // sur internet, et on garde une copie de secours pour pouvoir
 // ouvrir l'app même sans connexion (avec les dernières données vues).
 // Pour forcer une mise à jour chez tout le monde, change VERSION.
 // =============================================================
-const VERSION = "montrio-v15";
+const VERSION = "montrio-v16";
 const ESSENTIEL = ["./", "index.html", "style.css", "app.js", "plus.js", "config.js", "donnees.js", "manifest.webmanifest", "icones/icone-192.png"];
 
 self.addEventListener("install", (e) => {
@@ -34,8 +34,8 @@ self.addEventListener("fetch", (e) => {
 // ---- Alertes sur le téléphone (envoyées par le relais) ----
 self.addEventListener("push", (e) => {
   let d = {};
-  try { d = e.data ? e.data.json() : {}; } catch (err) { d = { titre: "MonTrio", texte: e.data ? e.data.text() : "" }; }
-  e.waitUntil(self.registration.showNotification(d.titre || "MonTrio", {
+  try { d = e.data ? e.data.json() : {}; } catch (err) { d = { titre: "MonTrioHockey", texte: e.data ? e.data.text() : "" }; }
+  e.waitUntil(self.registration.showNotification(d.titre || "MonTrioHockey", {
     body: d.texte || "", tag: d.tag || undefined, icon: "icones/icone-192.png", badge: "icones/icone-192.png", data: { url: d.url || "./" },
   }));
 });
