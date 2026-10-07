@@ -164,9 +164,9 @@ const ligneMatchCourte = (m, eq) => {
   const joue = estFini(m) || estDirect(m);
   const r = joue ? resultatPour(m, eq) : null;
   return `<button class="ligne-cal" data-match="${m.id}">
-    <span class="lc-date">${m.date === AUJ ? "Ce soir" : dateCourte(m.date)}</span>
+    <span class="lc-date">${(joue ? m.date : dateLocale(m)) === AUJ ? "Ce soir" : dateCourte(joue ? m.date : dateLocale(m))}</span>
     <span class="lc-adv">${m.dom === eq ? "vs" : "@"} <b>${abr(adversaire(m, eq))}</b> ${simplifier(courtEq(adversaire(m, eq))).trim() !== simplifier(abr(adversaire(m, eq))) ? `<span class="lc-nom">${echapper(courtEq(adversaire(m, eq)))}</span>` : ""}</span>
-    <span class="lc-res ${r ? r.classe : ""}">${r ? (estDirect(m) ? "● " : "") + r.texte : heureDe(m)}</span></button>`;
+    <span class="lc-res ${r ? r.classe : ""}">${r ? (estDirect(m) ? "● " : "") + r.texte : heureDe(m, false)}</span></button>`;
 };
 
 // ---- B. Sommaire d'un match -----------------------------------
@@ -218,9 +218,9 @@ async function ouvrirMatch(id, opt = {}) {
   if (!m) return toast("Ce match n'a pas été trouvé.");
   noterModale({ t: "match", id: String(m.id), retour: opt.retour });
   const lig = ligueDe(m.dom), joue = estFini(m) || estDirect(m);
-  const statut = estDirect(m) ? `<span class="badge-direct">EN DIRECT</span> ${m.periode || ""}` : estFini(m) ? `Final${suffixeFin(m)}` : `<span class="heure">${heureDe(m)}</span>`;
+  const statut = estDirect(m) ? `<span class="badge-direct">EN DIRECT</span> ${m.periode || ""}` : estFini(m) ? `Final${suffixeFin(m)}` : `<span class="heure">${heureDe(m, false)}</span>`;
   const haut = `<div class="fiche-haut match-haut">${boutonRetour()}
-    <div class="match-entete"><span class="tag-ligue petit">${LIGUES[lig].nom}</span> ${dateLongue(m.date)} · ${statut}${m.series ? " · Séries" : ""}</div>
+    <div class="match-entete"><span class="tag-ligue petit">${LIGUES[lig].nom}</span> ${dateLongue(estFini(m) || estDirect(m) ? m.date : dateLocale(m))} · ${statut}${m.series ? " · Séries" : ""}</div>
     <div class="match-equipes">
       <div class="me-cote-bloc">${blocEquipeMatch(m.ext, m.se, joue, m.se > m.sd, "Visiteurs")}</div>
       <span class="me-tiret">${joue ? "–" : "@"}</span>
@@ -366,8 +366,8 @@ function htmlFaceAFace(m) {
   if (!autres.length) return "";
   const v = { [m.dom]: 0, [m.ext]: 0 }, finis = [...autres, m].filter(estFini);
   for (const x of finis) v[x.sd > x.se ? x.dom : x.ext]++;
-  const ligneNeutre = (x) => `<button class="ligne-cal" data-match="${x.id}"><span class="lc-date">${x.date === AUJ ? "Ce soir" : dateCourte(x.date) + (x.date.slice(0, 4) !== AUJ.slice(0, 4) ? ` ${x.date.slice(0, 4)}` : "")}</span>
-    <span class="lc-adv"><b>${abr(x.ext)}</b> @ <b>${abr(x.dom)}</b></span><span class="lc-res">${estFini(x) || estDirect(x) ? `${x.se}-${x.sd}${suffixeFin(x)}` : heureDe(x)}</span></button>`;
+  const ligneNeutre = (x, d = estFini(x) || estDirect(x) ? x.date : dateLocale(x)) => `<button class="ligne-cal" data-match="${x.id}"><span class="lc-date">${d === AUJ ? "Ce soir" : dateCourte(d) + (d.slice(0, 4) !== AUJ.slice(0, 4) ? ` ${d.slice(0, 4)}` : "")}</span>
+    <span class="lc-adv"><b>${abr(x.ext)}</b> @ <b>${abr(x.dom)}</b></span><span class="lc-res">${estFini(x) || estDirect(x) ? `${x.se}-${x.sd}${suffixeFin(x)}` : heureDe(x, false)}</span></button>`;
   return `<h3>Entre eux cette saison</h3>${finis.length ? `<p class="petit-gris" style="margin-top:0">${abr(m.ext)} : ${pluriel(v[m.ext], "victoire")} · ${abr(m.dom)} : ${pluriel(v[m.dom], "victoire")}</p>` : ""}
     <div class="liste-cal">${autres.map(ligneNeutre).join("")}</div>`;
 }

@@ -23,11 +23,18 @@ function simplifier(t) { return String(t).normalize("NFD").replace(/[̀-ͯ]/g, "
 function slug(t) { return simplifier(t).replace(/[^a-z]+/g, "-").replace(/^-|-$/g, ""); }
 function echapper(t) { return String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]); }
 function pluriel(n, mot) { return `${n} ${mot}${n > 1 ? "s" : ""}`; }
-function heureDe(m) {
+function heureDe(m, avecJour = true) {
   // « 9 h 45 » (sans zéro devant), avec des espaces insécables pour ne pas couper l'heure
-  // et « 19 h » plutôt que « 19 h 00 »
-  return m.debut ? new Date(m.debut).toLocaleTimeString("fr-CA", { hour: "numeric", minute: "2-digit" }).replace(/\s/g, "\u00a0").replace(/\u00a0h\u00a000$/, "\u00a0h") : "";
+  // et « 19 h » plutôt que « 19 h 00 ». L'heure est celle de l'appareil du visiteur.
+  if (!m.debut) return "";
+  const h = new Date(m.debut).toLocaleTimeString("fr-CA", { hour: "numeric", minute: "2-digit" }).replace(/\s/g, "\u00a0").replace(/\u00a0h\u00a000$/, "\u00a0h");
+  // Ailleurs dans le monde (ex. en France), un match du jeudi soir au Québec tombe le vendredi :
+  // on l'indique, « 1 h (ven.) », pour ne pas se tromper de journée
+  const jl = dateLocale(m);
+  return avecJour && jl !== m.date ? `${h}\u00a0(${JOURS[versDate(jl).getDay()]})` : h;
 }
+// La date du match là où se trouve le visiteur (peut différer de la date officielle de la ligue)
+function dateLocale(m) { return m.debut ? versTexte(new Date(m.debut)) : m.date; }
 // « la LNH », mais « l'OHL » ; virgule décimale (3,00) ; séquences en français (V3, D2, DP1)
 const laLigue = (l) => (/^[AEIOUH]/.test(LIGUES[l]?.nom || "") && LIGUES[l]?.nom !== "LHJMQ" ? "l'" : "la ") + (LIGUES[l]?.nom || "ligue");
 const dec = (x, n = 2) => (x == null || isNaN(x) ? "–" : Number(x).toFixed(n).replace(".", ","));
@@ -334,7 +341,7 @@ async function rendreSoir() {
   if (!favs.length) { $("soir").innerHTML = `<p class="vide">Ajoute des joueurs à tes favoris pour suivre leurs matchs ici.</p>`; return; }
   if (!ceSoir.length) {
     const p = eqs.map(prochainMatch).filter((x) => x && x.debut).sort((a, b) => a.debut.localeCompare(b.debut))[0];
-    $("soir").innerHTML = `<p class="vide">Pas de match ce soir pour tes favoris. Repose-toi! 😄${p ? `<br>Prochain rendez-vous : <button class="lien-match" data-match="${p.id}"><strong>${dateLongue(p.date)}</strong>, ${echapper(courtEq(p.ext))} @ ${echapper(courtEq(p.dom))} à ${heureDe(p)} ›</button>` : ""}</p>`;
+    $("soir").innerHTML = `<p class="vide">Pas de match ce soir pour tes favoris. Repose-toi! 😄${p ? `<br>Prochain rendez-vous : <button class="lien-match" data-match="${p.id}"><strong>${dateLongue(dateLocale(p))}</strong>, ${echapper(courtEq(p.ext))} @ ${echapper(courtEq(p.dom))} à ${heureDe(p, false)} ›</button>` : ""}</p>`;
     return;
   }
   let h = "";
@@ -386,7 +393,7 @@ function htmlProchain(j) {
   if (direct) { const r = resultatPour(direct, j.eq); return `<button class="lien-match" data-match="${direct.id}"><span class="badge-direct">EN DIRECT</span> <strong>${r.texte}</strong> contre ${abr(adversaire(direct, j.eq))} ›</button>`; }
   const p = prochainMatch(j.eq);
   if (!p) return "Saison terminée";
-  return `<button class="lien-match" data-match="${p.id}">Prochain : <strong>${p.date === AUJ ? "ce soir" : dateLongue(p.date)}</strong> ${p.dom === j.eq ? "vs" : "@"} ${abr(adversaire(p, j.eq))} · ${heureDe(p)} ›</button>`;
+  return `<button class="lien-match" data-match="${p.id}">Prochain : <strong>${dateLocale(p) === AUJ ? "ce soir" : dateLongue(dateLocale(p))}</strong> ${p.dom === j.eq ? "vs" : "@"} ${abr(adversaire(p, j.eq))} · ${heureDe(p, false)} ›</button>`;
 }
 function rendreFavoris() {
   const favs = favorisObjets();
@@ -636,7 +643,7 @@ async function htmlMatchParMatch(j) {
   }
   if (prochains.length) {
     h += `<h3>Prochains matchs</h3><div class="prochains">${prochains.map((m) =>
-      `<div class="prochain-match" data-match="${m.id}"><strong>${m.date === AUJ ? "Ce soir" : dateLongue(m.date)}</strong><span>${m.dom === j.eq ? "vs" : "@"} ${echapper(nomEq(adversaire(m, j.eq)))}</span><span>${heureDe(m)}</span></div>`).join("")}</div>`;
+      `<div class="prochain-match" data-match="${m.id}"><strong>${dateLocale(m) === AUJ ? "Ce soir" : dateLongue(dateLocale(m))}</strong><span>${m.dom === j.eq ? "vs" : "@"} ${echapper(nomEq(adversaire(m, j.eq)))}</span><span>${heureDe(m, false)}</span></div>`).join("")}</div>`;
   }
   return h;
 }
