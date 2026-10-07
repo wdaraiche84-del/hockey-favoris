@@ -729,3 +729,32 @@ button.score-carte:hover { background: #2B3647; }
 .tuiles.petites { margin-top: 10px; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); }
 .tuiles.petites .tuile b { font-size: 1.25rem; }
 .tag-recrue { display: inline-block; vertical-align: middle; font-family: "Inter", sans-serif; font-size: .7rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; background: #F59E0B; color: #1F2937; border-radius: 5px; padding: 2px 7px; }
+
+/* ---- Course aux séries et tableau des séries ---- */
+.tableau.course tr.sous-tete td { background: var(--carte-2); font-weight: 800; font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--texte-doux); text-align: left; }
+.tableau.course tr.elimine td { opacity: .5; }
+.qualif { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; font-size: .65rem; font-weight: 800; background: var(--vert); color: #fff; vertical-align: middle; }
+.qualif.q-e { background: var(--texte-doux); }
+.affiches { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.affiches-conf h4 { margin: 0 0 6px; font-size: .85rem; color: var(--texte-doux); }
+.duel { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; background: var(--carte-2); border-radius: 10px; padding: 6px 10px; margin-bottom: 6px; }
+.duel span { font-size: .75rem; color: var(--texte-doux); font-weight: 700; }
+.duel button { border: 0; background: none; padding: 0; display: flex; align-items: baseline; gap: 6px; cursor: pointer; }
+.duel button:last-child { justify-content: flex-end; }
+.duel b { font-family: var(--titre); font-size: 1.3rem; }
+.duel small { font-size: .66rem; color: var(--texte-doux); font-weight: 600; }
+.duel button:hover b { color: var(--accent); }
+.tableau-series { display: grid; grid-template-columns: repeat(4, minmax(170px, 1fr)); gap: 12px; overflow-x: auto; }
+.ronde { display: flex; flex-direction: column; justify-content: space-around; gap: 10px; }
+.ronde h4 { margin: 0; font-size: .74rem; text-transform: uppercase; letter-spacing: .05em; color: var(--texte-doux); text-align: center; }
+.serie-carte { border: 1px solid var(--ligne); border-radius: 10px; overflow: hidden; }
+.sc-eq { display: grid; grid-template-columns: 30px 44px 1fr auto; align-items: center; gap: 6px; width: 100%; border: 0; background: var(--carte); padding: 6px 8px; text-align: left; cursor: pointer; }
+.sc-eq + .sc-eq { border-top: 1px solid var(--ligne); }
+.sc-eq small { font-size: .62rem; color: var(--texte-doux); font-weight: 700; }
+.sc-eq b { font-family: var(--titre); font-size: 1.1rem; }
+.sc-eq span { font-size: .75rem; color: var(--texte-doux); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sc-eq i { font-style: normal; font-family: var(--titre); font-weight: 800; font-size: 1.3rem; }
+.sc-eq.perd { opacity: .5; }
+.sc-eq.vide { cursor: default; display: block; color: var(--texte-doux); }
+.sc-eq:hover:not(.vide) b { color: var(--accent); }
+@media (max-width: 640px) { .affiches { grid-template-columns: 1fr; } .tableau-series { grid-template-columns: repeat(4, 180px); } }

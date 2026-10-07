@@ -141,6 +141,20 @@ async function principal() {
     }));
   } catch (e) { console.warn("Classement :", e.message); }
 
+  // Tableau des séries éliminatoires (seulement quand les séries ont commencé)
+  let series = null;
+  if (calendrier.some((m) => m.series)) {
+    try {
+      const b = await lire(`/playoff-bracket/${saison.slice(4)}`);
+      series = (b.series || []).filter((x) => x.topSeedTeam || x.bottomSeedTeam).map((x) => ({
+        ronde: x.playoffRound, lettre: x.seriesLetter,
+        haut: { eq: x.topSeedTeam?.abbrev || null, rang: x.topSeedRankAbbrev || "", v: x.topSeedWins ?? 0 },
+        bas: { eq: x.bottomSeedTeam?.abbrev || null, rang: x.bottomSeedRankAbbrev || "", v: x.bottomSeedWins ?? 0 },
+        gagnant: x.winningTeamId ? (x.winningTeamId === x.topSeedTeam?.id ? x.topSeedTeam?.abbrev : x.bottomSeedTeam?.abbrev) : null,
+      }));
+    } catch (e) { console.warn("Séries :", e.message); }
+  }
+
   // 4. Stats de chaque joueur, match par match (seulement les matchs pas encore traités)
   //    Patineur : [buts, passes, +/-, tirs, minutes de punition, temps de glace]
   //    Gardien  : ["G", arrêts, tirs reçus, buts accordés, décision (W/L/O), temps de jeu]
@@ -184,6 +198,7 @@ async function principal() {
   }
   await ecrire("data/calendrier.json", calendrier);
   if (classement.length) await ecrire("data/classement.json", classement);
+  if (series) await ecrire("data/series.json", series);
   for (const eq of Object.keys(EQUIPES)) await ecrire(`data/points/${eq}.json`, points[eq]);
   await ecrire("data/traites-v2.json", [...traites].sort());
 

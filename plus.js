@@ -423,6 +423,63 @@ function htmlStatsAvancees(j) {
   return `<div class="tuiles petites">${h}</div>`;
 }
 
+// ---- D bis. Course aux séries et tableau des séries (LNH) -------
+let seriesLnh;
+const QUALIF = { x: "Qualifié", y: "Champion de division", z: "Champion d'association", p: "Meilleur de la ligue", e: "Éliminé" };
+const RONDES = { 1: "1re ronde", 2: "2e ronde", 3: "Finales d'association", 4: "Finale de la Coupe Stanley" };
+function ligneCourse(t, rang, eqs) {
+  const b = bilan(t.eq), diff = t.bp - t.bc;
+  return `<tr class="${eqs.includes(t.eq) ? "favori" : ""} ${t.q === "e" ? "elimine" : ""}"><td>${rang}</td>
+    <td class="eq"><button class="lien-equipe" data-equipe-fiche="${t.eq}"><span class="abr">${abr(t.eq)}</span> <span class="nom-long">${echapper(courtEq(t.eq))}</span></button>${t.q && QUALIF[t.q] ? ` <span class="qualif q-${t.q}" title="${QUALIF[t.q]}">${t.q === "e" ? "É" : "✓"}</span>` : ""}</td>
+    <td>${t.pj}</td><td class="pts">${t.pts}</td><td>${fmtBilan([t.v, t.d, t.dp])}</td><td class="large">${t.vr ?? "–"}</td>
+    <td class="${diff > 0 ? "plus" : diff < 0 ? "moins" : ""}">${signe(diff)}</td><td class="large">${fmtBilan(b.dix)}</td><td class="large">${serieFr(t.serie)}</td></tr>`;
+}
+const teteCourse = `<thead><tr><th>#</th><th>Équipe</th><th>PJ</th><th>PTS</th><th>V-D-DP</th><th class="large">VR</th><th>Diff</th><th class="large">10 dern.</th><th class="large">Série</th></tr></thead>`;
+function htmlCourse(c) {
+  const eqs = equipesFavorites();
+  const parRang = (l, k) => [...l].sort((a, b) => (a[k] ?? 99) - (b[k] ?? 99) || b.pts - a.pts || a.pj - b.pj);
+  let h = "", affiches = "";
+  for (const conf of groupes(c, "conf")) {
+    const eqConf = c.filter((t) => t.conf === conf);
+    const divs = groupes(eqConf, "div");
+    const tetes = {};
+    h += `<div class="table-bloc"><h3>${echapper(conf)}</h3><div class="defile"><table class="tableau course">${teteCourse}<tbody>`;
+    for (const d of divs) {
+      const top = parRang(eqConf.filter((t) => t.div === d), "rd").slice(0, 3);
+      tetes[d] = top;
+      h += `<tr class="sous-tete"><td colspan="9">${echapper(d)}</td></tr>${top.map((t, i) => ligneCourse(t, i + 1, eqs)).join("")}`;
+    }
+    const pris = new Set(Object.values(tetes).flat().map((t) => t.eq));
+    const wc = parRang(eqConf.filter((t) => !pris.has(t.eq)), "rw");
+    h += `<tr class="sous-tete"><td colspan="9">Meilleures 2es places (2 places)</td></tr>${wc.map((t, i) => ligneCourse(t, `${i + 1}`, eqs).replace("<tr class=\"", `<tr class="${i === 2 ? "coupure " : ""}`)).join("")}`;
+    h += `</tbody></table></div></div>`;
+    // Si les séries commençaient aujourd'hui
+    const [d1, d2] = divs;
+    if (d1 && d2 && wc.length >= 2 && tetes[d1].length >= 3 && tetes[d2].length >= 3) {
+      const [m1, m2] = [tetes[d1][0], tetes[d2][0]].sort((a, b) => b.pts - a.pts || a.pj - b.pj);
+      const duel = (a, b, ra, rb) => `<div class="duel"><button data-equipe-fiche="${a.eq}"><small>${ra}</small><b>${abr(a.eq)}</b></button><span>vs</span><button data-equipe-fiche="${b.eq}"><b>${abr(b.eq)}</b><small>${rb}</small></button></div>`;
+      affiches += `<div class="affiches-conf"><h4>${echapper(conf)}</h4>
+        ${duel(m1, wc[1], "1re div.", "2e meill. 2e")}${duel(tetes[m1.div][1], tetes[m1.div][2], "2e div.", "3e div.")}
+        ${duel(m2, wc[0], "1re div.", "1re meill. 2e")}${duel(tetes[m2.div][1], tetes[m2.div][2], "2e div.", "3e div.")}</div>`;
+    }
+  }
+  return `${affiches ? `<div class="table-bloc"><h3>Si les séries commençaient aujourd'hui</h3><div class="affiches">${affiches}</div></div>` : ""}${h}
+    <p class="petit-gris">Format de la LNH : les 3 premiers de chaque division et les 2 meilleures équipes parmi les autres (les « meilleures 2es places ») de chaque association font les séries. La ligne pointillée marque la limite. VR : victoires en temps réglementaire (premier critère en cas d'égalité). ✓ : place assurée · É : éliminé.</p>`;
+}
+function htmlTableauSeries(series) {
+  const carte = (x) => {
+    const eq = (e, gagne) => e.eq ? `<button class="sc-eq ${x.gagnant && !gagne ? "perd" : ""}" data-equipe-fiche="${e.eq}"><small>${e.rang}</small><b>${abr(e.eq)}</b><span>${echapper(courtEq(e.eq))}</span><i>${e.v}</i></button>` : `<div class="sc-eq vide"><b>À déterminer</b></div>`;
+    return `<div class="serie-carte">${eq(x.haut, x.gagnant === x.haut.eq)}${eq(x.bas, x.gagnant === x.bas.eq)}</div>`;
+  };
+  const rondes = [...new Set(series.map((x) => x.ronde))].sort();
+  return `<div class="table-bloc"><h3>Séries éliminatoires</h3><div class="tableau-series">${rondes.map((r) => `<div class="ronde"><h4>${RONDES[r] || `Ronde ${r}`}</h4>${series.filter((x) => x.ronde === r).map(carte).join("")}</div>`).join("")}</div></div>`;
+}
+async function rendreSeries() {
+  if (seriesLnh === undefined) seriesLnh = await lireJson("data/series.json").catch(() => null);
+  if (vueClassement !== "series" || ligue !== "lnh") return;
+  $("tables-classement").innerHTML = (seriesLnh?.length ? htmlTableauSeries(seriesLnh) : "") + htmlCourse(D.classement.lnh || []);
+}
+
 // ---- E. Comparateur de joueurs --------------------------------
 async function ouvrirComparaison(idA, idB, opt = {}) {
   await Promise.all([charger(ligDeId(idA)), idB ? charger(ligDeId(idB)) : null].map((p) => p && p.catch(() => {})));
