@@ -112,7 +112,7 @@ for (const m of cal) {
     description: joue
       ? `${nomEq(m.ext)} contre ${nomEq(m.dom)}, ${dateFr(m.debut)} (${lig}). Le récit du match, les 3 étoiles, les marqueurs et la feuille de match sur MonTrioHockey.`
       : `${nomEq(m.ext)} contre ${nomEq(m.dom)} (${lig}). L'avant-match : face-à-face, forme récente et joueurs à surveiller sur MonTrioHockey.`,
-    cible: `match/${m.id}`,
+    cible: `match/${m.id}`, image: imageDe(`match/${m.id}.jpg`),
   }));
 }
 
