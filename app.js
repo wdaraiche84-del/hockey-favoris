@@ -25,7 +25,8 @@ function echapper(t) { return String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;
 function pluriel(n, mot) { return `${n} ${mot}${n > 1 ? "s" : ""}`; }
 function heureDe(m) {
   // « 9 h 45 » (sans zéro devant), avec des espaces insécables pour ne pas couper l'heure
-  return m.debut ? new Date(m.debut).toLocaleTimeString("fr-CA", { hour: "numeric", minute: "2-digit" }).replace(/\s/g, "\u00a0") : "";
+  // et « 19 h » plutôt que « 19 h 00 »
+  return m.debut ? new Date(m.debut).toLocaleTimeString("fr-CA", { hour: "numeric", minute: "2-digit" }).replace(/\s/g, "\u00a0").replace(/\u00a0h\u00a000$/, "\u00a0h") : "";
 }
 // « la LNH », mais « l'OHL » ; virgule décimale (3,00) ; séquences en français (V3, D2, DP1)
 const laLigue = (l) => (/^[AEIOUH]/.test(LIGUES[l]?.nom || "") && LIGUES[l]?.nom !== "LHJMQ" ? "l'" : "la ") + (LIGUES[l]?.nom || "ligue");
@@ -85,6 +86,7 @@ async function chargerLnh() {
     t.conf = NOMS_CONF[t.conf] || t.conf; t.div = NOMS_DIV[t.div] || t.div;
     if (equipes[t.eq]) Object.assign(equipes[t.eq], { conf: t.conf, div: t.div });
   }
+  D.records = j.records || null;
   ajouterDonnees("lnh", equipes, j.joueurs, cal, cl, j.misAJour);
 }
 async function chargerAutre(lig) {
@@ -137,7 +139,7 @@ function resultatPour(m, eq) {
 function statutMatch(m) {
   if (estDirect(m)) return m.periode || "En direct";
   if (estFini(m)) return "Final" + suffixeFin(m);
-  return heureDe(m);
+  return `<span class="heure">${heureDe(m)}</span>`; // (en minuscules : « 19 h », pas « 19 H »)
 }
 // Bilan d'une équipe à partir de ses matchs terminés : [victoires, défaites, défaites en prolongation]
 function issuePour(m, eq) { const { nous, eux } = scorePour(m, eq); return nous > eux ? 0 : m.fin ? 2 : 1; }
@@ -178,6 +180,12 @@ const GROUPES_LIGUES = [["Pro", ["lnh", "ahl"]], ["Junior", ["lhjmq", "ohl", "wh
 function rendreChoixLigue() {
   $("choix-ligue").innerHTML = GROUPES_LIGUES.map(([g, ls]) => `<div class="groupe-ligues"><span class="groupe-nom">${g}</span>${ls.map((k) =>
     `<button class="puce-ligue ${k === ligue ? "actif" : ""}" data-ligue="${k}" role="tab" aria-selected="${k === ligue}" title="${LIGUES[k].long}">${LIGUES[k].nom}</button>`).join("")}</div>`).join("");
+  // La ligue choisie reste visible dans la barre (ex. KHL, cachée à droite sur téléphone)
+  const boite = $("choix-ligue"), a = boite.querySelector(".actif");
+  if (a && boite.scrollWidth > boite.clientWidth) {
+    const r = a.getBoundingClientRect(), rb = boite.getBoundingClientRect();
+    if (r.left < rb.left || r.right > rb.right) boite.scrollLeft += r.left - rb.left - (rb.width - r.width) / 2;
+  }
   $("ligue-long").textContent = LIGUES[ligue].long;
   document.querySelectorAll("[data-nom-ligue]").forEach((x) => (x.textContent = LIGUES[ligue].nom));
 }
@@ -326,7 +334,7 @@ async function rendreSoir() {
   if (!favs.length) { $("soir").innerHTML = `<p class="vide">Ajoute des joueurs à tes favoris pour suivre leurs matchs ici.</p>`; return; }
   if (!ceSoir.length) {
     const p = eqs.map(prochainMatch).filter((x) => x && x.debut).sort((a, b) => a.debut.localeCompare(b.debut))[0];
-    $("soir").innerHTML = `<p class="vide">Pas de match ce soir pour tes favoris. Repose-toi! 😄${p ? `<br>Prochain rendez-vous : <strong>${dateLongue(p.date)}</strong>, ${echapper(courtEq(p.ext))} @ ${echapper(courtEq(p.dom))} à ${heureDe(p)}.` : ""}</p>`;
+    $("soir").innerHTML = `<p class="vide">Pas de match ce soir pour tes favoris. Repose-toi! 😄${p ? `<br>Prochain rendez-vous : <button class="lien-match" data-match="${p.id}"><strong>${dateLongue(p.date)}</strong>, ${echapper(courtEq(p.ext))} @ ${echapper(courtEq(p.dom))} à ${heureDe(p)} ›</button>` : ""}</p>`;
     return;
   }
   let h = "";
@@ -335,7 +343,7 @@ async function rendreSoir() {
     const pts = { ...(await points(m.dom))[m.id], ...(await points(m.ext))[m.id] };
     const statut = estDirect(m) ? `<span class="badge-direct">EN DIRECT</span> <strong>${m.se}-${m.sd}</strong>`
       : estFini(m) ? `<strong>Final ${m.se}-${m.sd}${suffixeFin(m)}</strong>` : `<strong>${heureDe(m)}</strong>`;
-    h += `<div class="soir-match">
+    h += `<div class="soir-match cliquable" data-match="${m.id}" role="button" tabindex="0" aria-label="Voir le match">
       <div class="soir-tete"><strong><span class="tag-ligue petit">${LIGUES[ligueDe(m.dom)].nom}</span> ${echapper(courtEq(m.ext))} @ ${echapper(courtEq(m.dom))}</strong><span>${statut}</span></div>
       <div class="soir-joueurs">${lesMiens.map((j) => {
         const p = pts[j.id];
@@ -353,28 +361,32 @@ function etiquetteLigue(j) {
   const l = j.lig ? LIGUES[j.lig].nom : "NCAA";
   return `<span class="tag-ligue petit">${l}</span>`;
 }
-function htmlStats(j) {
+function htmlStats(j, sansDetails = false) {
   if (j.g) {
     const g = j.g;
     return `<div class="stats">
       <div><b>${g.pj}</b><small>PJ</small></div><div><b>${g.v}-${g.d}-${g.dp}</b><small>Fiche</small></div>
       <div><b>${dec(g.moy)}</b><small>Moy.</small></div>
-      <div><b>${g.pct != null ? g.pct.toFixed(3).replace(/^0/, "") : "–"}</b><small>% arr.</small></div></div>`;
+      <div><b>${g.pct != null ? g.pct.toFixed(3).replace(/^0/, "") : "–"}</b><small>% arr.</small></div></div>
+      ${!sansDetails && g.pj && (g.arr != null || g.bl != null) ? `<div class="stats secondaires">${g.arr != null ? `<div><b>${g.arr}</b><small>Arrêts</small></div><div><b>${g.tr}</b><small>Tirs reçus</small></div>` : ""}<div><b>${g.bl ?? 0}</b><small>BL</small></div>${g.dq != null ? `<div><b>${g.dq}</b><small>Départs de qualité</small></div>` : ""}</div>` : ""}`;
   }
   if (j.s) {
     const s = j.s;
+    // 2e rangée : le différentiel, les tirs, le temps de glace et les punitions (quand la ligue les donne)
+    const x = [[signe(s.pm ?? 0), "+/-"], s.tirs != null && [s.tirs, "Tirs"], s.tg ? [`${Math.floor(s.tg / 60)}:${String(s.tg % 60).padStart(2, "0")}`, "TG moy."] : s.pav != null && [s.pav, "PTS AN"], s.pun != null && [s.pun, "PUN"]].filter(Boolean);
     return `<div class="stats"><div><b>${s.pj}</b><small>PJ</small></div><div><b>${s.b}</b><small>B</small></div>
-      <div><b>${s.a}</b><small>A</small></div><div><b>${s.pts}</b><small>PTS</small></div></div>`;
+      <div><b>${s.a}</b><small>A</small></div><div><b>${s.pts}</b><small>PTS</small></div></div>
+      ${s.pj && !sansDetails ? `<div class="stats secondaires">${x.map(([v, l]) => `<div><b>${v}</b><small>${l}</small></div>`).join("")}</div>` : ""}`;
   }
   return `<div class="prochain">Stats à venir.</div>`;
 }
 function htmlProchain(j) {
   if (!D.equipes[j.eq]) return "Suivi de cette ligue : bientôt!";
   const direct = D.cal.find((m) => estDirect(m) && (m.dom === j.eq || m.ext === j.eq));
-  if (direct) { const r = resultatPour(direct, j.eq); return `<span class="badge-direct">EN DIRECT</span> <strong>${r.texte}</strong> contre ${abr(adversaire(direct, j.eq))}`; }
+  if (direct) { const r = resultatPour(direct, j.eq); return `<button class="lien-match" data-match="${direct.id}"><span class="badge-direct">EN DIRECT</span> <strong>${r.texte}</strong> contre ${abr(adversaire(direct, j.eq))} ›</button>`; }
   const p = prochainMatch(j.eq);
   if (!p) return "Saison terminée";
-  return `Prochain : <strong>${p.date === AUJ ? "ce soir" : dateLongue(p.date)}</strong> ${p.dom === j.eq ? "vs" : "@"} ${abr(adversaire(p, j.eq))} · ${heureDe(p)}`;
+  return `<button class="lien-match" data-match="${p.id}">Prochain : <strong>${p.date === AUJ ? "ce soir" : dateLongue(p.date)}</strong> ${p.dom === j.eq ? "vs" : "@"} ${abr(adversaire(p, j.eq))} · ${heureDe(p)} ›</button>`;
 }
 function rendreFavoris() {
   const favs = favorisObjets();
@@ -424,9 +436,9 @@ function rendreCalendrier() {
   const ms = D.cal.filter((m) => m.date === jourChoisi && (eqs.includes(m.dom) || eqs.includes(m.ext)));
   $("detail-jour").innerHTML = `<p class="detail-titre">${dateLongue(jourChoisi)}${jourChoisi === AUJ ? " · aujourd'hui" : ""}</p>` + (ms.length ? ms.map((m) => {
     const qui = favorisObjets().filter((j) => j.eq === m.dom || j.eq === m.ext).map(nomDeFamille).join(", ");
-    return `<div class="soir-match"><div class="soir-tete"><strong><span class="tag-ligue petit">${LIGUES[ligueDe(m.dom)].nom}</span> ${echapper(courtEq(m.ext))} @ ${echapper(courtEq(m.dom))}</strong>
+    return `<div class="soir-match cliquable" data-match="${m.id}" role="button" tabindex="0"><div class="soir-tete"><strong><span class="tag-ligue petit">${LIGUES[ligueDe(m.dom)].nom}</span> ${echapper(courtEq(m.ext))} @ ${echapper(courtEq(m.dom))}</strong>
       <span>${estDirect(m) ? '<span class="badge-direct">EN DIRECT</span> ' : ""}<strong>${estFini(m) || estDirect(m) ? `${m.se}-${m.sd}` : heureDe(m)}</strong></span></div>
-      <p class="petit-gris" style="margin-top:6px">Tes favoris : ${echapper(qui)}</p></div>`;
+      <p class="petit-gris" style="margin-top:6px">Tes favoris : ${echapper(qui)} <span class="voir-match">${estFini(m) ? "Sommaire" : "Avant-match"} ›</span></p></div>`;
   }).join("") : `<p class="vide">Aucun de tes favoris ne joue cette journée.</p>`);
 }
 $("sem-prec").onclick = () => { debutSemaine = decaler(debutSemaine, -7); rendreCalendrier(); };
@@ -635,7 +647,7 @@ async function ouvrirFiche(id) {
   const estFav = favoris.includes(j.id);
   let corps = "";
   if (j.s || j.g) {
-    corps += `<h3>Saison 2026-27</h3>${htmlStats(j)}`;
+    corps += `<h3>Saison 2026-27</h3>${htmlStats(j, true)}`;
     corps += htmlStatsAvancees(j);
   }
   corps += `<div id="fiche-profil"></div>`;
@@ -825,17 +837,20 @@ let pageActuelle = null;
 function allerA(page) {
   if (!PAGES.includes(page)) page = "accueil";
   const avant = PAGES.indexOf(pageActuelle), apres = PAGES.indexOf(page);
+  // On remonte en haut d'un coup (sans défilement animé, qui donnait l'impression que ça « lag »)
+  if (pageActuelle !== null && pageActuelle !== page) window.scrollTo({ top: 0, behavior: "instant" });
   document.querySelectorAll(".page").forEach((p) => {
     const active = p.dataset.page === page;
+    if (p.hidden === !active && !(active && avant !== apres)) return; // rien à changer
     p.hidden = !active;
     p.classList.remove("vers-gauche", "vers-droite");
-    if (active && avant >= 0 && avant !== apres) { void p.offsetWidth; p.classList.add(apres > avant ? "vers-gauche" : "vers-droite"); }
+    // (une page qui réapparaît rejoue son animation d'elle-même : pas besoin de forcer le navigateur à tout recalculer)
+    if (active && avant >= 0 && avant !== apres) p.classList.add(apres > avant ? "vers-gauche" : "vers-droite");
   });
   document.querySelectorAll("[data-lien]").forEach((a) => a.classList.toggle("actif", a.dataset.lien === page));
   // Le choix de ligue ne concerne pas la page « Mes favoris »
   document.body.classList.toggle("page-favoris", page === "favoris");
   document.body.classList.toggle("page-scores", page === "scores");
-  if (pageActuelle !== null && pageActuelle !== page) window.scrollTo({ top: 0 });
   pageActuelle = page;
   fermerFiche();
   fermerRecherche();

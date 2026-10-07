@@ -98,7 +98,9 @@ async function uneLigue(lig, conf) {
     if (j && j.pos !== "G") {
       j.s = { pj: n(s.games_played), b: n(s.goals), a: n(s.assists), pts: n(s.points), pm: n(s.plus_minus),
         tirs: n(s.shots), bav: n(s.power_play_goals), bin: n(s.short_handed_goals), bg: n(s.game_winning_goals), pun: n(s.penalty_minutes),
-        mj: n(s.faceoff_attempts) > 0 ? +(n(s.faceoff_wins) / n(s.faceoff_attempts)).toFixed(3) : null };
+        mj: n(s.faceoff_attempts) > 0 ? +(n(s.faceoff_wins) / n(s.faceoff_attempts)).toFixed(3) : null,
+        pav: n(s.power_play_points), pin: n(s.short_handed_points), bp: n(s.overtime_goals), bf: n(s.empty_net_goals), pb: n(s.first_goals),
+        btb: n(s.shootout_goals), etb: n(s.shootout_attempts) };
       if (s.rookie === "1") j.r = 1;
     }
   }
@@ -106,7 +108,8 @@ async function uneLigue(lig, conf) {
   for (const g of gardiens) {
     const j = parId.get(g.player_id);
     if (j) j.g = { pj: n(g.games_played), v: n(g.wins), d: n(g.losses), dp: g.non_reg_losses != null && g.non_reg_losses !== "" ? n(g.non_reg_losses) : n(g.ot_losses) + n(g.shootout_losses),
-      moy: dec(g.goals_against_average, 2), pct: dec(g.save_percentage, 3), bl: n(g.shutouts) };
+      moy: dec(g.goals_against_average, 2), pct: dec(g.save_percentage, 3), bl: n(g.shutouts),
+      arr: n(g.saves), tr: n(g.shots), btb: n(g.shootout_saves), etb: n(g.shootout_attempts) };
     if (j && g.rookie === "1") j.r = 1;
   }
   for (const j of joueurs) {

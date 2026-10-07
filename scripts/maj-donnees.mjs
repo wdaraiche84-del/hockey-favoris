@@ -124,6 +124,39 @@ async function principal() {
     }
   } catch (e) { console.warn("Recrues :", e.message); }
 
+  // Encore plus de stats (service de statistiques de la LNH) : points en avantage et en infériorité,
+  // buts en prolongation et dans un filet désert, mises en échec, tirs bloqués, revirements,
+  // punitions provoquées, temps de glace en AN et en DN, présences ; gardiens : départs de qualité
+  const statsLnh = async (vue) => {
+    const exp = encodeURIComponent(`gameTypeId=2 and seasonId=${saison}`);
+    const rep = await fetch(`https://api.nhle.com/stats/rest/en/${vue}?isAggregate=true&isGame=false&start=0&limit=-1&cayenneExp=${exp}`, { headers: { "User-Agent": "hockey-favoris (site de fan)" } });
+    if (!rep.ok) throw new Error(`${vue} ${rep.status}`);
+    return (await rep.json()).data || [];
+  };
+  const fusion = async (vue, f) => {
+    try { for (const r of await statsLnh(vue)) { const j = parId.get(r.playerId); if (j) f(j, r); } }
+    catch (e) { console.warn("Stats", vue, ":", e.message); }
+  };
+  await fusion("skater/summary", (j, r) => j.s && Object.assign(j.s, { pav: r.ppPoints ?? 0, pin: r.shPoints ?? 0, bp: r.otGoals ?? 0 }));
+  await fusion("skater/realtime", (j, r) => j.s && Object.assign(j.s, { bf: r.emptyNetGoals ?? 0, me: r.hits ?? 0, tb: r.blockedShots ?? 0, rp: r.takeaways ?? 0, rv: r.giveaways ?? 0, pb: r.firstGoals ?? 0 }));
+  await fusion("skater/timeonice", (j, r) => j.s && Object.assign(j.s, { tav: Math.round(r.ppTimeOnIcePerGame ?? 0), tdn: Math.round(r.shTimeOnIcePerGame ?? 0), pres: r.shiftsPerGame != null ? +r.shiftsPerGame.toFixed(1) : null }));
+  await fusion("skater/penalties", (j, r) => j.s && Object.assign(j.s, { pprov: r.penaltiesDrawn ?? 0 }));
+  await fusion("goalie/advanced", (j, r) => j.g && Object.assign(j.g, { dq: r.qualityStart ?? 0, tit: r.gamesStarted ?? 0 }));
+  await fusion("goalie/summary", (j, r) => j.g && Object.assign(j.g, { arr: r.saves ?? 0, tr: r.shotsAgainst ?? 0 }));
+
+  // Les records de la saison mesurés par le système de suivi de la LNH (vitesse, tir, distance)
+  let records = null;
+  try {
+    const ed = await lire(`/edge/skater-landing/now`);
+    const L = ed.leaders || {}, rec = (o, val) => (o?.player?.id && val != null ? { id: String(o.player.id), v: +Number(val).toFixed(1) } : null);
+    records = {
+      tir: rec(L.hardestShot, L.hardestShot?.shotSpeed?.metric),
+      vitesse: rec(L.maxSkatingSpeed, L.maxSkatingSpeed?.skatingSpeed?.metric),
+      distance: rec(L.totalDistanceSkated, L.totalDistanceSkated?.distanceSkated?.metric),
+      distanceMatch: rec(L.distanceMaxGame, L.distanceMaxGame?.distanceSkated?.metric),
+    };
+  } catch (e) { console.warn("Records :", e.message); }
+
   const calendrier = [...matchs.values()].sort((a, b) => (a.debut || a.date).localeCompare(b.debut || b.date));
 
   // Classement de la ligue
@@ -239,9 +272,9 @@ async function principal() {
   await ecrire("data/traites-v2.json", [...traites].sort());
 
   const ancienJoueurs = await lireJson("data/joueurs.json", null);
-  const memesJoueurs = ancienJoueurs && JSON.stringify(ancienJoueurs.joueurs) === JSON.stringify(joueurs);
+  const memesJoueurs = ancienJoueurs && JSON.stringify(ancienJoueurs.joueurs) === JSON.stringify(joueurs) && JSON.stringify(ancienJoueurs.records ?? null) === JSON.stringify(records);
   if (change || !memesJoueurs) {
-    await writeFile("data/joueurs.json", JSON.stringify({ misAJour: new Date().toISOString(), saison, equipes: EQUIPES, joueurs }));
+    await writeFile("data/joueurs.json", JSON.stringify({ misAJour: new Date().toISOString(), saison, equipes: EQUIPES, joueurs, records }));
     console.log(`Fichiers mis à jour : ${joueurs.length} joueurs, ${calendrier.length} matchs.`);
   } else {
     console.log("Aucun changement depuis la dernière fois.");

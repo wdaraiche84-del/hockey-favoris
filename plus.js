@@ -218,7 +218,7 @@ async function ouvrirMatch(id, opt = {}) {
   if (!m) return toast("Ce match n'a pas été trouvé.");
   noterModale({ t: "match", id: String(m.id), retour: opt.retour });
   const lig = ligueDe(m.dom), joue = estFini(m) || estDirect(m);
-  const statut = estDirect(m) ? `<span class="badge-direct">EN DIRECT</span> ${m.periode || ""}` : estFini(m) ? `Final${suffixeFin(m)}` : `${heureDe(m)}`;
+  const statut = estDirect(m) ? `<span class="badge-direct">EN DIRECT</span> ${m.periode || ""}` : estFini(m) ? `Final${suffixeFin(m)}` : `<span class="heure">${heureDe(m)}</span>`;
   const haut = `<div class="fiche-haut match-haut">${boutonRetour()}
     <div class="match-entete"><span class="tag-ligue petit">${LIGUES[lig].nom}</span> ${dateLongue(m.date)} · ${statut}${m.series ? " · Séries" : ""}</div>
     <div class="match-equipes">
@@ -320,6 +320,13 @@ function recitMatch(m, lignes) {
   const [h1, h2] = meilleurs(W);
   if (h1) {
     if (h1.b >= 3) phrases.push(`${h1.j.nom} a réussi un tour du chapeau${h1.a ? ` en plus d'ajouter ${pluriel(h1.a, "passe")}` : ""}.`);
+    else if (h1.b + h1.a === 1) {
+      // Personne n'a plus d'un point : on nomme plutôt les marqueurs (« Seth Jones et Matthew Tkachuk ont marqué pour les Panthers »)
+      const noms = meilleurs(W).filter((x) => x.b > 0).map((x) => x.j.nom);
+      const liste = noms.length > 1 ? `${noms.slice(0, -1).join(", ")} et ${noms[noms.length - 1]}` : noms[0];
+      if (noms.length > 1) phrases.push(`${liste} ont marqué pour ${aW.le}.`);
+      else if (noms.length) phrases.push(sw === 1 ? `${liste} a marqué le seul but du match.` : `${liste} a fait bouger les cordages pour ${aW.le}.`);
+    }
     else phrases.push(`${h1.j.nom} a mené la charge avec ${fait(h1)}${h2 && h2.b + h2.a >= 2 ? `, ${/^[aeiouhéèêàâîôûAEIOUHÉÈ]/.test(h2.j.nom) ? "tandis qu'" : "tandis que "}${h2.j.nom} a ajouté ${fait(h2)}` : ""}.`);
   }
   const [p] = meilleurs(L);
@@ -548,7 +555,17 @@ rendreMeneurs = function () {
       + (tous.some((j) => j.s?.bin != null) ? bloc("Buts en infériorité numérique", listeMeneurs(10, (j) => av(j) && j.s.bin > 0, (j) => j.s.bin), (j) => j.s.bin) : "")
       + (tous.some((j) => j.s?.tg) ? bloc("Temps de glace moyen", listeMeneurs(10, (j) => av(j) && j.s.tg && j.s.pj >= minPj, (j) => j.s.tg), (j) => mmss(j.s.tg), "par match") : "")
       + (tous.some((j) => j.s?.mj != null) ? bloc("Mises au jeu gagnées", listeMeneurs(10, (j) => av(j) && j.s.mj != null && ["C", "AV"].includes(j.pos) && j.s.pj >= Math.max(3, minPj) && j.s.mj > 0 && j.s.mj < 1, (j) => j.s.mj), (j) => pctFr(j.s.mj), "centres") : "")
-      + (tous.some((j) => j.g?.bl != null) ? bloc("Gardiens · Blanchissages", listeMeneurs(10, (j) => j.g && j.g.bl > 0, (j) => j.g.bl), (j) => j.g.bl) : "");
+      + (tous.some((j) => j.s?.pav != null) ? bloc("Points en avantage numérique", listeMeneurs(10, (j) => av(j) && j.s.pav > 0, (j) => j.s.pav), (j) => j.s.pav) : "")
+      + (tous.some((j) => j.s?.me != null) ? bloc("Mises en échec", listeMeneurs(10, (j) => av(j) && j.s.me > 0, (j) => j.s.me), (j) => j.s.me) : "")
+      + (tous.some((j) => j.s?.tb != null) ? bloc("Tirs bloqués", listeMeneurs(10, (j) => av(j) && j.s.tb > 0, (j) => j.s.tb), (j) => j.s.tb) : "")
+      + (tous.some((j) => j.s?.rp != null) ? bloc("Rondelles récupérées", listeMeneurs(10, (j) => av(j) && j.s.rp > 0, (j) => j.s.rp), (j) => j.s.rp) : "")
+      + (tous.some((j) => j.s?.pprov != null) ? bloc("Punitions provoquées", listeMeneurs(10, (j) => av(j) && j.s.pprov > 0, (j) => j.s.pprov), (j) => j.s.pprov) : "")
+      + (tous.some((j) => j.s?.bp) ? bloc("Buts en prolongation", listeMeneurs(10, (j) => av(j) && j.s.bp > 0, (j) => j.s.bp), (j) => j.s.bp) : "")
+      + (tous.some((j) => j.s?.pun != null) ? bloc("Minutes de punition", listeMeneurs(10, (j) => av(j) && j.s.pun > 0, (j) => j.s.pun), (j) => j.s.pun) : "")
+      + (tous.some((j) => j.g?.bl != null) ? bloc("Gardiens · Blanchissages", listeMeneurs(10, (j) => j.g && j.g.bl > 0, (j) => j.g.bl), (j) => j.g.bl) : "")
+      + (tous.some((j) => j.g?.dq != null) ? bloc("Gardiens · Départs de qualité", listeMeneurs(10, (j) => j.g && j.g.dq > 0, (j) => j.g.dq), (j) => j.g.dq) : "")
+      + (tous.some((j) => j.g?.arr != null) ? bloc("Gardiens · Arrêts", listeMeneurs(10, (j) => j.g && j.g.arr > 0, (j) => j.g.arr), (j) => j.g.arr) : "");
+    h = htmlRecords(lig) + h;
   } else if (onglet === "recrues") {
     const rec = (j) => j.r && j.s && j.s.pj > 0;
     h += `<p class="aide meneurs-aide">Les joueurs qui jouent leur première saison dans ${laLigue(lig)}.</p>`
@@ -568,16 +585,59 @@ $("grille-meneurs").addEventListener("click", (e) => {
 function htmlStatsAvancees(j) {
   const s = j.s, g = j.g, t = (val, lib) => `<div class="tuile"><b>${val}</b><small>${lib}</small></div>`;
   const nb = (n, sing, plur) => t(n, n > 1 ? plur : sing);
-  if (g) return g.bl ? `<div class="tuiles petites">${nb(g.bl, "blanchissage", "blanchissages")}</div>` : "";
-  if (!s) return "";
-  let h = t(signe(s.pm), "différentiel");
-  if (s.tirs != null) h += nb(s.tirs, "tir", "tirs") + (s.tirs >= 5 ? t(pctFr(s.b / s.tirs), "% de tirs") : "");
-  if (s.bav != null) h += t(s.bav, s.bav > 1 ? "buts en AN" : "but en AN");
-  if (s.bg != null) h += nb(s.bg, "but gagnant", "buts gagnants");
-  if (s.tg) h += t(mmss(s.tg), "temps de glace moyen");
-  if (s.mj != null && s.mj > 0 && s.mj < 1 && s.pj >= 3 && ["C", "AV"].includes(j.pos)) h += t(pctFr(s.mj), "mises au jeu gagnées");
-  if (s.pun != null) h += t(s.pun, s.pun > 1 ? "minutes de punition" : "minute de punition");
-  return `<div class="tuiles petites">${h}</div>`;
+  if (g) {
+    if (!g.pj) return "";
+    let h = "";
+    if (g.tit != null) h += nb(g.tit, "départ", "départs");
+    if (g.arr != null && g.tr) h += t(`${g.arr}/${g.tr}`, "arrêts / tirs reçus") + t(dec(g.tr / g.pj, 1), "tirs reçus par match");
+    if (g.dq != null) h += nb(g.dq, "départ de qualité", "départs de qualité");
+    if (g.bl != null) h += nb(g.bl, "blanchissage", "blanchissages");
+    if (g.etb) h += t(`${g.btb}/${g.etb}`, "arrêts en tirs de barrage");
+    return h ? `<div class="tuiles petites">${h}</div>` : "";
+  }
+  if (!s || !s.pj) return "";
+  const groupe = (titre, h) => (h ? `<h4 class="mini-titre">${titre}</h4><div class="tuiles petites">${h}</div>` : "");
+  // L'attaque
+  let att = t(signe(s.pm), "différentiel");
+  if (s.tirs != null) att += nb(s.tirs, "tir", "tirs") + (s.tirs >= 5 ? t(pctFr(s.b / s.tirs), "% de tirs") : "");
+  if (s.pj) att += t(dec(s.pts / s.pj, 2), "points par match");
+  if (s.bg != null) att += nb(s.bg, "but gagnant", "buts gagnants");
+  if (s.pb) att += nb(s.pb, "premier but du match", "premiers buts du match");
+  if (s.bp) att += nb(s.bp, "but en prolongation", "buts en prolongation");
+  if (s.bf) att += nb(s.bf, "but dans un filet désert", "buts dans un filet désert");
+  if (s.etb) att += t(`${s.btb}/${s.etb}`, "en tirs de barrage");
+  // Les unités spéciales
+  let spe = "";
+  if (s.bav != null) spe += t(s.bav, s.bav > 1 ? "buts en AN" : "but en AN");
+  if (s.pav != null) spe += t(s.pav, s.pav > 1 ? "points en AN" : "point en AN");
+  if (s.bin != null && (s.bin || s.pin)) spe += t(s.bin, s.bin > 1 ? "buts en DN" : "but en DN");
+  if (s.pin) spe += t(s.pin, s.pin > 1 ? "points en DN" : "point en DN");
+  if (s.tav) spe += t(mmss(s.tav), "temps en AN par match");
+  if (s.tdn) spe += t(mmss(s.tdn), "temps en DN par match");
+  // Le jeu sans la rondelle
+  let jeu = "";
+  if (s.tg) jeu += t(mmss(s.tg), "temps de glace moyen");
+  if (s.pres) jeu += t(dec(s.pres, 1), "présences par match");
+  if (s.mj != null && s.mj > 0 && s.mj < 1 && s.pj >= 3 && ["C", "AV"].includes(j.pos)) jeu += t(pctFr(s.mj), "mises au jeu gagnées");
+  if (s.me != null) jeu += nb(s.me, "mise en échec", "mises en échec");
+  if (s.tb != null) jeu += nb(s.tb, "tir bloqué", "tirs bloqués");
+  if (s.rp != null) jeu += t(s.rp, s.rp > 1 ? "rondelles récupérées" : "rondelle récupérée");
+  if (s.rv != null) jeu += t(s.rv, s.rv > 1 ? "rondelles perdues" : "rondelle perdue");
+  if (s.pun != null) jeu += t(s.pun, s.pun > 1 ? "minutes de punition" : "minute de punition");
+  if (s.pprov != null) jeu += nb(s.pprov, "punition provoquée", "punitions provoquées");
+  return groupe("Attaque", att) + groupe("Unités spéciales", spe) + groupe("Temps de jeu et travail", jeu);
+}
+
+// Les records de la saison mesurés par le système de suivi de la LNH
+function htmlRecords(lig) {
+  const r = lig === "lnh" && D.records;
+  if (!r) return "";
+  const ligne = (x, titre, unite) => {
+    const j = x && D.parId.get(x.id);
+    return j ? `<li data-fiche="${j.id}"><span class="nom">${titre}<small>${echapper(j.nom)} · ${echapper(courtEq(j.eq))}</small></span><span class="val">${dec(x.v, 1)}<small> ${unite}</small></span></li>` : "";
+  };
+  const h = ligne(r.tir, "Tir le plus puissant", "km/h") + ligne(r.vitesse, "Patineur le plus rapide", "km/h") + ligne(r.distance, "Plus grande distance parcourue", "km") + ligne(r.distanceMatch, "Plus grande distance en un match", "km");
+  return h ? `<section class="bloc"><div class="titre-section"><h2>Records de la saison <span class="tag-ligue">LNH</span></h2><span class="sur-titre">Suivi des joueurs de la LNH</span></div><ol class="meneurs records">${h}</ol></section>` : "";
 }
 
 // ---- D bis. Course aux séries et tableau des séries (LNH) -------
@@ -616,12 +676,12 @@ function htmlCourse(c) {
       const [m1, m2] = [tetes[d1][0], tetes[d2][0]].sort((a, b) => b.pts - a.pts || a.pj - b.pj || (b.vr ?? 0) - (a.vr ?? 0) || b.v - a.v || (b.bp - b.bc) - (a.bp - a.bc));
       const duel = (a, b, ra, rb) => `<div class="duel"><button data-equipe-fiche="${a.eq}"><small>${ra}</small><b>${abr(a.eq)}</b></button><span>vs</span><button data-equipe-fiche="${b.eq}"><b>${abr(b.eq)}</b><small>${rb}</small></button></div>`;
       affiches += `<div class="affiches-conf"><h4>${echapper(conf)}</h4>
-        ${duel(m1, wc[1], "1re div.", "2e meill. 2e")}${duel(tetes[m1.div][1], tetes[m1.div][2], "2e div.", "3e div.")}
-        ${duel(m2, wc[0], "1re div.", "1re meill. 2e")}${duel(tetes[m2.div][1], tetes[m2.div][2], "2e div.", "3e div.")}</div>`;
+        ${duel(m1, wc[1], "1re div.", "2e repêchée")}${duel(tetes[m1.div][1], tetes[m1.div][2], "2e div.", "3e div.")}
+        ${duel(m2, wc[0], "1re div.", "1re repêchée")}${duel(tetes[m2.div][1], tetes[m2.div][2], "2e div.", "3e div.")}</div>`;
     }
   }
   return `${affiches ? `<div class="table-bloc"><h3>Si les séries commençaient aujourd'hui</h3><div class="affiches">${affiches}</div></div>` : ""}${h}
-    <p class="petit-gris">Format de la LNH : les 3 premiers de chaque division et les 2 meilleures équipes parmi les autres (les « meilleures 2es places ») de chaque association font les séries. La ligne pointillée marque la limite. VR : victoires en temps réglementaire (premier critère en cas d'égalité). ✓ : place assurée · É : éliminé.</p>`;
+    <p class="petit-gris">Format de la LNH : les 3 premiers de chaque division et les 2 meilleures équipes parmi les autres de chaque association (les « équipes repêchées ») font les séries. La ligne pointillée marque la limite. VR : victoires en temps réglementaire (premier critère en cas d'égalité). ✓ : place assurée · É : éliminé.</p>`;
 }
 function htmlTableauSeries(series) {
   const carte = (x) => {
@@ -702,12 +762,27 @@ async function ouvrirComparaison(idA, idB, opt = {}) {
   let lignes = "";
   if (A.g && B.g) {
     lignes = ligne("Matchs joués", A.g.pj, B.g.pj) + ligne("Victoires", A.g.v, B.g.v) + ligne("Moyenne de buts", A.g.pj ? A.g.moy : null, B.g.pj ? B.g.moy : null, dec, true)
-      + ligne("% d'arrêts", A.g.pj ? A.g.pct : null, B.g.pj ? B.g.pct : null, pct3) + ligne("% d'arrêts · 5 derniers", fA?.sa ? fA.sv / fA.sa : null, fB?.sa ? fB.sv / fB.sa : null, pct3);
+      + ligne("% d'arrêts", A.g.pj ? A.g.pct : null, B.g.pj ? B.g.pct : null, pct3) + ligne("% d'arrêts · 5 derniers", fA?.sa ? fA.sv / fA.sa : null, fB?.sa ? fB.sv / fB.sa : null, pct3)
+      + (A.g.bl != null && B.g.bl != null ? ligne("Blanchissages", A.g.bl, B.g.bl) : "")
+      + (A.g.arr != null && B.g.arr != null ? ligne("Arrêts", A.g.arr, B.g.arr) : "")
+      + (A.g.dq != null && B.g.dq != null ? ligne("Départs de qualité", A.g.dq, B.g.dq) : "");
   } else if (A.s && B.s) {
     const ppm = (s) => (s.pj ? s.pts / s.pj : 0), bpm = (s) => (s.pj ? s.b / s.pj : 0);
     lignes = ligne("Matchs joués", A.s.pj, B.s.pj) + ligne("Buts", A.s.b, B.s.b) + ligne("Passes", A.s.a, B.s.a) + ligne("Points", A.s.pts, B.s.pts)
       + ligne("Points par match", ppm(A.s), ppm(B.s), dec) + ligne("Buts par match", bpm(A.s), bpm(B.s), dec)
       + ligne("Différentiel", A.s.pm, B.s.pm, signe) + ligne("Points · 5 derniers matchs", fA?.pts ?? null, fB?.pts ?? null);
+    // Le reste, seulement quand les deux joueurs ont la stat (selon la ligue)
+    const deux = (k) => A.s[k] != null && B.s[k] != null;
+    if (deux("tirs")) lignes += ligne("Tirs", A.s.tirs, B.s.tirs) + ligne("% de tirs", A.s.tirs ? A.s.b / A.s.tirs : null, B.s.tirs ? B.s.b / B.s.tirs : null, (x) => pctFr(x));
+    if (deux("bav")) lignes += ligne("Buts en avantage numérique", A.s.bav, B.s.bav);
+    if (deux("pav")) lignes += ligne("Points en avantage numérique", A.s.pav, B.s.pav);
+    if (deux("bg")) lignes += ligne("Buts gagnants", A.s.bg, B.s.bg);
+    if (A.s.tg && B.s.tg) lignes += ligne("Temps de glace moyen", A.s.tg, B.s.tg, mmss);
+    if (deux("mj") && A.s.mj > 0 && B.s.mj > 0) lignes += ligne("Mises au jeu gagnées", A.s.mj, B.s.mj, (x) => pctFr(x));
+    if (deux("me")) lignes += ligne("Mises en échec", A.s.me, B.s.me);
+    if (deux("tb")) lignes += ligne("Tirs bloqués", A.s.tb, B.s.tb);
+    if (deux("rp")) lignes += ligne("Rondelles récupérées", A.s.rp, B.s.rp);
+    if (deux("pun")) lignes += ligne("Minutes de punition", A.s.pun, B.s.pun, String, true);
   } else lignes = `<p class="vide">On ne peut pas comparer un gardien et un joueur. Choisis deux gardiens ou deux joueurs.</p>`;
   const note = A.lig !== B.lig ? `<p class="note-fiche">Attention : ${echapper(nomDeFamille(A))} et ${echapper(nomDeFamille(B))} ne jouent pas dans la même ligue, alors les chiffres ne se comparent pas parfaitement.</p>` : "";
   montrerModale(haut("Comparaison") + `<div class="fiche-corps"><div class="cmp-tetes">${tete(A)}<span class="cmp-vs">VS</span>${tete(B)}</div>${note}<div class="cmp">${lignes}</div>
@@ -852,7 +927,10 @@ const LEXIQUE = [["PJ", "Parties (matchs) jouées"], ["B", "Buts"], ["A", "Passe
   ["(P)", "Match décidé en prolongation"], ["(TB)", "Match décidé en tirs de barrage"], ["BP / BC", "Buts pour / buts contre"], ["Diff", "Différence entre les buts pour et les buts contre"],
   ["Moy.", "Moyenne de buts accordés par match (gardiens)"], ["% arr.", "Pourcentage d'arrêts : arrêts divisés par les tirs reçus (.920 = 92 %)"], ["Déc.", "Décision du gardien : V, D ou DP"],
   ["Série", "Résultats de suite en cours (V3 = 3 victoires de suite, D2 = 2 défaites, DP1 = 1 défaite en prolongation)"], ["10 dern.", "Fiche des 10 derniers matchs (V-D-DP)"], ["Dom. / Ext.", "Fiche à domicile / à l'étranger"],
-  ["3 étoiles", "Les meilleurs du match, choisis automatiquement par MonTrioHockey selon les stats"], ["En feu", "Les joueurs qui ont le plus de points dans les 5 derniers matchs de leur équipe"]];
+  ["3 étoiles", "Les meilleurs du match, choisis automatiquement par MonTrioHockey selon les stats"], ["En feu", "Les joueurs qui ont le plus de points dans les 5 derniers matchs de leur équipe"],
+  ["AN", "Avantage numérique (on a plus de joueurs sur la glace que l'adversaire)"], ["DN", "Désavantage (infériorité) numérique"], ["BL", "Blanchissage : match sans accorder de but"],
+  ["Départ de qualité", "Match où le gardien a un % d'arrêts meilleur que la moyenne de la ligue"], ["Rondelle récupérée", "Le joueur enlève la rondelle à l'adversaire"], ["Rondelle perdue", "Le joueur donne la rondelle à l'adversaire par erreur"],
+  ["Punition provoquée", "Le joueur a forcé l'adversaire à prendre une punition"], ["Présences", "Nombre de fois où le joueur saute sur la glace"]];
 function ouvrirLexique() {
   noterModale({ t: "lexique", id: "x" });
   montrerModale(`<div class="fiche-haut"><div><h2>Lexique</h2><p>Les abréviations du hockey, expliquées simplement.</p></div><button class="fermer" aria-label="Fermer">✕</button></div>
@@ -914,6 +992,7 @@ async function rendreRecits() {
   const eqs = equipesFavorites();
   const ms = finis.filter((m) => m.date === date).sort((a, b) => (eqs.includes(b.dom) || eqs.includes(b.ext)) - (eqs.includes(a.dom) || eqs.includes(a.ext)) || (b.sd + b.se) - (a.sd + a.se));
   const cartes = [];
+  await Promise.all([...new Set(ms.flatMap((m) => [m.dom, m.ext]))].map(points)); // on charge tout d'un coup (plus rapide)
   for (const m of ms) {
     const lignes = [[m.ext, (await points(m.ext))[m.id] || {}], [m.dom, (await points(m.dom))[m.id] || {}]];
     const vide = !Object.keys(lignes[0][1]).length && !Object.keys(lignes[1][1]).length;
@@ -926,7 +1005,13 @@ async function rendreRecits() {
   }
   if (jeton !== jetonRecits) return;
   $("recits-date").textContent = dateLongue(date);
-  boite.innerHTML = `<div class="recits">${cartes.join("")}</div>`;
+  // Les 3 premiers récits (tes favoris d'abord), les autres sur demande : la page reste courte sur téléphone
+  const MONTRES = 3, reste = cartes.length - MONTRES;
+  boite.innerHTML = `<div class="recits">${cartes.slice(0, MONTRES).join("")}</div>`
+    + (reste > 0 ? `<div class="recits" id="recits-autres" hidden>${cartes.slice(MONTRES).join("")}</div>
+      <button class="btn leger plus-recits" id="plus-recits">Voir ${reste > 1 ? `les ${reste} autres récits` : "l'autre récit"} ▾</button>` : "");
+  const bt = $("plus-recits");
+  if (bt) bt.onclick = () => { $("recits-autres").hidden = false; bt.remove(); };
 }
 
 // ---- La semaine en bref (accueil) -------------------------------

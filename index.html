@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!-- =============================================================
      PAGE PRINCIPALE DU SITE
-     Le site est découpé en plusieurs « pages » (À la une, Scores,
+     Le site est découpé en plusieurs « pages » (Accueil, Scores,
      Mes favoris…). Une seule est affichée à la fois ; les onglets
      en haut (ou la barre du bas sur téléphone) passent de l'une à
      l'autre. L'apparence est dans style.css, ce qui réagit aux
@@ -39,7 +39,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <!-- Le « ?v=… » oblige les navigateurs à prendre la nouvelle version après chaque changement -->
-  <link rel="stylesheet" href="style.css?v=20">
+  <link rel="stylesheet" href="style.css?v=21">
   <!-- Pour installer MonTrioHockey comme une application sur le téléphone -->
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#111111">
@@ -59,7 +59,7 @@
     <div class="entete-int">
       <a class="logo" href="#/accueil" aria-label="MonTrioHockey, accueil"><img class="logo-marque" src="icones/logo.svg" alt="" width="38" height="38"><span class="logo-texte">MonTrio<b>Hockey</b></span></a>
       <nav class="nav-haut" aria-label="Pages">
-        <a href="#/accueil" data-lien="accueil">À la une</a>
+        <a href="#/accueil" data-lien="accueil">Accueil</a>
         <a href="#/scores" data-lien="scores">Scores</a>
         <a href="#/favoris" data-lien="favoris">Mes favoris</a>
         <a href="#/classement" data-lien="classement">Classement</a>
@@ -100,7 +100,7 @@
 
   <main id="pages" class="pages">
 
-    <!-- ========== PAGE 1 : À la une ========== -->
+    <!-- ========== PAGE 1 : Accueil ========== -->
     <div class="page" data-page="accueil">
       <!-- Carte de bienvenue (premier passage seulement) -->
       <section id="bienvenue" class="bloc bienvenue" hidden>
@@ -243,7 +243,7 @@
 
   <!-- ===== Barre de navigation (téléphone) ===== -->
   <nav class="nav-bas" aria-label="Pages">
-    <a href="#/accueil" data-lien="accueil"><span>📰</span>Une</a>
+    <a href="#/accueil" data-lien="accueil"><span>🏠</span>Accueil</a>
     <a href="#/scores" data-lien="scores"><span>🏒</span>Scores</a>
     <a href="#/favoris" data-lien="favoris"><span>⭐</span>Favoris</a>
     <a href="#/classement" data-lien="classement"><span>🏆</span>Classement</a>
@@ -268,10 +268,10 @@
     <article id="fiche" class="fiche" role="dialog" aria-modal="true"></article>
   </div>
 
-  <script src="config.js?v=20"></script>
-  <script src="donnees.js?v=20"></script>
-  <script src="app.js?v=20"></script>
-  <script src="plus.js?v=20"></script>
+  <script src="config.js?v=21"></script>
+  <script src="donnees.js?v=21"></script>
+  <script src="app.js?v=21"></script>
+  <script src="plus.js?v=21"></script>
   <div id="toasts" class="toasts" aria-live="polite"></div>
 </body>
 </html>
