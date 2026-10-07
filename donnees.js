@@ -11,5 +11,5 @@ const AUTRES_JOUEURS = [
 ];
 const AUTRES_EQUIPES = { MICH: "Université du Michigan (NCAA)" };
 
-// ---- Favoris proposés au premier passage --------------------
-const FAVORIS_DE_DEPART = ["slafkovsky", "suzuki", "hutson", "hage"];
+// ---- Favoris au premier passage : aucun (chacun choisit les siens) --
+const FAVORIS_DE_DEPART = [];
