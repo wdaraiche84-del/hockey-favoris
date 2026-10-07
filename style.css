@@ -841,3 +841,44 @@ button.score-carte:hover { background: #333; }
 #recits-autres { margin-top: 12px; }
 .fiche-corps .mini-titre { margin: 14px 0 6px; }
 .fiche-corps .stats + .mini-titre { margin-top: 18px; }
+
+/* =============================================================
+   ACCUEIL SUR GRAND ÉCRAN : 3 colonnes (gauche · centre · droite)
+   ============================================================= */
+@media (max-width: 1399px) { [data-page="accueil"] .grille-2 > .pile.pile-gauche { display: none; } }
+@media (min-width: 1400px) {
+  .entete-int, .barre-ligues-int, .bandeau-int, .pages { max-width: 1560px; }
+  .grille-accueil { grid-template-columns: 300px minmax(0, 1.65fr) minmax(0, 1fr); }
+  .pile-gauche { display: flex; }
+}
+.bloc-mini .titre-section h2 { font-size: 1.15rem; }
+.mini-classement { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.mini-classement th { font-size: .66rem; color: var(--texte-doux); text-transform: uppercase; text-align: right; padding: 3px 4px; font-weight: 700; }
+.mini-classement th:nth-child(2) { text-align: left; }
+.mini-classement td { padding: 5px 4px; text-align: right; border-top: 1px solid var(--ligne); }
+.mini-classement td:first-child { color: var(--texte-doux); text-align: left; width: 20px; }
+.mini-classement td.eq { text-align: left; font-weight: 700; }
+.mini-classement td.eq button { border: 0; background: none; padding: 0; font: inherit; color: inherit; cursor: pointer; }
+.mini-classement td.eq button:hover { color: var(--accent); }
+.mini-classement td.eq small { font-weight: 500; color: var(--texte-doux); margin-left: 4px; }
+.mini-classement td.pts { font-weight: 800; }
+.mini-classement tr.favori td { background: var(--accent-pale); }
+.mini-classement .plus { color: #16A34A; } .mini-classement .moins { color: #DC2626; }
+.mini-groupe { font-size: .7rem; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: .05em; margin: 2px 0 4px; }
+.partout-ligue { margin-top: 10px; }
+.partout-ligue:first-child { margin-top: 0; }
+.partout-ligue h4 { margin: 0 0 4px; display: flex; align-items: center; gap: 6px; font-size: .72rem; color: var(--texte-doux); font-weight: 700; text-transform: uppercase; }
+.partout-match { display: flex; justify-content: space-between; align-items: center; width: 100%; border: 0; background: var(--carte-2); border-radius: 7px; padding: 6px 9px; margin-bottom: 4px; font: inherit; font-size: .82rem; color: var(--texte); cursor: pointer; text-align: left; }
+.partout-match:hover { outline: 1px solid var(--accent); }
+.partout-match b { font-weight: 800; }
+.partout-match .res { font-weight: 700; color: var(--texte-doux); white-space: nowrap; }
+.partout-match.direct .res { color: #DC2626; }
+.partout-plus { font-size: .75rem; color: var(--accent); font-weight: 700; background: none; border: 0; padding: 2px 0; cursor: pointer; }
+/* Les récits s'emboîtent (plus de trous quand une carte est plus longue) */
+.recits { display: block; columns: 2; column-gap: 12px; }
+.recits > .recit-carte { break-inside: avoid; margin-bottom: 12px; display: flex; }
+@media (max-width: 640px) { .recits { columns: 1; } }
+.recits[hidden] { display: none; }
+.seulement-grand { display: none; }
+@media (min-width: 1400px) { .seulement-grand { display: block; } }
+.meneurs.records li::before { display: none; content: none; }

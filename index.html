@@ -39,7 +39,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <!-- Le « ?v=… » oblige les navigateurs à prendre la nouvelle version après chaque changement -->
-  <link rel="stylesheet" href="style.css?v=22">
+  <link rel="stylesheet" href="style.css?v=23">
   <!-- Pour installer MonTrioHockey comme une application sur le téléphone -->
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#111111">
@@ -123,7 +123,18 @@
         <button id="installer-ok" class="btn accent">Installer</button>
         <button id="installer-non" class="btn leger" aria-label="Plus tard">Plus tard</button>
       </section>
-      <div class="grille-2">
+      <div class="grille-2 grille-accueil">
+        <!-- Colonne de gauche : seulement sur les grands écrans (PC) -->
+        <aside class="pile pile-gauche" aria-label="En un coup d'œil">
+          <section class="bloc bloc-mini">
+            <div class="titre-section"><h2>Classement <span class="tag-ligue" data-nom-ligue></span></h2><a class="lien-plus" href="#/classement">Complet ›</a></div>
+            <div id="mini-classement"></div>
+          </section>
+          <section class="bloc bloc-mini">
+            <div class="titre-section"><h2>Ce soir partout</h2><a class="lien-plus" href="#/scores" data-scores-tout>Scores ›</a></div>
+            <div id="ce-soir-partout"></div>
+          </section>
+        </aside>
         <div class="pile">
         <section class="bloc">
           <div class="titre-section"><h2>Les récits de la soirée <span class="tag-ligue" data-nom-ligue></span></h2><span id="recits-date" class="sur-titre"></span></div>
@@ -154,6 +165,7 @@
             <div class="titre-section"><h2>🔥 En feu <span class="tag-ligue" data-nom-ligue></span></h2><span class="sur-titre">5 derniers matchs</span></div>
             <ol id="mini-chauds" class="meneurs"></ol>
           </section>
+          <div id="mini-records" class="seulement-grand"></div>
         </div>
       </div>
     </div>
@@ -268,10 +280,10 @@
     <article id="fiche" class="fiche" role="dialog" aria-modal="true"></article>
   </div>
 
-  <script src="config.js?v=22"></script>
-  <script src="donnees.js?v=22"></script>
-  <script src="app.js?v=22"></script>
-  <script src="plus.js?v=22"></script>
+  <script src="config.js?v=23"></script>
+  <script src="donnees.js?v=23"></script>
+  <script src="app.js?v=23"></script>
+  <script src="plus.js?v=23"></script>
   <div id="toasts" class="toasts" aria-live="polite"></div>
 </body>
 </html>

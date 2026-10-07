@@ -1005,8 +1005,8 @@ async function rendreRecits() {
   }
   if (jeton !== jetonRecits) return;
   $("recits-date").textContent = dateLongue(date);
-  // Les 3 premiers récits (tes favoris d'abord), les autres sur demande : la page reste courte sur téléphone
-  const MONTRES = 3, reste = cartes.length - MONTRES;
+  // Les 3 premiers récits (6 sur PC, tes favoris d'abord), les autres sur demande : la page reste courte sur téléphone
+  const MONTRES = matchMedia("(min-width: 961px)").matches ? 6 : 3, reste = cartes.length - MONTRES;
   boite.innerHTML = `<div class="recits">${cartes.slice(0, MONTRES).join("")}</div>`
     + (reste > 0 ? `<div class="recits" id="recits-autres" hidden>${cartes.slice(MONTRES).join("")}</div>
       <button class="btn leger plus-recits" id="plus-recits">Voir ${reste > 1 ? `les ${reste} autres récits` : "l'autre récit"} ▾</button>` : "");
@@ -1054,6 +1054,61 @@ async function rendreSemaine() {
 }
 const rendreUneBase = rendreUne;
 rendreUne = async function () { await rendreUneBase(); rendreSemaine(); };
+
+
+// ---- Colonne de gauche de l'accueil (grands écrans seulement) ----
+// Un mini-classement de la ligue choisie, les matchs de ce soir dans toutes les ligues
+// et, pour la LNH, les records de vitesse.
+const grandEcran = matchMedia("(min-width: 1400px)");
+let jetonGauche = 0;
+async function rendreColonneGauche() {
+  if (!grandEcran.matches) return;
+  const jeton = ++jetonGauche, lig = ligue, eqs = equipesFavorites();
+  // 1. Mini-classement : la division (ou l'association) de ton équipe favorite, sinon le top 10
+  const c = trierEquipes(D.classement[lig] || []);
+  let groupe = c, titre = "Toute la ligue";
+  const fav = c.find((t) => eqs.includes(t.eq));
+  const eqFav = fav && D.equipes[fav.eq];
+  if (eqFav?.div && c.filter((t) => D.equipes[t.eq]?.div === eqFav.div).length >= 4) { groupe = c.filter((t) => D.equipes[t.eq]?.div === eqFav.div); titre = eqFav.div; }
+  else if (eqFav?.conf && c.filter((t) => D.equipes[t.eq]?.conf === eqFav.conf).length >= 4) { groupe = c.filter((t) => D.equipes[t.eq]?.conf === eqFav.conf); titre = eqFav.conf; }
+  groupe = groupe.slice(0, 10);
+  $("mini-classement").innerHTML = groupe.length ? `<p class="mini-groupe">${echapper(titre)}</p><table class="mini-classement"><thead><tr><th>#</th><th>Équipe</th><th>PJ</th><th>PTS</th><th>Diff</th></tr></thead><tbody>${groupe.map((t, i) => {
+    const diff = t.bp - t.bc;
+    return `<tr class="${eqs.includes(t.eq) ? "favori" : ""}"><td>${i + 1}</td><td class="eq"><button data-equipe-fiche="${t.eq}">${abr(t.eq)}<small>${echapper(courtEq(t.eq))}</small></button></td><td>${t.pj}</td><td class="pts">${t.pts}</td><td class="${diff > 0 ? "plus" : diff < 0 ? "moins" : ""}">${signe(diff)}</td></tr>`;
+  }).join("")}</tbody></table>` : `<p class="vide">Le classement arrive bientôt.</p>`;
+  $("mini-records").innerHTML = htmlRecords(lig).replace('class="bloc"', 'class="bloc bloc-mini"');
+  // 2. Ce soir partout : on charge les autres ligues en arrière-plan (une seule fois)
+  const soir = () => {
+    let h = "";
+    for (const [, ls] of GROUPES_LIGUES) for (const l of ls) {
+      if (!D.charge[l]) continue;
+      const ms = matchsLigue(l).filter((m) => m.date === AUJ).sort((a, b) => (estDirect(b) - estDirect(a)) || (a.debut || "").localeCompare(b.debut || ""));
+      if (!ms.length) continue;
+      h += `<div class="partout-ligue"><h4><span class="tag-ligue petit">${LIGUES[l].nom}</span>${pluriel(ms.length, "match")}</h4>${ms.slice(0, 4).map((m) => {
+        const res = estDirect(m) ? `● ${m.se}-${m.sd}` : estFini(m) ? `${m.se}-${m.sd}${suffixeFin(m)}` : heureDe(m);
+        const f = eqs.includes(m.dom) || eqs.includes(m.ext);
+        return `<button class="partout-match ${estDirect(m) ? "direct" : ""}" data-match="${m.id}"><span><b>${abr(m.ext)}</b> @ <b>${abr(m.dom)}</b>${f ? " ⭐" : ""}</span><span class="res">${res}</span></button>`;
+      }).join("")}${ms.length > 4 ? `<button class="partout-plus" data-scores-ligue="${l}">+ ${ms.length - 4} autres ›</button>` : ""}</div>`;
+    }
+    $("ce-soir-partout").innerHTML = h || `<p class="vide">Aucun match aujourd'hui.</p>`;
+  };
+  soir();
+  await chargerTout(); // (déjà chargées : c'est instantané)
+  if (jeton === jetonGauche) soir();
+}
+// On la redessine avec le reste (changement de ligue, résultats en direct, nouvelle journée)
+{
+  const r0 = rafraichir, b0 = rendreBandeau;
+  rafraichir = function () { r0(); rendreColonneGauche(); };
+  rendreBandeau = function () { b0(); rendreColonneGauche(); };
+  grandEcran.addEventListener("change", rendreColonneGauche);
+}
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-scores-tout],[data-scores-ligue]");
+  if (!b) return;
+  if (b.dataset.scoresLigue) { e.preventDefault(); choisirLigue(b.dataset.scoresLigue); location.hash = "#/scores"; }
+  else { scoresTout = true; memoire("scores-tout", "1"); rendrePageScores(); }
+});
 
 // ---- Démarrage ---------------------------------------------------
 rendreBoutonAlertes();
