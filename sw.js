@@ -6,8 +6,8 @@
 // ouvrir l'app même sans connexion (avec les dernières données vues).
 // Pour forcer une mise à jour chez tout le monde, change VERSION.
 // =============================================================
-const VERSION = "montrio-v19";
-const ESSENTIEL = ["./", "index.html", "style.css", "app.js", "plus.js", "config.js", "donnees.js", "manifest.webmanifest", "icones/icone-192.png"];
+const VERSION = "montrio-v20";
+const ESSENTIEL = ["./", "index.html", "style.css?v=20", "app.js?v=20", "plus.js?v=20", "config.js?v=20", "donnees.js?v=20", "manifest.webmanifest", "icones/icone-192.png"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(ESSENTIEL)).then(() => self.skipWaiting()));
@@ -22,7 +22,8 @@ self.addEventListener("fetch", (e) => {
   // On ne touche qu'aux fichiers du site lui-même (pas au direct ni aux polices)
   if (e.request.method !== "GET" || url.origin !== location.origin) return;
   e.respondWith(
-    fetch(e.request)
+    // Les pages elles-mêmes : toujours vérifier auprès du serveur qu'on a la dernière version
+    fetch(e.request.mode === "navigate" ? new Request(e.request.url, { cache: "no-cache", credentials: "same-origin" }) : e.request)
       .then((rep) => {
         if (rep.ok) { const copie = rep.clone(); caches.open(VERSION).then((c) => c.put(e.request, copie)); }
         return rep;
