@@ -115,16 +115,9 @@
       <div class="grille-2">
         <div class="pile">
         <section class="bloc">
-          <div class="titre-section"><h2>À la une</h2>
-            <div id="filtres-buzz" class="onglets petits" role="tablist">
-              <button class="onglet actif" data-buzz="tout">Tout</button>
-              <button class="onglet" data-buzz="blessure">Blessures</button>
-              <button class="onglet" data-buzz="transaction">Transactions</button>
-              <button class="onglet" data-buzz="suspension">Suspensions</button>
-            </div>
-          </div>
-          <div id="articles"></div>
-          <p class="petit-gris" id="note-articles">Les articles viennent de Google Actualités : un clic ouvre l'article complet sur le site du média.</p>
+          <div class="titre-section"><h2>Les récits de la soirée <span class="tag-ligue" data-nom-ligue></span></h2><span id="recits-date" class="sur-titre"></span></div>
+          <div id="recits"></div>
+          <p class="petit-gris">Récits écrits automatiquement par MonTrio à partir des statistiques officielles. Touche un match pour voir son sommaire complet.</p>
         </section>
         <section class="bloc une">
           <div class="titre-section"><h2>Performances <span class="tag-ligue" data-nom-ligue></span></h2><span id="une-date" class="sur-titre"></span></div>
@@ -176,7 +169,7 @@
       <section class="bloc">
         <div class="titre-section"><h2>Mes favoris <span id="nb-favoris" class="pastille"></span></h2>
           <div class="outils-favoris">
-            <button id="alertes" class="btn leger" title="Un avis quand un de tes favoris marque, pendant que MonTrio est ouvert">🔔 Alertes de buts : non</button>
+            <button id="alertes" class="btn leger" title="Un avis quand un de tes favoris de la LNH marque, sur ton téléphone ou ton ordinateur">🔔 Alertes de buts : non</button>
           </div></div>
         <div id="cartes-favoris" class="cartes"></div>
         <p class="petit-gris">Tes favoris peuvent venir de toutes les ligues. Pour en ajouter, va dans l'onglet <a href="#/joueurs">Joueurs</a>.</p>
@@ -234,7 +227,6 @@
   <footer class="pied">
     <p id="maj"></p>
     <p>Site non officiel, sans lien avec les ligues ni les équipes. · <button class="lien-pied" id="ouvrir-lexique">Lexique des abréviations</button></p>
-    <details class="credits-photos" id="credits-photos"></details>
   </footer>
 
   <!-- ===== Barre de navigation (téléphone) ===== -->

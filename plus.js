@@ -208,12 +208,13 @@ async function corpsMatchJoue(m) {
 // Articles selon le nom court : « les Canadiens », « le Lightning », « l'Avalanche »
 function article(eq) {
   const n = courtEq(eq).trim();
-  // En Europe, les équipes portent surtout un nom de ville : pas d'article (« Fribourg-Gottéron », « de Lausanne »)
+  // Les surnoms au pluriel : « les Canadiens », « les Hitmen », « les ZSC Lions »
+  if (/(s|men)$/i.test(n)) return { le: `les ${n}`, du: `des ${n}`, au: `aux ${n}`, pl: true };
+  // En Europe, les autres équipes portent surtout un nom de ville : pas d'article (« Fribourg-Gottéron », « de Lausanne »)
   if (["khl", "shl", "liiga", "nl"].includes(ligueDe(eq))) {
-    const voy = /^[aeiouhéèêàâîôûAEIOUHÉÈÖÜ]/.test(n);
+    const voy = /^[aeiouhéèêàâîôûAEIOUHÉÈÄÖÜ]/.test(n);
     return { le: n, du: `${voy ? "d'" : "de "}${n}`, au: `à ${n}`, pl: false };
   }
-  if (/s$/i.test(n)) return { le: `les ${n}`, du: `des ${n}`, au: `aux ${n}`, pl: true };
   if (/^[aeiouhéèêàâîôûAEIOUHÉÈ]/.test(n)) return { le: `l'${n}`, du: `de l'${n}`, au: `à l'${n}`, pl: false };
   return { le: `le ${n}`, du: `du ${n}`, au: `au ${n}`, pl: false };
 }
@@ -223,7 +224,7 @@ function recitMatch(m, lignes) {
   const gagnantDom = m.sd > m.se, W = gagnantDom ? m.dom : m.ext, L = gagnantDom ? m.ext : m.dom;
   const sw = Math.max(m.sd, m.se), sl = Math.min(m.sd, m.se), ecart = sw - sl;
   const aW = article(W), aL = article(L), v = (a, sing, plur) => (a.pl ? plur : sing);
-  const jour = JOURS_LONGS[versDate(m.date).getDay()], lieu = gagnantDom ? "devant ses partisans" : "sur la route";
+  const jour = JOURS_LONGS[versDate(m.date).getDay()], lieu = gagnantDom ? (aW.pl ? "devant leurs partisans" : "devant ses partisans") : "sur la route";
   let p1;
   if (m.fin === "SO") p1 = `${majuscule(aW.le)} ${v(aW, "l'a", "l'ont")} emporté ${sw}-${sl} en tirs de barrage contre ${aL.le}, ${jour}, ${lieu}.`;
   else if (m.fin === "OT") p1 = `${majuscule(aW.le)} ${v(aW, "a", "ont")} eu besoin de la prolongation pour venir à bout ${aL.du} ${sw}-${sl}, ${jour}, ${lieu}.`;
@@ -250,8 +251,10 @@ function recitMatch(m, lignes) {
     if (tW > tL) phrases.push(`${majuscule(aW.le)} ${v(aW, "a", "ont")} aussi eu nettement l'avantage au chapitre des tirs, ${tW}-${tL}.`);
     else phrases.push(`${majuscule(aL.le)} ${v(aL, "a", "ont")} pourtant obtenu beaucoup plus de tirs, ${tL}-${tW}, sans réussir à en profiter.`);
   }
-  const b = bilan(W);
-  phrases.push(`${majuscule(aW.le)} ${v(aW, "présente", "présentent")} maintenant une fiche de ${fmtBilan(b.tous)}.`);
+  // Fiche de l'équipe gagnante juste après ce match
+  const fiche = [0, 0, 0];
+  for (const x of matchsDe(W).filter(estFini)) { fiche[issuePour(x, W)]++; if (String(x.id) === String(m.id)) break; }
+  phrases.push(`${majuscule(aW.le)} ${v(aW, "porte", "portent")} ainsi ${v(aW, "sa", "leur")} fiche à ${fmtBilan(fiche)}.`);
   return phrases.map(echapper).join(" ");
 }
 
@@ -398,7 +401,7 @@ async function rendreChauds() {
   bloc.innerHTML = `
     <section class="bloc bloc-feu"><div class="titre-section"><h2>🔥 En feu <span class="tag-ligue">${LIGUES[lig].nom}</span></h2><span class="sur-titre">5 derniers matchs</span></div><ol class="meneurs">${htmlChauds(chauds.slice(0, 10), (x) => x.pts, detailPts)}</ol></section>
     ${LIGUES[lig].pointsSeulement ? "" : `<section class="bloc"><div class="titre-section"><h2>Séquences de points <span class="tag-ligue">${LIGUES[lig].nom}</span></h2><span class="sur-titre">En cours</span></div><ol class="meneurs">${htmlChauds(seq.slice(0, 10), (x) => x.sequence, (x) => `${x.sequence} matchs de suite`)}</ol></section>`}
-    <section class="bloc"><div class="titre-section"><h2>Gardiens en forme <span class="tag-ligue">${LIGUES[lig].nom}</span></h2><span class="sur-titre">5 derniers matchs</span></div><ol class="meneurs">${htmlChauds(gar.slice(0, 10), (x) => pct3(x.sv / x.sa), (x) => `${x.sv} arrêts sur ${x.sa} en ${pluriel(x.pj, "match")}`)}</ol></section>`;
+    ${f.some((x) => x.j.pos === "G") ? "" : "<!--"}<section class="bloc"><div class="titre-section"><h2>Gardiens en forme <span class="tag-ligue">${LIGUES[lig].nom}</span></h2><span class="sur-titre">5 derniers matchs</span></div><ol class="meneurs">${htmlChauds(gar.slice(0, 10), (x) => pct3(x.sv / x.sa), (x) => `${x.sv} arrêts sur ${x.sa} en ${pluriel(x.pj, "match")}`)}</ol></section>${f.some((x) => x.j.pos === "G") ? "" : "-->"}`;
 }
 // Forme récente dans la fiche d'un joueur
 async function htmlFormeJoueur(j) {
@@ -422,20 +425,21 @@ rendreMeneurs = function () {
   const bloc = (titre, liste, aff, sous = "") => `<section class="bloc"><div class="titre-section"><h2>${titre} <span class="tag-ligue">${nom}</span></h2>${sous ? `<span class="sur-titre">${sous}</span>` : ""}</div><ol class="meneurs">${htmlMeneurs(liste, aff)}</ol></section>`;
   const avecAvancees = tous.some((j) => j.s && j.s.tirs != null), avecRecrues = tous.some((j) => j.r);
   const onglets = [["saison", "Saison"], ["forme", "🔥 En forme"], avecAvancees && ["avancees", "Stats avancées"], avecRecrues && ["recrues", "Recrues"]].filter(Boolean);
-  if (!onglets.some(([k]) => k === ongletMeneurs)) ongletMeneurs = "saison";
-  let h = `<div class="onglets meneurs-onglets" role="tablist">${onglets.map(([k, t]) => `<button class="onglet ${k === ongletMeneurs ? "actif" : ""}" data-onglet-meneurs="${k}" role="tab" aria-selected="${k === ongletMeneurs}">${t}</button>`).join("")}</div>`;
-  if (ongletMeneurs === "saison") {
+  const onglet = onglets.some(([k]) => k === ongletMeneurs) ? ongletMeneurs : "saison"; // le choix est gardé pour les autres ligues
+  const avecGardiens = tous.some((j) => j.g);
+  let h = `<div class="onglets meneurs-onglets" role="tablist">${onglets.map(([k, t]) => `<button class="onglet ${k === onglet ? "actif" : ""}" data-onglet-meneurs="${k}" role="tab" aria-selected="${k === onglet}">${t}</button>`).join("")}</div>`;
+  if (onglet === "saison") {
     h += bloc("Points", listeMeneurs(15, patineur, (j) => j.s.pts), (j) => j.s.pts)
       + bloc("Buts", listeMeneurs(15, patineur, (j) => j.s.b), (j) => j.s.b)
       + bloc("Passes", listeMeneurs(15, patineur, (j) => j.s.a), (j) => j.s.a)
       + bloc("Points par match", listeMeneurs(10, (j) => j.s && j.s.pj >= minPj, (j) => j.s.pts / j.s.pj), (j) => dec(j.s.pts / j.s.pj), `min. ${pluriel(minPj, "match")}`)
       + bloc("Différentiel", listeMeneurs(10, patineur, (j) => j.s.pm), (j) => signe(j.s.pm))
-      + bloc("Gardiens · Victoires", listeMeneurs(10, gardien, (j) => j.g.v), (j) => j.g.v)
+      + (avecGardiens ? bloc("Gardiens · Victoires", listeMeneurs(10, gardien, (j) => j.g.v), (j) => j.g.v)
       + bloc("Gardiens · % d'arrêts", listeMeneurs(10, (j) => gardien(j) && j.g.pct != null, (j) => j.g.pct), (j) => pct3(j.g.pct), `min. ${pluriel(minG, "match")}`)
-      + bloc("Gardiens · Moyenne", listeMeneurs(10, (j) => gardien(j) && j.g.moy != null, (j) => -j.g.moy), (j) => dec(j.g.moy), "buts accordés par match");
-  } else if (ongletMeneurs === "forme") {
+      + bloc("Gardiens · Moyenne", listeMeneurs(10, (j) => gardien(j) && j.g.moy != null, (j) => -j.g.moy), (j) => dec(j.g.moy), "buts accordés par match") : "");
+  } else if (onglet === "forme") {
     h += `<div id="bloc-chauds" class="bloc-chauds"></div>`;
-  } else if (ongletMeneurs === "avancees") {
+  } else if (onglet === "avancees") {
     const minTirs = Math.max(5, Math.ceil(maxPj * 1.5));
     const av = (j) => j.s && j.s.pj > 0 && j.s.tirs != null;
     h += bloc("Tirs au but", listeMeneurs(10, av, (j) => j.s.tirs), (j) => j.s.tirs)
@@ -444,14 +448,14 @@ rendreMeneurs = function () {
       + (tous.some((j) => j.s?.bg != null) ? bloc("Buts gagnants", listeMeneurs(10, (j) => av(j) && j.s.bg > 0, (j) => j.s.bg), (j) => j.s.bg) : "")
       + (tous.some((j) => j.s?.bin != null) ? bloc("Buts en infériorité numérique", listeMeneurs(10, (j) => av(j) && j.s.bin > 0, (j) => j.s.bin), (j) => j.s.bin) : "")
       + (tous.some((j) => j.s?.tg) ? bloc("Temps de glace moyen", listeMeneurs(10, (j) => av(j) && j.s.tg && j.s.pj >= minPj, (j) => j.s.tg), (j) => mmss(j.s.tg), "par match") : "")
-      + (tous.some((j) => j.s?.mj != null) ? bloc("Mises au jeu gagnées", listeMeneurs(10, (j) => av(j) && j.s.mj != null && ["C", "AV"].includes(j.pos) && j.s.pj >= minPj && j.s.mj > 0 && j.s.mj < 1, (j) => j.s.mj), (j) => pctFr(j.s.mj), "centres") : "")
+      + (tous.some((j) => j.s?.mj != null) ? bloc("Mises au jeu gagnées", listeMeneurs(10, (j) => av(j) && j.s.mj != null && ["C", "AV"].includes(j.pos) && j.s.pj >= Math.max(3, minPj) && j.s.mj > 0 && j.s.mj < 1, (j) => j.s.mj), (j) => pctFr(j.s.mj), "centres") : "")
       + (tous.some((j) => j.g?.bl != null) ? bloc("Gardiens · Blanchissages", listeMeneurs(10, (j) => j.g && j.g.bl > 0, (j) => j.g.bl), (j) => j.g.bl) : "");
-  } else if (ongletMeneurs === "recrues") {
+  } else if (onglet === "recrues") {
     const rec = (j) => j.r && j.s && j.s.pj > 0;
     h += `<p class="aide meneurs-aide">Les joueurs qui jouent leur première saison dans ${laLigue(lig)}.</p>`
       + bloc("Recrues · Points", listeMeneurs(15, rec, (j) => j.s.pts), (j) => j.s.pts)
-      + bloc("Recrues · Buts", listeMeneurs(10, rec, (j) => j.s.b), (j) => j.s.b)
-      + bloc("Recrues · Gardiens", listeMeneurs(10, (j) => j.r && j.g && j.g.pj > 0 && j.g.pct != null, (j) => j.g.pct), (j) => pct3(j.g.pct), "% d'arrêts");
+      + bloc("Recrues · Buts", listeMeneurs(10, (j) => rec(j) && j.s.b > 0, (j) => j.s.b), (j) => j.s.b)
+      + (avecGardiens ? bloc("Recrues · Gardiens", listeMeneurs(10, (j) => j.r && gardien(j) && j.g.pct != null, (j) => j.g.pct), (j) => pct3(j.g.pct), `% d'arrêts · min. ${pluriel(minG, "match")}`) : "");
   }
   $("grille-meneurs").innerHTML = h;
   rendreChauds();
@@ -464,15 +468,16 @@ $("grille-meneurs").addEventListener("click", (e) => {
 // Stats avancées dans la fiche d'un joueur
 function htmlStatsAvancees(j) {
   const s = j.s, g = j.g, t = (val, lib) => `<div class="tuile"><b>${val}</b><small>${lib}</small></div>`;
-  if (g) return g.bl != null ? `<div class="tuiles petites">${t(g.bl, "blanchissages")}</div>` : "";
+  const nb = (n, sing, plur) => t(n, n > 1 ? plur : sing);
+  if (g) return g.bl ? `<div class="tuiles petites">${nb(g.bl, "blanchissage", "blanchissages")}</div>` : "";
   if (!s) return "";
   let h = t(signe(s.pm), "différentiel");
-  if (s.tirs != null) h += t(s.tirs, "tirs") + t(s.tirs ? pctFr(s.b / s.tirs) : "–", "% de tirs");
-  if (s.bav != null) h += t(s.bav, "buts en AN");
-  if (s.bg != null) h += t(s.bg, "buts gagnants");
+  if (s.tirs != null) h += nb(s.tirs, "tir", "tirs") + (s.tirs >= 5 ? t(pctFr(s.b / s.tirs), "% de tirs") : "");
+  if (s.bav != null) h += t(s.bav, s.bav > 1 ? "buts en AN" : "but en AN");
+  if (s.bg != null) h += nb(s.bg, "but gagnant", "buts gagnants");
   if (s.tg) h += t(mmss(s.tg), "temps de glace moyen");
-  if (s.mj != null && s.mj > 0 && ["C", "AV"].includes(j.pos)) h += t(pctFr(s.mj), "mises au jeu gagnées");
-  if (s.pun != null) h += t(s.pun, "minutes de punition");
+  if (s.mj != null && s.mj > 0 && s.mj < 1 && s.pj >= 3 && ["C", "AV"].includes(j.pos)) h += t(pctFr(s.mj), "mises au jeu gagnées");
+  if (s.pun != null) h += t(s.pun, s.pun > 1 ? "minutes de punition" : "minute de punition");
   return `<div class="tuiles petites">${h}</div>`;
 }
 
@@ -490,7 +495,7 @@ function ligneCourse(t, rang, eqs) {
 const teteCourse = `<thead><tr><th>#</th><th>Équipe</th><th>PJ</th><th>PTS</th><th>V-D-DP</th><th class="large">VR</th><th>Diff</th><th class="large">10 dern.</th><th class="large">Série</th></tr></thead>`;
 function htmlCourse(c) {
   const eqs = equipesFavorites();
-  const parRang = (l, k) => [...l].sort((a, b) => (a[k] ?? 99) - (b[k] ?? 99) || b.pts - a.pts || a.pj - b.pj);
+  const parRang = (l, k) => [...l].sort((a, b) => (a[k] ?? 99) - (b[k] ?? 99) || b.pts - a.pts || a.pj - b.pj || (b.vr ?? 0) - (a.vr ?? 0) || b.v - a.v);
   let h = "", affiches = "";
   for (const conf of groupes(c, "conf")) {
     const eqConf = c.filter((t) => t.conf === conf);
@@ -509,7 +514,7 @@ function htmlCourse(c) {
     // Si les séries commençaient aujourd'hui
     const [d1, d2] = divs;
     if (d1 && d2 && wc.length >= 2 && tetes[d1].length >= 3 && tetes[d2].length >= 3) {
-      const [m1, m2] = [tetes[d1][0], tetes[d2][0]].sort((a, b) => b.pts - a.pts || a.pj - b.pj);
+      const [m1, m2] = [tetes[d1][0], tetes[d2][0]].sort((a, b) => b.pts - a.pts || a.pj - b.pj || (b.vr ?? 0) - (a.vr ?? 0) || b.v - a.v || (b.bp - b.bc) - (a.bp - a.bc));
       const duel = (a, b, ra, rb) => `<div class="duel"><button data-equipe-fiche="${a.eq}"><small>${ra}</small><b>${abr(a.eq)}</b></button><span>vs</span><button data-equipe-fiche="${b.eq}"><b>${abr(b.eq)}</b><small>${rb}</small></button></div>`;
       affiches += `<div class="affiches-conf"><h4>${echapper(conf)}</h4>
         ${duel(m1, wc[1], "1re div.", "2e meill. 2e")}${duel(tetes[m1.div][1], tetes[m1.div][2], "2e div.", "3e div.")}
@@ -528,7 +533,7 @@ function htmlTableauSeries(series) {
   return `<div class="table-bloc"><h3>Séries éliminatoires</h3><div class="tableau-series">${rondes.map((r) => `<div class="ronde"><h4>${RONDES[r] || `Ronde ${r}`}</h4>${series.filter((x) => x.ronde === r).map(carte).join("")}</div>`).join("")}</div></div>`;
 }
 async function rendreSeries() {
-  if (seriesLnh === undefined) seriesLnh = await lireJson("data/series.json").catch(() => null);
+  if (seriesLnh === undefined) seriesLnh = matchsLigue("lnh").some((m) => m.series) ? await lireJson("data/series.json").catch(() => null) : null;
   if (vueClassement !== "series" || ligue !== "lnh") return;
   $("tables-classement").innerHTML = (seriesLnh?.length ? htmlTableauSeries(seriesLnh) : "") + htmlCourse(D.classement.lnh || []);
 }
@@ -624,7 +629,8 @@ async function verifierPush() {
   if (pushPossible !== null) return pushPossible;
   pushPossible = false;
   if (!RELAIS || !("serviceWorker" in navigator) || !("PushManager" in window)) return false;
-  try { pushPossible = !!(await (await fetch(`${RELAIS}/alertes/etat`, { cache: "no-store" })).json()).actif; } catch (e) {}
+  try { pushPossible = !!(await (await fetch(`${RELAIS}/alertes/etat`, { cache: "no-store" })).json()).actif; }
+  catch (e) { const r = pushPossible; pushPossible = null; return r; } // erreur réseau : on réessaiera plus tard
   return pushPossible;
 }
 const b64uVersOctets = (s) => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4)), (c) => c.charCodeAt(0));
@@ -633,7 +639,9 @@ function favorisLnh() {
   return { joueurs: fav.map((j) => j.id).filter((id) => /^\d+$/.test(id)), equipes: [...new Set(fav.map((j) => j.eq))] };
 }
 async function abonnementPush(creer) {
-  const reg = await navigator.serviceWorker.ready;
+  // On n'attend jamais plus de 4 secondes (ex. navigation privée sans « service worker »)
+  const reg = await Promise.race([navigator.serviceWorker.getRegistration().then((r) => r || navigator.serviceWorker.ready), new Promise((r) => setTimeout(() => r(null), 4000))]);
+  if (!reg) return null;
   let sub = await reg.pushManager.getSubscription();
   if (!sub && creer) {
     const { cle } = await (await fetch(`${RELAIS}/alertes/cle`)).json();
@@ -645,7 +653,11 @@ async function synchroniserPush() {
   if (!alertesOn || !(await verifierPush())) return;
   try {
     const sub = await abonnementPush(false);
-    if (sub) await fetch(`${RELAIS}/alertes/abonner`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ abonnement: sub.toJSON(), ...favorisLnh() }) });
+    if (!sub) return;
+    const corps = JSON.stringify({ abonnement: sub.toJSON(), ...favorisLnh() });
+    if (memoire("push-envoye") === corps) return; // rien de changé depuis la dernière fois
+    const r = await fetch(`${RELAIS}/alertes/abonner`, { method: "POST", headers: { "Content-Type": "application/json" }, body: corps });
+    if (r.ok) memoire("push-envoye", corps);
   } catch (e) {}
 }
 function rendreBoutonAlertes() {
@@ -657,7 +669,9 @@ $("alertes").onclick = async () => {
   const iPhoneNav = /iphone|ipad/i.test(navigator.userAgent) && !estInstallee();
   if (activer && "Notification" in window && Notification.permission === "default") { try { await Notification.requestPermission(); } catch (e) {} }
   alertesOn = activer; memoire("alertes", alertesOn ? "1" : "0"); rendreBoutonAlertes();
+  if (activer && "Notification" in window && Notification.permission === "denied") toast("Les notifications sont bloquées pour ce site dans les réglages de ton navigateur ou de ton téléphone. Tu seras averti seulement pendant que MonTrio est ouvert.", 9000);
   if (!activer) {
+    memoire("push-envoye", "");
     try { const sub = await abonnementPush(false); if (sub) { await fetch(`${RELAIS}/alertes/desabonner`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ abonnement: sub.toJSON() }) }); await sub.unsubscribe(); } } catch (e) {}
     return toast("Alertes désactivées.");
   }
@@ -678,7 +692,8 @@ retirer = function (id) { retirerBase(id); synchroniserPush(); };
 function avertir(titre, texte) {
   toast(`${titre} ${texte}`, 7000);
   if (document.hidden && "Notification" in window && Notification.permission === "granted") {
-    try { new Notification(titre, { body: texte, icon: "icones/icone-192.png", tag: titre + texte }); } catch (e) {}
+    // Si le relais envoie déjà les alertes au téléphone, on n'en ajoute pas une deuxième
+    if (!pushPossible) try { new Notification(titre, { body: texte, icon: "icones/icone-192.png", tag: titre + texte }); } catch (e) {}
   }
 }
 async function verifierAlertes() {
@@ -740,27 +755,46 @@ function ouvrirDepuisAdresse() {
   return true;
 }
 
-// À la une : on prévient quand les médias de cette ligue écrivent surtout en anglais
-const rendreBuzzBase = rendreBuzz;
-rendreBuzz = async function () {
-  await rendreBuzzBase();
-  const anglais = !["lnh", "lhjmq"].includes(ligue);
-  $("note-articles").textContent = `Les articles viennent de Google Actualités : un clic ouvre l'article complet sur le site du média.${anglais ? ` Pour ${laLigue(ligue)}, la plupart des médias écrivent en anglais.` : ""}`;
-};
+// ---- Les récits de la soirée (accueil) ---------------------------
+// Notre propre contenu : un récit écrit automatiquement pour chaque match de la dernière soirée.
+let jetonRecits = 0;
+async function rendreRecits() {
+  const jeton = ++jetonRecits, lig = ligue;
+  const finis = matchsLigue(lig).filter((m) => estFini(m) && m.date <= AUJ);
+  const boite = $("recits");
+  if (!finis.length) { boite.innerHTML = `<p class="vide">La saison n'est pas encore commencée.</p>`; $("recits-date").textContent = ""; return; }
+  const date = finis[finis.length - 1].date;
+  const eqs = equipesFavorites();
+  const ms = finis.filter((m) => m.date === date).sort((a, b) => (eqs.includes(b.dom) || eqs.includes(b.ext)) - (eqs.includes(a.dom) || eqs.includes(a.ext)) || (b.sd + b.se) - (a.sd + a.se));
+  const cartes = [];
+  for (const m of ms) {
+    const lignes = [[m.ext, (await points(m.ext))[m.id] || {}], [m.dom, (await points(m.dom))[m.id] || {}]];
+    const vide = !Object.keys(lignes[0][1]).length && !Object.keys(lignes[1][1]).length;
+    const fav = eqs.includes(m.dom) || eqs.includes(m.ext);
+    const gagne = (eq) => (m.dom === eq ? m.sd > m.se : m.se > m.sd);
+    cartes.push(`<article class="recit-carte ${fav ? "favori" : ""}" data-match="${m.id}" tabindex="0" role="button">
+      <div class="rc-score"><span class="${gagne(m.ext) ? "gagne" : ""}"><b>${abr(m.ext)}</b> ${m.se}</span><span class="rc-tiret">–</span><span class="${gagne(m.dom) ? "gagne" : ""}">${m.sd} <b>${abr(m.dom)}</b></span><small>Final${suffixeFin(m)}${fav ? " · ⭐" : ""}</small></div>
+      <p>${vide ? "Le récit arrive dès que les statistiques du match sont disponibles." : recitMatch(m, lignes)}</p>
+      <span class="rc-lien">Sommaire du match ›</span></article>`);
+  }
+  if (jeton !== jetonRecits) return;
+  $("recits-date").textContent = dateLongue(date);
+  boite.innerHTML = `<div class="recits">${cartes.join("")}</div>`;
+}
 
 // ---- La semaine en bref (accueil) -------------------------------
 let jetonSemaine = 0;
 async function rendreSemaine() {
-  const jeton = ++jetonSemaine, lig = ligue, debut = decaler(AUJ, -7);
+  const jeton = ++jetonSemaine, lig = ligue, debut = decaler(AUJ, -6); // aujourd'hui et les 6 jours d'avant
   const ms = matchsLigue(lig).filter((m) => estFini(m) && m.date >= debut && m.date <= AUJ);
   const boite = $("semaine");
   if (!ms.length) { boite.innerHTML = `<p class="vide">Aucun match dans les 7 derniers jours.</p>`; return; }
   const joueurs = new Map(), equipes = new Map();
   for (const m of ms) {
     for (const eq of [m.dom, m.ext]) {
-      const e = equipes.get(eq) || { eq, v: 0, d: 0, bp: 0, bc: 0 };
+      const e = equipes.get(eq) || { eq, v: 0, d: 0, dp: 0, bp: 0, bc: 0 };
       const { nous, eux } = scorePour(m, eq);
-      if (nous > eux) e.v++; else e.d++;
+      if (nous > eux) e.v++; else if (m.fin) e.dp++; else e.d++;
       e.bp += nous; e.bc += eux; equipes.set(eq, e);
       const ligne = (await points(eq))[m.id] || {};
       for (const [id, l] of Object.entries(ligne)) {
@@ -775,16 +809,16 @@ async function rendreSemaine() {
   if (jeton !== jetonSemaine) return;
   const tous = [...joueurs.values()];
   const top = tous.filter((x) => x.j.pos !== "G" && x.b + x.a > 0).sort((a, b) => (b.b + b.a) - (a.b + a.a) || b.b - a.b || a.pj - b.pj).slice(0, 5);
-  const g = tous.filter((x) => x.j.pos === "G" && x.sa >= 40).sort((a, b) => b.sv / b.sa - a.sv / a.sa)[0];
-  const e = [...equipes.values()].sort((a, b) => b.v - a.v || (b.bp - b.bc) - (a.bp - a.bc))[0];
+  const g = tous.filter((x) => x.j.pos === "G" && x.pj >= 2 && x.sa >= 40).sort((a, b) => b.sv / b.sa - a.sv / a.sa)[0];
+  const e = [...equipes.values()].sort((a, b) => (2 * b.v + b.dp) - (2 * a.v + a.dp) || (b.bp - b.bc) - (a.bp - a.bc))[0];
   const mdm = [...ms].sort((a, b) => (b.sd + b.se + (b.fin ? 2 : 0)) - (a.sd + a.se + (a.fin ? 2 : 0)))[0];
   const carte = (titre, attr, grand, petit) => `<button class="sem-carte" ${attr}><small>${titre}</small><b>${grand}</b><span>${petit}</span></button>`;
   boite.innerHTML = `<div class="sem-cartes">
     ${top[0] ? carte("Joueur de la semaine", `data-fiche="${top[0].j.id}"`, echapper(top[0].j.nom), `${abr(top[0].j.eq)} · ${top[0].b} B, ${top[0].a} A en ${pluriel(top[0].pj, "match")}`) : ""}
     ${g ? carte("Gardien de la semaine", `data-fiche="${g.j.id}"`, echapper(g.j.nom), `${abr(g.j.eq)} · ${pct3(g.sv / g.sa)} en ${pluriel(g.pj, "match")}`) : ""}
-    ${e ? carte("Équipe de la semaine", `data-equipe-fiche="${e.eq}"`, echapper(nomEq(e.eq)), `${e.v}-${e.d} · ${signe(e.bp - e.bc)} au différentiel`) : ""}
+    ${e ? carte("Équipe de la semaine", `data-equipe-fiche="${e.eq}"`, echapper(nomEq(e.eq)), `${e.v}-${e.d}-${e.dp} · ${signe(e.bp - e.bc)} au différentiel`) : ""}
     ${mdm ? carte("Match de la semaine", `data-match="${mdm.id}"`, `${abr(mdm.ext)} ${mdm.se} – ${mdm.sd} ${abr(mdm.dom)}${suffixeFin(mdm)}`, dateLongue(mdm.date)) : ""}</div>
-    ${top.length ? `<h4 class="mini-titre sem-titre">Top 5 des pointeurs</h4><ol class="meneurs">${top.map((x) => `<li data-fiche="${x.j.id}"><span class="nom">${echapper(x.j.nom)}${favoris.includes(x.j.id) ? " ⭐" : ""}<small>${echapper(courtEq(x.j.eq))} · ${x.b} B, ${x.a} A en ${pluriel(x.pj, "match")}</small></span><span class="val">${x.b + x.a}</span></li>`).join("")}</ol>` : ""}`;
+    ${top.length ? `<h4 class="mini-titre sem-titre">Les meilleurs pointeurs</h4><ol class="meneurs">${top.map((x) => `<li data-fiche="${x.j.id}"><span class="nom">${echapper(x.j.nom)}${favoris.includes(x.j.id) ? " ⭐" : ""}<small>${echapper(courtEq(x.j.eq))} · ${x.b} B, ${x.a} A en ${pluriel(x.pj, "match")}</small></span><span class="val">${x.b + x.a}</span></li>`).join("")}</ol>` : ""}`;
 }
 const rendreUneBase = rendreUne;
 rendreUne = async function () { await rendreUneBase(); rendreSemaine(); };

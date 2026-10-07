@@ -20,7 +20,6 @@ Scores, classement, meneurs et stats de la LNH, de la LAH, des ligues junior (LH
 | `scripts/maj-donnees.mjs` | Le robot qui va chercher les données des 32 équipes de la LNH |
 | `scripts/maj-autres-ligues.mjs` | Le robot de la LAH et des juniors |
 | `scripts/maj-europe.mjs` | Le robot des ligues d'Europe : KHL, SHL (Suède), Liiga (Finlande), National League (Suisse) |
-| `scripts/maj-nouvelles.mjs` | Le robot des articles (section « À la une ») |
 | `.github/workflows/maj-donnees.yml` | Dit à GitHub de lancer le robot toutes les 30 minutes environ |
 | `relais/` | Le relais optionnel pour le direct à la seconde (voir `relais/LISEZMOI.md`) |
 

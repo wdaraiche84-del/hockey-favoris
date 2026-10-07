@@ -16,7 +16,8 @@ function versTexte(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 function versDate(t) { const [a, m, j] = t.split("-").map(Number); return new Date(a, m - 1, j); }
-function dateLongue(t) { const d = versDate(t); return `${JOURS[d.getDay()]} ${d.getDate()} ${MOIS[d.getMonth()]}`; }
+const jourFr = (d) => (d.getDate() === 1 ? "1er" : d.getDate());
+function dateLongue(t) { const d = versDate(t); return `${JOURS[d.getDay()]} ${jourFr(d)} ${MOIS[d.getMonth()]}`; }
 function decaler(t, n) { const d = versDate(t); d.setDate(d.getDate() + n); return versTexte(d); }
 function simplifier(t) { return String(t).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); }
 function slug(t) { return simplifier(t).replace(/[^a-z]+/g, "-").replace(/^-|-$/g, ""); }
@@ -188,7 +189,7 @@ async function choisirLigue(k) {
   try { await charger(k); } catch (e) { montrerErreur(`Les données de ${laLigue(k)} n'ont pas pu être chargées pour l'instant.`); }
   document.body.classList.remove("chargement");
   equipeChoisie = null;
-  rafraichir(); rendreUne(); rendreBuzz(); rendreMiseAJour();
+  rafraichir(); rendreUne(); rendreRecits(); rendreMiseAJour();
 }
 $("choix-ligue").addEventListener("click", (e) => { const b = e.target.closest("[data-ligue]"); if (b) choisirLigue(b.dataset.ligue); });
 function montrerErreur(t) { $("erreur").hidden = false; $("erreur").textContent = t; setTimeout(() => ($("erreur").hidden = true), 8000); }
@@ -317,110 +318,6 @@ async function rendreUne() {
       <span><strong>${echapper(titrePerformance(p))}</strong><small>${abr(p.j.eq)} vs ${abr(adversaire(p.m, p.j.eq))} · ${p.b} B, ${p.a} A</small></span>
     </button></li>`).join("");
 }
-
-// ---- 6 b. À la une : les articles du hockey ---------------------
-const NOMS_CAT = { blessure: "Blessure", suspension: "Suspension", transaction: "Transaction", nouvelle: "Nouvelle" };
-let filtreBuzz = "tout";
-D.nouvelles = null;
-function ilYa(date) {
-  const min = Math.round((Date.now() - new Date(date)) / 60000);
-  if (min < 60) return `il y a ${Math.max(1, min)} min`;
-  if (min < 1440) return `il y a ${Math.round(min / 60)} h`;
-  const j = Math.round(min / 1440);
-  return j === 1 ? "hier" : `il y a ${j} jours`;
-}
-// Repère l'équipe dont parle un titre (ex. « Canadien » → MTL), pour décorer la carte
-function equipeDuTitre(titre) {
-  const t = simplifier(titre);
-  for (const [eq, e] of Object.entries(D.equipes)) {
-    if (e.lig !== "lnh" && e.lig !== ligue) continue;
-    const court = simplifier(e.court || "");
-    if (court.length < 4) continue;
-    const singulier = court.endsWith("s") ? court.slice(0, -1) : court;
-    if (new RegExp(`\\b${singulier.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`).test(t)) return eq;
-  }
-  return null;
-}
-// ---- Photos libres de droits (Wikimedia Commons) --------------
-// Chaque carte reçoit une photo de sa catégorie, toujours la même pour un
-// même titre, sans répéter une photo déjà affichée sur la page.
-let PHOTOS = [];
-const photosVues = new Set();
-const chargerPhotos = fetch("images/photos/credits.json").then((r) => r.json()).then((l) => { PHOTOS = l; }).catch(() => {});
-function hacher(t) { let h = 0; for (const c of t) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; }
-function photoPour(titre, cat) {
-  const essais = [PHOTOS.filter((p) => p.cat === cat), PHOTOS.filter((p) => p.cat === "nouvelle"), PHOTOS];
-  for (const l of essais) {
-    if (!l.length) continue;
-    const debut = hacher(titre) % l.length;
-    for (let i = 0; i < l.length; i++) {
-      const p = l[(debut + i) % l.length];
-      if (!photosVues.has(p.f)) { photosVues.add(p.f); return p; }
-    }
-  }
-  return PHOTOS.length ? PHOTOS[hacher(titre) % PHOTOS.length] : null;
-}
-function rendreCredits() {
-  const el = document.getElementById("credits-photos");
-  if (!el || !PHOTOS.length) return;
-  el.innerHTML = `<summary>Crédits photos</summary><p>Photos libres de droits provenant de Wikimedia Commons, utilisées seulement pour décorer : ce sont des images neutres (patinoires, bâtons, rondelles, patins) qui ne montrent aucune équipe ni aucun joueur.</p><ul>${
-    PHOTOS.map((p) => `<li><a href="${echapper(p.page)}" target="_blank" rel="noopener">${echapper(p.auteur)}</a> · ${echapper(p.lic)}</li>`).join("")}</ul>`;
-}
-
-function carteArticle(x, taille) {
-  const cat = NOMS_CAT[x.cat] ? x.cat : "nouvelle";
-  const eq = equipeDuTitre(x.titre);
-  const ph = taille === "petite-liste" ? null : photoPour(x.titre, cat);
-  const lig = x.lig && LIGUES[x.lig] ? `<span class="tag-ligue petit">${LIGUES[x.lig].nom}</span>` : "";
-  return `<a class="article article-${taille} fond-${cat}" href="${echapper(x.lien)}" target="_blank" rel="noopener noreferrer">
-    <span class="article-visuel${ph ? " avec-photo" : ""}">${ph ? `<img class="article-photo" src="images/photos/${ph.f}" alt="" loading="lazy"><span class="article-credit">Photo : ${echapper(ph.auteur)}</span>` : ""}${eq ? `<span class="article-eq">${abr(eq)}</span>` : `<span class="article-eq icone-cat">${{ blessure: "✚", transaction: "⇄", suspension: "⏸", nouvelle: "🏒" }[cat]}</span>`}
-      <span class="article-tags"><span class="cat cat-${cat}">${NOMS_CAT[cat]}</span>${lig}</span></span>
-    <span class="article-texte"><strong>${echapper(x.titre)}</strong><small>${echapper(x.source)} · ${ilYa(x.date)}</small></span>
-  </a>`;
-}
-// Même classement que le robot des nouvelles (on l'applique aussi aux articles déjà reçus)
-// Une vraie transaction : un geste concret, pas une rumeur ni une question
-const TRANSACTION = /(?<!\p{L})(traded|acquires?|acquired|signs?|signed|re-signs?|extension|claimed|waivers|recall(s|ed)?|reassign(s|ed)?|loan(s|ed)|releases?|released|fired|hired|named (head )?coach|échangé|échangés|échange \w+ (à|aux|contre)|acquiert|acquis|obtient|obtenu|cède|cédé|signe|a signé|paraphe|prolonge|prolongation de contrat|contrat (de|d'une durée)|soumis au ballottage|plac\w*\s.{0,40}?au ballottage|réclamé|rappelé|rappelle|retranché|libéré|congédié|embauché|nommé (entraîneur|directeur|capitaine))(?!\p{L})/iu;
-const SPECULATION = /\?|rumeur|rumou?r|could|might|should|would|interest|target|potential|possible|pourrai(t|ent)|surprise|choix|intéress|cible|possible|spécul|envisag|aimerai(t|ent)|songe|candidat|serait|devrai(t|ent)|options?\b/i;
-function categorieDe(titre, source = "") {
-  if (/bless|injur|\bIR\b|à l'écart|absen|opér[ée]|commotion|rétabli|retour au jeu|infirmerie|concussion|week-to-week|day-to-day|out for/i.test(titre)) return "blessure";
-  if (/suspen|amende|sanction|audience disciplinaire|fined|hearing/i.test(titre)) return "suspension";
-  if (TRANSACTION.test(titre) && !SPECULATION.test(titre) && !/rumeur/i.test(source)) return "transaction";
-  return "nouvelle";
-}
-
-// Les nouvelles du Canadien de Montréal ont la priorité (LNH)
-const parleDuCH = (x) => (/canadien|\bCH\b|Habs|St-Louis|Hughes/i.test(x.titre || "") ? 1 : 0);
-const carte = carteArticle;
-// Paris sportifs, cotes, casinos : jamais dans les articles
-const JEU = /\bparis? sportifs?\b|\bpari\b|\bparie[rz]?\b|parieu|mise-o-jeu|mises? sportives?|\bcotes?\b|\bodds\b|\bbet(s|ting|tor)?\b|rue ?des ?joueurs|odds scanner|prédiction|prediction|pronostic|parlay|sportsbook|bookmak|casino|draftkings|fanduel|betmgm|bet365|betway|bet99|betrivers|caesars sportsbook|pointsbet|fanatics sportsbook|loto-québec|covers\.com|action network|pickswise|oddsshark|sportsline|dimers|\bprops?\b/i;
-async function rendreBuzz() {
-  await chargerPhotos; photosVues.clear(); rendreCredits();
-  if (!D.nouvelles) D.nouvelles = lireJson("data/nouvelles.json").catch(() => []);
-  const tout = (await D.nouvelles).filter((x) => x.cat !== "bagarre" && !/bagarre|gants|\bfights?\b/i.test(x.titre) && !JEU.test(x.titre) && !JEU.test(x.source || "")).map((x) => ({ ...x, cat: categorieDe(x.titre, x.source) }));
-  // La ligue choisie d'abord, puis le reste
-  // Seulement les articles de la ligue choisie (les anciens articles sans ligue comptent pour la LNH)
-  const liste = tout.filter((x) => (x.lig || "lnh") === ligue)
-    .filter((x) => filtreBuzz === "tout" || x.cat === filtreBuzz)
-    .sort((a, b) => (ligue === "lnh" ? parleDuCH(b) - parleDuCH(a) : 0) || String(b.date).localeCompare(String(a.date)))
-    .slice(0, 21);
-  if (!liste.length) { $("articles").innerHTML = `<p class="vide">Pas d'articles récents sur ${laLigue(ligue)}${filtreBuzz !== "tout" ? " dans cette catégorie" : ""} pour l'instant. Reviens un peu plus tard!</p>`; return; }
-  // Mise en page de site de sports : 1 grande + 2 moyennes, une grille de cartes, puis « Plus de nouvelles »
-  const [vedette, ...reste] = liste;
-  const cotes = reste.slice(0, 2), grille = reste.slice(2, 8), plus = reste.slice(8);
-  $("articles").innerHTML = `
-    <div class="une-haut">${carte(vedette, "grande")}<div class="une-cotes">${cotes.map((x) => carte(x, "moyenne")).join("")}</div></div>
-    ${grille.length ? `<div class="grille-articles">${grille.map((x) => carte(x, "petite")).join("")}</div>` : ""}
-    ${plus.length ? `<h3 class="groupe-titre">Plus de nouvelles</h3><ul class="buzz">${plus.map((x) => `<li class="buzz-item"><span class="cat cat-${NOMS_CAT[x.cat] ? x.cat : "nouvelle"}">${NOMS_CAT[x.cat] || "Nouvelle"}</span>
-      <a class="buzz-texte" href="${echapper(x.lien)}" target="_blank" rel="noopener noreferrer"><strong>${echapper(x.titre)}</strong><small>${echapper(x.source)} · ${ilYa(x.date)} ↗</small></a></li>`).join("")}</ul>` : ""}`;
-}
-$("filtres-buzz").addEventListener("click", (e) => {
-  const b = e.target.closest("[data-buzz]");
-  if (!b) return;
-  filtreBuzz = b.dataset.buzz;
-  document.querySelectorAll("[data-buzz]").forEach((x) => x.classList.toggle("actif", x === b));
-  rendreBuzz();
-});
 
 // ---- 7. Ce soir pour tes favoris (toutes les ligues) ---------
 async function rendreSoir() {
@@ -683,7 +580,7 @@ const estGardienLigne = (l) => Array.isArray(l) && l[0] === "G";
 const ptsLigne = (l) => (!l || estGardienLigne(l) ? 0 : (l[0] || 0) + (l[1] || 0));
 const signe = (n) => (n > 0 ? `+${n}` : `${n}`);
 const DECISIONS = { W: "V", L: "D", O: "DP" };
-function dateCourte(t) { const d = versDate(t); return `${d.getDate()} ${MOIS_COURT[d.getMonth()]}`; }
+function dateCourte(t) { const d = versDate(t); return `${jourFr(d)} ${MOIS_COURT[d.getMonth()]}`; }
 async function htmlMatchParMatch(j) {
   const pts = await points(j.eq);
   const tous = matchsDe(j.eq);
@@ -978,7 +875,7 @@ async function demarrer() {
   rafraichir();
   rendreMiseAJour();
   rendreUne();
-  rendreBuzz();
+  rendreRecits();
   ouvrirDepuisAdresse();
   setInterval(tourDirect, SECONDES_DIRECT * 1000);
   tourDirect();

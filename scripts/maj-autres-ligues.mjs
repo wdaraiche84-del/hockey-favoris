@@ -97,7 +97,7 @@ async function uneLigue(lig, conf) {
   const gardiens = (await mk("statviewtype", { type: "topgoalies", season_id: sid, first: 0, limit: 500 })).Statviewtype || [];
   for (const g of gardiens) {
     const j = parId.get(g.player_id);
-    if (j) j.g = { pj: n(g.games_played), v: n(g.wins), d: n(g.losses), dp: n(g.ot_losses) + n(g.shootout_losses),
+    if (j) j.g = { pj: n(g.games_played), v: n(g.wins), d: n(g.losses), dp: g.non_reg_losses != null && g.non_reg_losses !== "" ? n(g.non_reg_losses) : n(g.ot_losses) + n(g.shootout_losses),
       moy: dec(g.goals_against_average, 2), pct: dec(g.save_percentage, 3), bl: n(g.shutouts) };
     if (j && g.rookie === "1") j.r = 1;
   }

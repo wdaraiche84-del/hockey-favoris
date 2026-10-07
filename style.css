@@ -307,7 +307,7 @@ table.tableau { width: 100%; border-collapse: collapse; font-size: .85rem; }
   .maj-badge { display: none; }
 }
 @media (max-width: 960px) {
-  .grille-2, .grille-tables { grid-template-columns: 1fr; }
+  .grille-2, .grille-tables { grid-template-columns: minmax(0, 1fr); }
   .grille-meneurs { grid-template-columns: 1fr 1fr; }
   .nav-haut { display: none; }
 }
@@ -768,3 +768,20 @@ button.score-carte:hover { background: #2B3647; }
 .sem-carte span { font-size: .78rem; color: var(--texte-doux); }
 .sem-titre { margin-top: 14px; }
 @media (max-width: 640px) { .sem-cartes { grid-template-columns: 1fr; } }
+
+/* ---- Les récits de la soirée (accueil) ---- */
+.recits { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.recit-carte { border: 1px solid var(--ligne); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px; cursor: pointer; background: var(--carte); transition: border-color .15s, box-shadow .15s; }
+.recit-carte:hover { border-color: var(--accent); box-shadow: 0 6px 18px rgba(15, 23, 42, .08); }
+.recit-carte.favori { border-left: 4px solid var(--accent); }
+.rc-score { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; font-family: var(--titre); font-size: 1.5rem; font-weight: 700; color: var(--texte-doux); }
+.rc-score .gagne { color: var(--texte); }
+.rc-score b { font-weight: 800; }
+.rc-score .rc-tiret { color: var(--texte-doux); }
+.rc-score small { margin-left: auto; font-family: "Inter", sans-serif; font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.recit-carte p { margin: 0; font-size: .9rem; line-height: 1.55; }
+.rc-lien { margin-top: auto; font-size: .8rem; font-weight: 700; color: var(--accent); }
+@media (max-width: 640px) { .recits { grid-template-columns: 1fr; } }
+
+.meneurs-onglets { overflow-x: auto; scrollbar-width: none; }
+.meneurs-onglets .onglet { white-space: nowrap; }

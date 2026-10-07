@@ -17,6 +17,12 @@ const PERMIS = [/^\/v1\/score\/now$/, /^\/v1\/gamecenter\/\d+\/boxscore$/];
 // Les adresses du site qui ont le droit d'utiliser le relais
 const SITES = ["https://montriohockey.ca", "https://www.montriohockey.ca", "https://wdaraiche84-del.github.io"];
 const SITE_PRINCIPAL = "https://wdaraiche84-del.github.io/hockey-favoris/";
+// Seuls les vrais services d'alertes des navigateurs sont acceptés (Chrome, Firefox, Apple, Microsoft)
+const SERVICES_PUSH = [/^fcm\.googleapis\.com$/, /^updates\.push\.services\.mozilla\.com$/, /^web\.push\.apple\.com$/, /\.notify\.windows\.com$/, /^push\.services\.mozilla\.com$/];
+const MAX_ABONNES = 5000;
+const MAX_ENVOIS = 40; // le plan gratuit permet 50 requêtes sortantes par réveil
+// Petite mémoire (le temps que le relais reste éveillé) : évite de surcharger la LNH et l'espace KV
+const memoire = { direct: new Map(), etat: null, vapid: null, cleSignature: null, jetons: new Map() };
 
 export default {
   async fetch(requete, env, ctx) {
@@ -37,18 +43,31 @@ export default {
       if (!env.ABONNES) return json({ erreur: "Les alertes ne sont pas encore activées sur le relais." }, 503);
       if (url.pathname === "/alertes/cle" && requete.method === "GET") return json({ cle: (await clesVapid(env)).publique });
       if (requete.method !== "POST") return json({ erreur: "Méthode non permise" }, 405);
+      if (!SITES.includes(origine)) return json({ erreur: "Origine non permise" }, 403);
       let corps;
       try { corps = await requete.json(); } catch { return json({ erreur: "Demande illisible" }, 400); }
       const sub = corps.abonnement;
-      if (!sub?.endpoint || !/^https:\/\//.test(sub.endpoint) || !sub.keys?.p256dh || !sub.keys?.auth) return json({ erreur: "Abonnement invalide" }, 400);
+      const hote = (() => { try { const u = new URL(sub?.endpoint); return u.protocol === "https:" ? u.hostname : ""; } catch { return ""; } })();
+      const b64 = /^[A-Za-z0-9_-]+={0,2}$/;
+      if (!hote || !SERVICES_PUSH.some((r) => r.test(hote)) || String(sub.endpoint).length > 600
+        || !b64.test(sub.keys?.p256dh || "") || !/^.{86,88}$/.test(sub.keys.p256dh) || !b64.test(sub.keys?.auth || "") || !/^.{21,24}$/.test(sub.keys.auth)) {
+        return json({ erreur: "Abonnement invalide" }, 400);
+      }
       const cle = await empreinte(sub.endpoint);
       const abonnes = (await env.ABONNES.get("abonnes", "json")) || {};
+      let nouveau;
       if (url.pathname === "/alertes/abonner") {
-        const propre = (l, re) => (Array.isArray(l) ? l.map(String).filter((x) => re.test(x)).slice(0, 60) : []);
-        abonnes[cle] = { sub: { endpoint: sub.endpoint, keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth } },
-          equipes: propre(corps.equipes, /^[A-Z]{3}$/), joueurs: propre(corps.joueurs, /^\d{6,8}$/), maj: Date.now() };
-      } else if (url.pathname === "/alertes/desabonner") delete abonnes[cle];
-      else return json({ erreur: "Adresse inconnue" }, 404);
+        const propre = (l, re) => (Array.isArray(l) ? [...new Set(l.map(String).filter((x) => re.test(x)))].slice(0, 60).sort() : []);
+        nouveau = { sub: { endpoint: sub.endpoint, keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth } },
+          equipes: propre(corps.equipes, /^[A-Z]{3}$/), joueurs: propre(corps.joueurs, /^\d{6,8}$/) };
+        // On n'écrit que si quelque chose a changé (le plan gratuit limite les écritures)
+        if (JSON.stringify(abonnes[cle]) === JSON.stringify(nouveau)) return json({ ok: true });
+        if (!abonnes[cle] && Object.keys(abonnes).length >= MAX_ABONNES) return json({ erreur: "Trop d'abonnés pour l'instant" }, 503);
+        abonnes[cle] = nouveau;
+      } else if (url.pathname === "/alertes/desabonner") {
+        if (!abonnes[cle]) return json({ ok: true });
+        delete abonnes[cle];
+      } else return json({ erreur: "Adresse inconnue" }, 404);
       await env.ABONNES.put("abonnes", JSON.stringify(abonnes));
       return json({ ok: true });
     }
@@ -57,18 +76,17 @@ export default {
     if (requete.method !== "GET" || !PERMIS.some((r) => r.test(url.pathname))) {
       return new Response("Adresse non permise", { status: 404, headers: entetes });
     }
-    const cache = caches.default;
-    const cle = new Request(SOURCE + url.pathname);
-    let rep = await cache.match(cle);
-    if (!rep) {
+    // Une même réponse sert tout le monde pendant 15 secondes
+    let x = memoire.direct.get(url.pathname);
+    if (!x || Date.now() - x.t > 15000) {
       const source = await fetch(SOURCE + url.pathname, { headers: { "User-Agent": "MonTrio (site de fan)" } });
-      rep = new Response(source.body, source);
-      rep.headers.set("Cache-Control", "public, max-age=15");
-      if (source.ok) ctx.waitUntil(cache.put(cle, rep.clone()));
+      x = { t: Date.now(), statut: source.status, corps: await source.text() };
+      if (source.ok) {
+        memoire.direct.set(url.pathname, x);
+        if (memoire.direct.size > 60) memoire.direct.delete(memoire.direct.keys().next().value);
+      }
     }
-    const finale = new Response(rep.body, rep);
-    for (const [k, v] of Object.entries(entetes)) finale.headers.set(k, v);
-    return finale;
+    return new Response(x.corps, { status: x.statut, headers: { ...entetes, "Content-Type": "application/json", "Cache-Control": "public, max-age=15" } });
   },
 
   // Chaque minute (déclencheur « Cron » : * * * * *)
@@ -80,10 +98,14 @@ export default {
 // ---- Surveillance des matchs ----------------------------------
 const texte = (v) => (v && typeof v === "object" ? v.default : v) || "";
 export async function verifierMatchs(env, envoyer = envoyerPush) {
+  const abonnes = (await env.ABONNES.get("abonnes", "json")) || {};
+  if (!Object.keys(abonnes).length) return; // personne d'abonné : on ne fait rien
   const rep = await fetch(SOURCE + "/v1/score/now", { headers: { "User-Agent": "MonTrio (site de fan)" } });
   if (!rep.ok) return;
   const donnees = await rep.json();
-  const etat = (await env.ABONNES.get("etat", "json")) || {};
+  // L'état gardé en mémoire est plus récent que celui de KV (qui peut avoir jusqu'à une minute de retard)
+  const lu = (await env.ABONNES.get("etat", "json")) || {};
+  const etat = memoire.etat && (memoire.etat._t || 0) >= (lu._t || 0) ? memoire.etat : lu;
   const avis = []; // { equipes, joueurs, titre, texte, url, tag }
   let change = false;
   for (const g of donnees.games || []) {
@@ -116,22 +138,23 @@ export async function verifierMatchs(env, envoyer = envoyerPush) {
   }
   // On oublie les matchs qui ne sont plus dans la liste du jour
   const ids = new Set((donnees.games || []).map((g) => String(g.id)));
-  for (const k of Object.keys(etat)) if (!ids.has(k)) { delete etat[k]; change = true; }
-  if (change) await env.ABONNES.put("etat", JSON.stringify(etat));
+  for (const k of Object.keys(etat)) if (k !== "_t" && !ids.has(k)) { delete etat[k]; change = true; }
+  if (change) { etat._t = Date.now(); memoire.etat = etat; await env.ABONNES.put("etat", JSON.stringify(etat)); }
   if (!avis.length) return avis;
 
   // Chaque abonné reçoit au plus une alerte par but : celle de son joueur favori en priorité
-  const abonnes = (await env.ABONNES.get("abonnes", "json")) || {};
   const vapid = await clesVapid(env);
-  let retires = false;
+  let retires = false, envois = 0;
   for (const [cle, a] of Object.entries(abonnes)) {
     const dejaTag = new Set();
     for (const x of avis) {
+      if (envois >= MAX_ENVOIS) break;
       const vise = (x.joueurs || []).some((j) => a.joueurs.includes(j)) || (x.equipes || []).some((e) => a.equipes.includes(e));
       if (!vise || dejaTag.has(x.tag)) continue;
       dejaTag.add(x.tag);
+      envois++;
       const statut = await envoyer(a.sub, { titre: x.titre, texte: x.texte, url: SITE_PRINCIPAL + x.url, tag: x.tag }, vapid);
-      if (statut === 404 || statut === 410) { delete abonnes[cle]; retires = true; break; } // abonnement expiré
+      if (statut === 403 || statut === 404 || statut === 410) { delete abonnes[cle]; retires = true; break; } // abonnement expiré ou refusé
     }
   }
   if (retires) await env.ABONNES.put("abonnes", JSON.stringify(abonnes));
@@ -147,20 +170,26 @@ async function empreinte(t) { return b64u(await crypto.subtle.digest("SHA-256", 
 
 // ---- Clés VAPID : créées une seule fois, gardées dans KV -----------
 export async function clesVapid(env) {
+  if (memoire.vapid) return memoire.vapid;
   let k = await env.ABONNES.get("vapid", "json");
   if (!k) {
     const paire = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
     k = { publique: b64u(await crypto.subtle.exportKey("raw", paire.publicKey)), privee: await crypto.subtle.exportKey("jwk", paire.privateKey) };
     await env.ABONNES.put("vapid", JSON.stringify(k));
   }
+  memoire.vapid = k;
   return k;
 }
 export async function jetonVapid(endpoint, k) {
+  const aud = new URL(endpoint).origin, garde = memoire.jetons.get(aud);
+  if (garde && garde.exp - Date.now() / 1000 > 3600) return garde.jeton; // un jeton sert plusieurs heures
   const entete = b64u(enc(JSON.stringify({ typ: "JWT", alg: "ES256" })));
   const charge = b64u(enc(JSON.stringify({ aud: new URL(endpoint).origin, exp: Math.floor(Date.now() / 1000) + 12 * 3600, sub: SITE_PRINCIPAL })));
-  const cle = await crypto.subtle.importKey("jwk", k.privee, { name: "ECDSA", namedCurve: "P-256" }, false, ["sign"]);
-  const sig = await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, cle, enc(`${entete}.${charge}`));
-  return `${entete}.${charge}.${b64u(sig)}`;
+  memoire.cleSignature ||= await crypto.subtle.importKey("jwk", k.privee, { name: "ECDSA", namedCurve: "P-256" }, false, ["sign"]);
+  const sig = await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, memoire.cleSignature, enc(`${entete}.${charge}`));
+  const jeton = `${entete}.${charge}.${b64u(sig)}`;
+  memoire.jetons.set(aud, { jeton, exp: Math.floor(Date.now() / 1000) + 12 * 3600 });
+  return jeton;
 }
 
 // ---- Chiffrement du message (norme Web Push, RFC 8291 « aes128gcm ») ----
