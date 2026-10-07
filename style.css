@@ -239,7 +239,9 @@ a { color: inherit; }
 .resultats .infos span { font-size: .75rem; color: var(--texte-doux); }
 .resultats .btn { padding: 6px 9px; }
 
-.onglets { display: flex; gap: 4px; background: var(--carte-2); border-radius: 9px; padding: 3px; margin-bottom: 10px; }
+.onglets { display: flex; gap: 4px; background: var(--carte-2); border-radius: 9px; padding: 3px; margin-bottom: 10px; overflow-x: auto; scrollbar-width: none; max-width: 100%; }
+.onglets::-webkit-scrollbar { display: none; }
+.onglets .onglet { flex-shrink: 0; white-space: nowrap; }
 .onglet { flex: 1; border: 0; background: transparent; border-radius: 7px; padding: 6px; font-weight: 600; font-size: .85rem; color: var(--texte-doux); }
 .onglet.actif { background: var(--carte); color: var(--texte); box-shadow: var(--ombre); }
 
