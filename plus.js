@@ -40,11 +40,30 @@ function routeModale() {
   if (!e || e.t === "lexique") return null;
   return e.t === "comparer" ? (e.id2 ? `comparer/${e.id}/${e.id2}` : null) : `${e.t}/${e.id}`;
 }
+// Adresses lisibles, comme les grands sites : lnh/joueur/nick-suzuki/8480018/
+// (même règle que le robot scripts/maj-partage.mjs, qui crée une page pour chacune)
+const PREFIXE = { lnh: "lnh", ahl: "lah", lhjmq: "lhjmq", ohl: "ohl", whl: "whl", khl: "khl", shl: "shl", liiga: "liiga", nl: "nl" };
+const slugUrl = (t) => String(t).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "x";
+function cheminJoli(type, id) {
+  if (type === "joueur") { const j = joueur(id); return j && j.lig ? `${PREFIXE[j.lig]}/joueur/${slugUrl(j.nom)}/${j.id}/` : null; }
+  if (type === "equipe") { const e = D.equipes[id]; return e ? `${PREFIXE[e.lig]}/equipe/${slugUrl(e.nom)}/` : null; }
+  if (type === "match") { const m = matchParId(id); return m && D.equipes[m.dom] ? `${PREFIXE[ligueDe(m.dom)]}/match/${slugUrl(courtEq(m.ext))}-${slugUrl(courtEq(m.dom))}-${m.date}/${m.id}/` : null; }
+  return null;
+}
+function adresseModale() {
+  const e = modaleActuelle;
+  if (!e || e.t === "lexique") return null;
+  if (e.t === "comparer") return e.id2 ? `#/comparer/${e.id}/${e.id2}` : null;
+  return cheminJoli(e.t, e.id) || `#/${e.t}/${e.id}`;
+}
 function majAdresse() {
-  const r = routeModale();
-  if (!r || decodeURIComponent(location.hash) === `#/${r}`) return;
-  if (/^#\/(joueur|equipe|match|comparer)\//.test(location.hash)) history.replaceState(history.state, "", `#/${r}`);
-  else history.pushState({ montrio: true }, "", `#/${r}`);
+  const r = adresseModale();
+  if (!r) return;
+  const url = new URL(r, document.baseURI).href;
+  if (url === location.href) return;
+  const dejaModale = /^#\/(joueur|equipe|match|comparer)\//.test(location.hash) || adresseJolie();
+  if (dejaModale) history.replaceState(history.state, "", url);
+  else history.pushState({ montrio: true }, "", url);
 }
 function revenir() {
   const e = pileModale.pop();
@@ -613,10 +632,9 @@ function toast(texte, duree = 4000) {
 async function partager(chemin, titre) {
   // Joueurs, équipes et matchs ont leur propre petite page de partage (j/, e/, m/) :
   // l'aperçu dans Messenger, Discord ou un texto montre alors le bon nom et les bonnes stats.
-  const base = `${location.origin}${location.pathname.replace(/[^/]*$/, "")}`;
-  const [type, id] = chemin.split("/");
-  const court = { joueur: "j", equipe: "e", match: "m" }[type];
-  const url = court && !chemin.includes("/", chemin.indexOf("/") + 1) ? `${base}${court}/${encodeURIComponent(id)}` : `${base}#/${chemin}`;
+  const [type, id, id2] = chemin.split("/");
+  const joli = !id2 && cheminJoli(type, id);
+  const url = new URL(joli || `#/${chemin}`, document.baseURI).href;
   try {
     if (navigator.share && matchMedia("(pointer: coarse)").matches) { await navigator.share({ title: titre, url }); return; }
     await navigator.clipboard.writeText(url);
@@ -749,6 +767,19 @@ document.addEventListener("keydown", (e) => {
 // ---- G. Liens directs -----------------------------------------
 // #/joueur/ID, #/equipe/ID, #/match/ID, #/comparer/ID1/ID2
 function ouvrirDepuisAdresse() {
+  // Adresse lisible (ex. retour en avant dans l'historique) : lnh/joueur/nom/ID/, lnh/equipe/nom/, lnh/match/…/ID/
+  const jolie = adresseJolie();
+  if (jolie) {
+    const [, pre, type, morceau, id] = jolie;
+    const lig = Object.keys(PREFIXE).find((k) => PREFIXE[k] === pre);
+    if (pageActuelle === null) allerA("accueil");
+    charger(lig).catch(() => {}).then(() => {
+      if (type === "joueur") { nettoyerFavoris(); ouvrirFiche(id); }
+      else if (type === "match") ouvrirMatch(id);
+      else { const eq = Object.keys(D.equipes).find((k) => ligueDe(k) === lig && slugUrl(nomEq(k)) === morceau); if (eq) ouvrirEquipe(eq); }
+    });
+    return true;
+  }
   const x = /^#\/(joueur|equipe|match|comparer)\/([^/]+)(?:\/([^/]+))?/.exec(decodeURIComponent(location.hash));
   if (!x) return false;
   const [, type, id, id2] = x;

@@ -659,9 +659,9 @@ async function ouvrirFiche(id) {
 function fermerFiche() {
   const ouverte = !$("fiche-fond").hidden;
   $("fiche-fond").hidden = true;
-  if (ouverte && /^#\/(joueur|equipe|match|comparer)\//.test(location.hash)) {
+  if (ouverte && (/^#\/(joueur|equipe|match|comparer)\//.test(location.hash) || adresseJolie())) {
     if (history.state?.montrio) history.back(); // retire l'adresse de la fenêtre (comme le bouton Retour)
-    else history.replaceState(null, "", "#/" + (pageActuelle || "accueil"));
+    else history.replaceState(null, "", document.baseURI.replace(/#.*$/, "") + "#/" + (pageActuelle || "accueil"));
   }
 }
 $("fiche-fond").addEventListener("click", (e) => { if (e.target.id === "fiche-fond" || e.target.closest(".fermer")) fermerFiche(); });
@@ -837,8 +837,16 @@ function allerA(page) {
   fermerFiche();
   fermerRecherche();
 }
+// Adresse lisible d'un joueur, d'une équipe ou d'un match (voir plus.js)
+const adresseJolie = () => /\/(lnh|lah|lhjmq|ohl|whl|khl|shl|liiga|nl)\/(joueur|equipe|match)\/([^/]+)\/(?:([^/]+)\/)?$/.exec(location.pathname);
 const pageDeLAdresse = () => (location.hash.match(/^#\/(\w+)/) || [])[1] || "accueil";
 window.addEventListener("hashchange", () => { if (!ouvrirDepuisAdresse()) allerA(pageDeLAdresse()); });
+// Retour / avant dans l'historique vers une adresse lisible (sans « # »)
+window.addEventListener("popstate", () => {
+  if (!location.hash && adresseJolie()) ouvrirDepuisAdresse();
+  else if (location.hash) { if (!ouvrirDepuisAdresse()) allerA(pageDeLAdresse()); } // (le navigateur n'envoie pas toujours « hashchange » ici)
+  else if (!$("fiche-fond").hidden) fermerFiche();
+});
 let toucheDepart = null;
 $("pages").addEventListener("touchstart", (e) => {
   const zone = e.target.closest(".defile, .bandeau-matchs, .jours, input");

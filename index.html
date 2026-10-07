@@ -10,6 +10,16 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
+  <script>
+    // Le site peut afficher une adresse lisible (ex. …/lnh/joueur/nick-suzuki/8480018/).
+    // Cette « base » garde les fichiers du site (style, données) au bon endroit.
+    (function () {
+      var m = location.pathname.match(/^(.*?\/)(?:lnh|lah|lhjmq|ohl|whl|khl|shl|liiga|nl)\/(?:joueur|equipe|match)\//);
+      var b = document.createElement("base");
+      b.href = m ? m[1] : location.pathname.replace(/[^/]*$/, "");
+      document.head.appendChild(b);
+    })();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>MonTrioHockey · Le hockey de toutes les ligues, en français</title>
   <meta name="description" content="MonTrioHockey : scores en direct, classements, meneurs et stats match par match de la LNH, de la LAH, de la LHJMQ, de l'OHL, de la WHL, de la KHL, de la SHL, de la Liiga et de la National League. En français, avec le suivi de tes joueurs préférés.">
