@@ -1,6 +1,6 @@
 # =============================================================
 # LE ROBOT DES IMAGES DE PARTAGE
-# Pour chaque joueur (qui a joué cette saison) et chaque équipe, une image 800 × 420 qui
+# Pour chaque joueur (qui a joué cette saison) et chaque équipe, une image 600 × 315 qui
 # s'affiche quand on colle le lien dans Discord, Messenger, etc. :
 # à gauche le nom du site, à droite l'info du joueur ou de l'équipe.
 # Rangées dans images/partage/joueur/ID.jpg et images/partage/equipe/ID.jpg
@@ -14,9 +14,9 @@ import json, hashlib, os, pathlib, html, subprocess, sys
 RACINE = pathlib.Path(__file__).resolve().parent.parent
 POLICES = RACINE / "scripts" / "polices"
 SORTIE = RACINE / "images" / "partage"
-VERSION = "3"  # changer ce chiffre refait toutes les images (nouveau dessin)
+VERSION = "5"  # changer ce chiffre refait toutes les images (nouveau dessin)
 LIGUES = {"lnh": "LNH", "ahl": "LAH", "lhjmq": "LHJMQ", "ohl": "OHL", "whl": "WHL", "khl": "KHL", "shl": "SHL", "liiga": "Liiga", "nl": "National League"}
-PAYS = {"lnh": "Amérique du Nord", "ahl": "Amérique du Nord", "lhjmq": "Junior", "ohl": "Junior", "whl": "Junior", "khl": "Russie", "shl": "Suède", "liiga": "Finlande", "nl": "Suisse"}
+PAYS = {"lnh": "Ligue nationale de hockey", "ahl": "Ligue américaine de hockey", "lhjmq": "Junior · Québec et Maritimes", "ohl": "Junior · Ontario", "whl": "Junior · Ouest canadien et américain", "khl": "Russie", "shl": "Suède", "liiga": "Finlande", "nl": "Suisse"}
 POS = {"AG": "Ailier gauche", "C": "Centre", "AD": "Ailier droit", "AV": "Attaquant", "D": "Défenseur", "G": "Gardien"}
 LOGO = (RACINE / "icones" / "logo.svg").read_text().replace("<svg ", '<svg width="150" height="150" ', 1)
 
@@ -31,7 +31,7 @@ GABARIT = """<html><head><style>
 @font-face {{ font-family: I; font-weight: 800; src: url('{p}/Inter-ExtraBold.otf'); }}
 * {{ margin: 0; box-sizing: border-box; }}
 body {{ width: 1200px; height: 630px; font-family: I, sans-serif; display: flex; background: #111; color: #fff; overflow: hidden; }}
-.g {{ width: 600px; height: 630px; background: linear-gradient(160deg, #1c1917, #111 60%, #2a1206); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px; border-right: 6px solid #EA580C; }}
+.g {{ width: 600px; height: 630px; background: #141414; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px; border-right: 6px solid #EA580C; }}
 .nom-site {{ font-weight: 800; font-size: 64px; letter-spacing: -2px; }} .nom-site b {{ color: #FB923C; }}
 .slogan {{ font-weight: 500; font-size: 24px; color: #D6D3D1; }}
 .d {{ width: 600px; height: 630px; padding: 56px 54px; display: flex; flex-direction: column; justify-content: center; gap: 14px; background: #19191b; position: relative; }}
@@ -74,7 +74,7 @@ def main():
         taches[f"joueur/{j['id']}.jpg"] = dict(ligue=LIGUES[j["lig"]], titre=j["nom"], sous=sous, eq=eq.get("nom", ""),
             lignes="Stats, match par match et fiche complète", filigrane=e(j.get("no") if j.get("no") is not None else eq.get("abr", "")))
     for k, eq in equipes.items():
-        taches[f"equipe/{k}.jpg"] = dict(ligue=LIGUES[eq["lig"]], titre=eq["nom"], sous=PAYS[eq["lig"]], eq=" · ".join(x for x in [eq.get("conf"), eq.get("div")] if x and x != LIGUES[eq["lig"]] and x != "KHL")[:60],
+        taches[f"equipe/{k}.jpg"] = dict(ligue=LIGUES[eq["lig"]], titre=eq["nom"], sous=PAYS[eq["lig"]], eq=" · ".join(dict.fromkeys(x for x in [eq.get("conf"), eq.get("div")] if x and x not in (LIGUES[eq["lig"]], "KHL", "SHL", "Liiga", "National League")))[:60],
             lignes="Classement, calendrier, meneurs et effectif", filigrane=e(eq.get("abr", "")))
 
     ancien = lire("images/partage/empreintes.json") or {}
@@ -92,12 +92,12 @@ def main():
         try:
             from playwright.sync_api import sync_playwright
         except ImportError:  # sur GitHub : on installe le navigateur seulement quand il y a des images à faire
-            subprocess.run([sys.executable, "-m", "pip", "install", "-q", "playwright"], check=True)
+            subprocess.run([sys.executable, "-m", "pip", "install", "-q", "--break-system-packages", "playwright"], check=True)
             subprocess.run([sys.executable, "-m", "playwright", "install", "--with-deps", "chromium"], check=True)
             from playwright.sync_api import sync_playwright
         with sync_playwright() as p:
             b = p.chromium.launch()
-            pg = b.new_page(viewport={"width": 1200, "height": 630}, device_scale_factor=2 / 3)
+            pg = b.new_page(viewport={"width": 1200, "height": 630}, device_scale_factor=0.5)
             for i, (chemin, t) in enumerate(a_faire):
                 contenu = GABARIT.format(p=POLICES.as_uri(), logo=LOGO, taille=taille(t["titre"]), ligue=e(t["ligue"]), titre=e(t["titre"]),
                                          sous=e(t["sous"]), eq=e(t["eq"]), lignes=e(t["lignes"]), filigrane=t["filigrane"])
@@ -105,7 +105,7 @@ def main():
                 if i == 0: pg.evaluate("document.fonts.ready")
                 f = SORTIE / chemin
                 f.parent.mkdir(parents=True, exist_ok=True)
-                pg.screenshot(path=str(f), type="jpeg", quality=78)
+                pg.screenshot(path=str(f), type="jpeg", quality=75)
             b.close()
     (SORTIE / "empreintes.json").write_text(json.dumps(nouv, ensure_ascii=False, sort_keys=True))
 

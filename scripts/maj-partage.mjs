@@ -32,7 +32,7 @@ const dec = (x, n) => (x == null ? "–" : Number(x).toFixed(n).replace(".", ","
 
 import { existsSync } from "node:fs";
 // L'image propre au joueur ou à l'équipe (faite par scripts/maj-images.py), sinon l'image générale
-const imageDe = (chemin) => (existsSync(`images/partage/${chemin}`) ? { url: SITE + "images/partage/" + chemin, l: 800, h: 420 } : { url: IMAGE, l: 1200, h: 630 });
+const imageDe = (chemin) => (existsSync(`images/partage/${chemin}`) ? { url: SITE + "images/partage/" + chemin, l: 600, h: 315 } : { url: IMAGE, l: 1200, h: 630 });
 function page({ titre, description, cible, image = { url: IMAGE, l: 1200, h: 630 } }) {
   const url = SITE + "#/" + cible;
   return `<!DOCTYPE html>
