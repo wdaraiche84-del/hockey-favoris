@@ -735,7 +735,7 @@ async function ouvrirFiche(id) {
   let corps = "";
   if (j.s || j.g) {
     corps += `<h3>Saison 2026-27</h3>${htmlStats(j)}`;
-    if (j.s) corps += `<p class="petit-gris" style="text-align:center">Différentiel : ${j.s.pm > 0 ? "+" : ""}${j.s.pm}</p>`;
+    corps += htmlStatsAvancees(j);
   }
   if (D.equipes[j.eq]) {
     corps += `<h3>Match par match</h3><div id="fiche-saison"><p class="vide">Chargement…</p></div>`;
@@ -744,7 +744,7 @@ async function ouvrirFiche(id) {
   }
   $("fiche").innerHTML = `
     <div class="fiche-haut">${pastille(j)}
-      <div><h2>${echapper(j.nom)}</h2><p>${etiquetteLigue(j)} ${NOMS_POS[j.pos] || j.pos} · ${D.equipes[j.eq] ? `<button class="lien-equipe clair" data-equipe-fiche="${j.eq}">${echapper(nomEq(j.eq))} ›</button>` : echapper(nomEq(j.eq))}</p>
+      <div><h2>${echapper(j.nom)}${j.r ? ` <span class="tag-recrue">Recrue</span>` : ""}</h2><p>${etiquetteLigue(j)} ${NOMS_POS[j.pos] || j.pos} · ${D.equipes[j.eq] ? `<button class="lien-equipe clair" data-equipe-fiche="${j.eq}">${echapper(nomEq(j.eq))} ›</button>` : echapper(nomEq(j.eq))}</p>
         <p class="fiche-boutons">${estFav ? `<button class="btn leger" data-retirer="${j.id}" data-garder>Retirer de mes favoris</button>`
           : `<button class="btn accent" data-ajouter="${j.id}" data-garder>+ Ajouter à mes favoris</button>`}
           ${j.s || j.g ? `<button class="btn fantome" data-comparer="${j.id}">⇄ Comparer</button>` : ""}

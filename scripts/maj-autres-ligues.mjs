@@ -87,13 +87,19 @@ async function uneLigue(lig, conf) {
   const patineurs = (await mk("statviewtype", { type: "topscorers", season_id: sid, first: 0, limit: 2000 })).Statviewtype || [];
   for (const s of patineurs) {
     const j = parId.get(s.player_id);
-    if (j && j.pos !== "G") j.s = { pj: n(s.games_played), b: n(s.goals), a: n(s.assists), pts: n(s.points), pm: n(s.plus_minus) };
+    if (j && j.pos !== "G") {
+      j.s = { pj: n(s.games_played), b: n(s.goals), a: n(s.assists), pts: n(s.points), pm: n(s.plus_minus),
+        tirs: n(s.shots), bav: n(s.power_play_goals), bin: n(s.short_handed_goals), bg: n(s.game_winning_goals), pun: n(s.penalty_minutes),
+        mj: n(s.faceoff_attempts) > 0 ? +(n(s.faceoff_wins) / n(s.faceoff_attempts)).toFixed(3) : null };
+      if (s.rookie === "1") j.r = 1;
+    }
   }
   const gardiens = (await mk("statviewtype", { type: "topgoalies", season_id: sid, first: 0, limit: 500 })).Statviewtype || [];
   for (const g of gardiens) {
     const j = parId.get(g.player_id);
     if (j) j.g = { pj: n(g.games_played), v: n(g.wins), d: n(g.losses), dp: n(g.ot_losses) + n(g.shootout_losses),
-      moy: dec(g.goals_against_average, 2), pct: dec(g.save_percentage, 3) };
+      moy: dec(g.goals_against_average, 2), pct: dec(g.save_percentage, 3), bl: n(g.shutouts) };
+    if (j && g.rookie === "1") j.r = 1;
   }
   for (const j of joueurs) {
     if (j.pos === "G" && !j.g) j.g = { pj: 0, v: 0, d: 0, dp: 0, moy: null, pct: null };

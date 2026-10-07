@@ -356,18 +356,72 @@ async function htmlFormeJoueur(j) {
   return `<div class="forme-joueur ${f.pts >= 5 ? "feu" : ""}"><span>${f.pts >= 5 ? "🔥 " : ""}5 derniers matchs de l'équipe</span><strong>${txt}</strong>${f.sequence >= 3 ? `<span class="sequence">Séquence de ${f.sequence} matchs avec un point</span>` : ""}</div>`;
 }
 // La page Meneurs reçoit 3 nouveaux blocs, et un classement aux points par match
-const rendreMeneursBase = rendreMeneurs;
+// La page Meneurs, en onglets pour ne pas s'y perdre : Saison, En forme, Stats avancées, Recrues
+let ongletMeneurs = memoire("onglet-meneurs") || "saison";
+const mmss = (sec) => (sec ? `${Math.floor(sec / 60)}:${String(Math.round(sec % 60)).padStart(2, "0")}` : "–");
+const pctFr = (x, n = 1) => (x == null || isNaN(x) ? "–" : `${(x * 100).toFixed(n).replace(".", ",")} %`);
 rendreMeneurs = function () {
-  rendreMeneursBase();
-  if (LIGUES[ligue].sansJoueurs) return;
-  const maxPj = Math.max(1, ...(D.classement[ligue] || []).map((t) => t.pj));
-  const min = Math.max(1, Math.ceil(maxPj / 2));
-  const ppm = listeMeneurs(15, (j) => j.s && j.s.pj >= min, (j) => j.s.pts / j.s.pj);
-  $("grille-meneurs").insertAdjacentHTML("afterbegin", `<div id="bloc-chauds" class="bloc-chauds"></div>`);
-  $("grille-meneurs").insertAdjacentHTML("beforeend", `<section class="bloc"><div class="titre-section"><h2>Points par match <span class="tag-ligue">${LIGUES[ligue].nom}</span></h2><span class="sur-titre">min. ${pluriel(min, "match")}</span></div>
-    <ol class="meneurs">${htmlMeneurs(ppm, (j) => dec(j.s.pts / j.s.pj))}</ol></section>`);
+  const lig = ligue, nom = LIGUES[lig].nom, tous = joueursLigue();
+  $("mini-meneurs").innerHTML = htmlMeneurs(listeMeneurs(5, patineur, (j) => j.s.pts), (j) => j.s.pts);
+  const maxPj = Math.max(1, ...(D.classement[lig] || []).map((t) => t.pj));
+  const minPj = Math.max(1, Math.ceil(maxPj / 2)), minG = Math.max(Math.min(2, maxPj), Math.ceil(maxPj / 3));
+  const gardien = (j) => j.g && j.g.pj >= minG;
+  const bloc = (titre, liste, aff, sous = "") => `<section class="bloc"><div class="titre-section"><h2>${titre} <span class="tag-ligue">${nom}</span></h2>${sous ? `<span class="sur-titre">${sous}</span>` : ""}</div><ol class="meneurs">${htmlMeneurs(liste, aff)}</ol></section>`;
+  const avecAvancees = tous.some((j) => j.s && j.s.tirs != null), avecRecrues = tous.some((j) => j.r);
+  const onglets = [["saison", "Saison"], ["forme", "🔥 En forme"], avecAvancees && ["avancees", "Stats avancées"], avecRecrues && ["recrues", "Recrues"]].filter(Boolean);
+  if (!onglets.some(([k]) => k === ongletMeneurs)) ongletMeneurs = "saison";
+  let h = `<div class="onglets meneurs-onglets" role="tablist">${onglets.map(([k, t]) => `<button class="onglet ${k === ongletMeneurs ? "actif" : ""}" data-onglet-meneurs="${k}" role="tab" aria-selected="${k === ongletMeneurs}">${t}</button>`).join("")}</div>`;
+  if (ongletMeneurs === "saison") {
+    h += bloc("Points", listeMeneurs(15, patineur, (j) => j.s.pts), (j) => j.s.pts)
+      + bloc("Buts", listeMeneurs(15, patineur, (j) => j.s.b), (j) => j.s.b)
+      + bloc("Passes", listeMeneurs(15, patineur, (j) => j.s.a), (j) => j.s.a)
+      + bloc("Points par match", listeMeneurs(10, (j) => j.s && j.s.pj >= minPj, (j) => j.s.pts / j.s.pj), (j) => dec(j.s.pts / j.s.pj), `min. ${pluriel(minPj, "match")}`)
+      + bloc("Différentiel", listeMeneurs(10, patineur, (j) => j.s.pm), (j) => signe(j.s.pm))
+      + bloc("Gardiens · Victoires", listeMeneurs(10, gardien, (j) => j.g.v), (j) => j.g.v)
+      + bloc("Gardiens · % d'arrêts", listeMeneurs(10, (j) => gardien(j) && j.g.pct != null, (j) => j.g.pct), (j) => pct3(j.g.pct), `min. ${pluriel(minG, "match")}`)
+      + bloc("Gardiens · Moyenne", listeMeneurs(10, (j) => gardien(j) && j.g.moy != null, (j) => -j.g.moy), (j) => dec(j.g.moy), "buts accordés par match");
+  } else if (ongletMeneurs === "forme") {
+    h += `<div id="bloc-chauds" class="bloc-chauds"></div>`;
+  } else if (ongletMeneurs === "avancees") {
+    const minTirs = Math.max(5, Math.ceil(maxPj * 1.5));
+    const av = (j) => j.s && j.s.pj > 0 && j.s.tirs != null;
+    h += bloc("Tirs au but", listeMeneurs(10, av, (j) => j.s.tirs), (j) => j.s.tirs)
+      + bloc("% de tirs", listeMeneurs(10, (j) => av(j) && j.s.tirs >= minTirs, (j) => j.s.b / j.s.tirs), (j) => pctFr(j.s.b / j.s.tirs), `min. ${minTirs} tirs`)
+      + (tous.some((j) => j.s?.bav != null) ? bloc("Buts en avantage numérique", listeMeneurs(10, (j) => av(j) && j.s.bav > 0, (j) => j.s.bav), (j) => j.s.bav) : "")
+      + (tous.some((j) => j.s?.bg != null) ? bloc("Buts gagnants", listeMeneurs(10, (j) => av(j) && j.s.bg > 0, (j) => j.s.bg), (j) => j.s.bg) : "")
+      + (tous.some((j) => j.s?.bin != null) ? bloc("Buts en infériorité numérique", listeMeneurs(10, (j) => av(j) && j.s.bin > 0, (j) => j.s.bin), (j) => j.s.bin) : "")
+      + (tous.some((j) => j.s?.tg) ? bloc("Temps de glace moyen", listeMeneurs(10, (j) => av(j) && j.s.tg && j.s.pj >= minPj, (j) => j.s.tg), (j) => mmss(j.s.tg), "par match") : "")
+      + (tous.some((j) => j.s?.mj != null) ? bloc("Mises au jeu gagnées", listeMeneurs(10, (j) => av(j) && j.s.mj != null && ["C", "AV"].includes(j.pos) && j.s.pj >= minPj && j.s.mj > 0 && j.s.mj < 1, (j) => j.s.mj), (j) => pctFr(j.s.mj), "centres") : "")
+      + (tous.some((j) => j.g?.bl != null) ? bloc("Gardiens · Blanchissages", listeMeneurs(10, (j) => j.g && j.g.bl > 0, (j) => j.g.bl), (j) => j.g.bl) : "");
+  } else if (ongletMeneurs === "recrues") {
+    const rec = (j) => j.r && j.s && j.s.pj > 0;
+    h += `<p class="aide meneurs-aide">Les joueurs qui jouent leur première saison dans ${laLigue(lig)}.</p>`
+      + bloc("Recrues · Points", listeMeneurs(15, rec, (j) => j.s.pts), (j) => j.s.pts)
+      + bloc("Recrues · Buts", listeMeneurs(10, rec, (j) => j.s.b), (j) => j.s.b)
+      + bloc("Recrues · Gardiens", listeMeneurs(10, (j) => j.r && j.g && j.g.pj > 0 && j.g.pct != null, (j) => j.g.pct), (j) => pct3(j.g.pct), "% d'arrêts");
+  }
+  $("grille-meneurs").innerHTML = h;
   rendreChauds();
 };
+$("grille-meneurs").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-onglet-meneurs]");
+  if (!b) return;
+  ongletMeneurs = b.dataset.ongletMeneurs; memoire("onglet-meneurs", ongletMeneurs); rendreMeneurs();
+});
+// Stats avancées dans la fiche d'un joueur
+function htmlStatsAvancees(j) {
+  const s = j.s, g = j.g, t = (val, lib) => `<div class="tuile"><b>${val}</b><small>${lib}</small></div>`;
+  if (g) return g.bl != null ? `<div class="tuiles petites">${t(g.bl, "blanchissages")}</div>` : "";
+  if (!s) return "";
+  let h = t(signe(s.pm), "différentiel");
+  if (s.tirs != null) h += t(s.tirs, "tirs") + t(s.tirs ? pctFr(s.b / s.tirs) : "–", "% de tirs");
+  if (s.bav != null) h += t(s.bav, "buts en AN");
+  if (s.bg != null) h += t(s.bg, "buts gagnants");
+  if (s.tg) h += t(mmss(s.tg), "temps de glace moyen");
+  if (s.mj != null && s.mj > 0 && ["C", "AV"].includes(j.pos)) h += t(pctFr(s.mj), "mises au jeu gagnées");
+  if (s.pun != null) h += t(s.pun, "minutes de punition");
+  return `<div class="tuiles petites">${h}</div>`;
+}
 
 // ---- E. Comparateur de joueurs --------------------------------
 async function ouvrirComparaison(idA, idB, opt = {}) {

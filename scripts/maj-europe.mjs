@@ -40,6 +40,18 @@ async function enregistrer(lig, saison, equipes, joueurs, classement, calendrier
   await mkdir(`${dossier}/points`, { recursive: true });
   let change = await ecrireSiChange(`${dossier}/calendrier.json`, calendrier);
   for (const cle of Object.keys(equipes)) change = (await ecrireSiChange(`${dossier}/points/${cle}.json`, points[cle] || {})) || change;
+  // Stats avancées tirées des matchs : tirs, minutes de punition, temps de glace moyen
+  const enSec = (t) => { const [m, sec] = String(t || "").split(":").map(Number); return (m || 0) * 60 + (sec || 0); };
+  for (const j of joueurs) {
+    if (!j.s || j.s.tirs != null) continue;
+    let tirs = 0, pun = 0, tg = 0, nTg = 0, vu = false;
+    for (const ligne of Object.values(points[j.eq] || {})) {
+      const l = ligne[j.id]; if (!l || l[0] === "G") continue;
+      vu = true; tirs += Number(l[3]) || 0; pun += Number(l[4]) || 0;
+      if (l[5]) { tg += enSec(l[5]); nTg++; }
+    }
+    if (vu && lig !== "liiga") { j.s.tirs = tirs; j.s.pun = pun; if (nTg) j.s.tg = Math.round(tg / nTg); }
+  }
   const ancien = await lireJson(`${dossier}/infos.json`, null);
   const contenu = { saison, equipes, joueurs, classement };
   if (change || !ancien || JSON.stringify({ ...ancien, misAJour: undefined }) !== JSON.stringify({ ...contenu, misAJour: undefined })) {

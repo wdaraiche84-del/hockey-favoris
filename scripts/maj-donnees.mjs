@@ -81,9 +81,13 @@ async function principal() {
       if (j.pos === "G") {
         j.g = { pj: g?.gamesPlayed ?? 0, v: g?.wins ?? 0, d: g?.losses ?? 0, dp: g?.overtimeLosses ?? 0,
           moy: g?.goalsAgainstAverage != null ? +g.goalsAgainstAverage.toFixed(2) : null,
-          pct: g?.savePercentage != null ? +g.savePercentage.toFixed(3) : null };
+          pct: g?.savePercentage != null ? +g.savePercentage.toFixed(3) : null, bl: g?.shutouts ?? 0 };
       } else {
-        j.s = { pj: s?.gamesPlayed ?? 0, b: s?.goals ?? 0, a: s?.assists ?? 0, pts: s?.points ?? 0, pm: s?.plusMinus ?? 0 };
+        j.s = { pj: s?.gamesPlayed ?? 0, b: s?.goals ?? 0, a: s?.assists ?? 0, pts: s?.points ?? 0, pm: s?.plusMinus ?? 0,
+          // Stats avancées : tirs, buts en avantage et en infériorité numérique, buts gagnants, punitions,
+          // temps de glace moyen (secondes) et % de mises au jeu gagnées
+          tirs: s?.shots ?? 0, bav: s?.powerPlayGoals ?? 0, bin: s?.shorthandedGoals ?? 0, bg: s?.gameWinningGoals ?? 0,
+          pun: s?.penaltyMinutes ?? 0, tg: Math.round(s?.avgTimeOnIcePerGame ?? 0), mj: s?.faceoffWinPctg ? +s.faceoffWinPctg.toFixed(3) : null };
       }
       parId.set(p.id, j);
       joueurs.push(j);
@@ -110,6 +114,16 @@ async function principal() {
     console.log(`${eq} : ok`);
   }
 
+  // Recrues de la saison (service de statistiques de la LNH)
+  try {
+    for (const type of ["skater", "goalie"]) {
+      const exp = encodeURIComponent(`gameTypeId=2 and seasonId=${saison} and isRookie='1'`);
+      const rep = await fetch(`https://api.nhle.com/stats/rest/en/${type}/summary?isAggregate=false&isGame=false&start=0&limit=-1&cayenneExp=${exp}`, { headers: { "User-Agent": "hockey-favoris (site de fan)" } });
+      if (!rep.ok) throw new Error(`recrues ${rep.status}`);
+      for (const r of (await rep.json()).data || []) { const j = parId.get(r.playerId); if (j) j.r = 1; }
+    }
+  } catch (e) { console.warn("Recrues :", e.message); }
+
   const calendrier = [...matchs.values()].sort((a, b) => (a.debut || a.date).localeCompare(b.debut || b.date));
 
   // Classement de la ligue
@@ -121,6 +135,9 @@ async function principal() {
       pts: t.points ?? 0, bp: t.goalFor ?? 0, bc: t.goalAgainst ?? 0,
       div: t.divisionName || "", conf: t.conferenceName || "",
       serie: t.streakCode ? `${t.streakCode}${t.streakCount ?? ""}` : "",
+      // Course aux séries : rang dans la division, rang de meilleure 2e place, qualification (x, y, z, e…)
+      rd: t.divisionSequence ?? null, rw: t.wildcardSequence ?? null, q: t.clinchIndicator || "",
+      vr: t.regulationWins ?? null,
     }));
   } catch (e) { console.warn("Classement :", e.message); }
 

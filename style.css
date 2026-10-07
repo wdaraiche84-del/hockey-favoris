@@ -722,3 +722,10 @@ button.score-carte:hover { background: #2B3647; }
   [data-page="accueil"] .grille-2 > .pile { display: contents; }
   [data-page="accueil"] .bloc-soir { order: -1; }
 }
+
+/* ---- Meneurs en onglets, stats avancées, recrues ---- */
+.meneurs-onglets { grid-column: 1 / -1; max-width: 560px; margin: 0; }
+.meneurs-aide { grid-column: 1 / -1; margin: 0; }
+.tuiles.petites { margin-top: 10px; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); }
+.tuiles.petites .tuile b { font-size: 1.25rem; }
+.tag-recrue { display: inline-block; vertical-align: middle; font-family: "Inter", sans-serif; font-size: .7rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; background: #F59E0B; color: #1F2937; border-radius: 5px; padding: 2px 7px; }
