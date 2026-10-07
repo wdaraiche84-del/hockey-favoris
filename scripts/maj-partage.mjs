@@ -30,7 +30,10 @@ const esc = (t) => String(t ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<
 const pl = (n, mot) => `${n} ${mot}${n > 1 ? "s" : ""}`;
 const dec = (x, n) => (x == null ? "–" : Number(x).toFixed(n).replace(".", ","));
 
-function page({ titre, description, cible }) {
+import { existsSync } from "node:fs";
+// L'image propre au joueur ou à l'équipe (faite par scripts/maj-images.py), sinon l'image générale
+const imageDe = (chemin) => (existsSync(`images/partage/${chemin}`) ? { url: SITE + "images/partage/" + chemin, l: 800, h: 420 } : { url: IMAGE, l: 1200, h: 630 });
+function page({ titre, description, cible, image = { url: IMAGE, l: 1200, h: 630 } }) {
   const url = SITE + "#/" + cible;
   return `<!DOCTYPE html>
 <html lang="fr"><head><meta charset="UTF-8">
@@ -39,7 +42,7 @@ function page({ titre, description, cible }) {
 <meta property="og:type" content="website"><meta property="og:locale" content="fr_CA"><meta property="og:site_name" content="MonTrioHockey">
 <meta property="og:title" content="${esc(titre)}">
 <meta property="og:description" content="${esc(description)}">
-<meta property="og:image" content="${IMAGE}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:image" content="${image.url}"><meta property="og:image:width" content="${image.l}"><meta property="og:image:height" content="${image.h}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#111111">
@@ -85,7 +88,7 @@ for (const j of joueurs) {
   pages.set(`${PREFIXE[j.lig]}/joueur/${slugUrl(j.nom)}/${j.id}/index.html`, page({
     titre: `${j.nom}${j.no != null ? ` · n° ${j.no}` : ""} · ${eq}`,
     description: `${POS[j.pos] || j.pos} · ${lig}. ${stats}Stats match par match et prochains matchs sur MonTrioHockey.`,
-    cible: `joueur/${j.id}`,
+    cible: `joueur/${j.id}`, image: imageDe(`joueur/${j.id}.jpg`),
   }));
 }
 for (const [k, e] of Object.entries(equipes)) {
@@ -96,7 +99,7 @@ for (const [k, e] of Object.entries(equipes)) {
   pages.set(`${PREFIXE[e.lig]}/equipe/${slugUrl(e.nom)}/index.html`, page({
     titre: `${e.nom} · ${LIGUES[e.lig]}`,
     description: t ? `Fiche ${t.v}-${t.d}-${t.dp}, ${pl(t.pts, "point")}${rang ? `, ${rang === 1 ? "1er" : `${rang}e`} de la ligue` : ""}. Résultats, calendrier, meneurs et effectif sur MonTrioHockey.` : `Calendrier, meneurs et effectif sur MonTrioHockey.`,
-    cible: `equipe/${k}`,
+    cible: `equipe/${k}`, image: imageDe(`equipe/${k}.jpg`),
   }));
 }
 for (const m of cal) {
