@@ -1,20 +1,44 @@
-# Installer le relais pour le direct à la seconde
+# Le relais de MonTrio (Cloudflare Workers, gratuit)
 
-Sans relais, le site se met à jour aux 30 minutes environ grâce au robot.
-Avec le relais, les scores et les points de tes favoris se rafraîchissent
-toutes les 20 secondes pendant les matchs. C'est gratuit.
+Le relais fait deux choses :
 
-## Étapes (environ 10 minutes)
+1. **Le direct** : les scores et les points de tes favoris se rafraîchissent
+   toutes les 20 secondes pendant les matchs de la LNH.
+2. **Les alertes sur le téléphone** : une notification quand un de tes
+   favoris de la LNH marque ou obtient une passe, quand ton équipe marque,
+   et le résultat final — même quand MonTrio est fermé.
 
-1. Crée un compte gratuit sur **dash.cloudflare.com/sign-up**.
-2. Dans le menu de gauche, va dans **Compute (Workers)** → **Workers & Pages**, puis clique sur **Create** → **Start with Hello World**.
-3. Donne-lui le nom **hockey-relais**, puis clique sur **Deploy**.
-4. Clique sur **Edit code**. Efface tout le code affiché et colle le contenu du fichier `relais/worker.js`.
-5. Clique sur **Deploy** en haut à droite.
-6. Copie l'adresse du relais, qui ressemble à `https://hockey-relais.ton-nom.workers.dev`.
-7. Donne cette adresse à Claude : il la mettra dans `config.js` (la ligne `const RELAIS = "";`).
+## Mettre le code à jour (à faire chaque fois que `relais/worker.js` change)
 
-## Vérifier que ça marche
+1. Va sur **dash.cloudflare.com** → **Workers & Pages** → ton relais.
+2. Clique sur **Edit code**. Efface tout et colle le contenu de `relais/worker.js`
+   (sur GitHub, le bouton « Copy raw file » copie tout d'un coup).
+3. Clique sur **Deploy**.
 
-Ouvre `https://hockey-relais.ton-nom.workers.dev/v1/score/now` dans ton navigateur.
-Tu devrais voir une page pleine de texte avec les matchs du jour. C'est bon signe!
+## Activer les alertes (une seule fois, environ 5 minutes)
+
+Le relais a besoin d'un petit espace pour se souvenir des abonnés (KV)
+et d'un réveil chaque minute (Cron).
+
+1. **Créer l'espace** : dans le menu de gauche, **Storage & Databases** → **KV**
+   → **Create** (ou « Create namespace »). Nom : `montrio-abonnes`. Clique **Add**.
+2. **Le relier au relais** : retourne dans ton relais → onglet **Settings**
+   → **Bindings** → **Add** → **KV namespace**.
+   - Variable name : `ABONNES` (en majuscules, exactement comme ça)
+   - KV namespace : `montrio-abonnes`
+   - Clique **Add binding** (ou **Deploy**).
+3. **Le réveil chaque minute** : toujours dans **Settings** → **Trigger events**
+   (ou « Triggers ») → **Add** → **Cron triggers** → choisis « Every minute »
+   ou écris `* * * * *` → **Add**.
+4. Vérifie : ouvre `https://TON-RELAIS.workers.dev/alertes/etat`.
+   Tu dois voir `{"actif":true}`.
+
+C'est tout : aucune clé secrète à copier. Le relais crée lui-même sa clé
+d'envoi la première fois et la garde dans son espace KV.
+
+## Limites du plan gratuit
+
+Largement suffisant pour commencer : le relais n'écrit dans son espace que
+lorsqu'un but est marqué ou qu'un match se termine.
+Sur iPhone, les alertes fonctionnent seulement si MonTrio est installé sur
+l'écran d'accueil (iOS 16.4 ou plus récent).

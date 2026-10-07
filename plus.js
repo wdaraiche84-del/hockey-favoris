@@ -613,15 +613,68 @@ async function partager(chemin, titre) {
     toast("Lien copié! Tu peux le coller dans un message.");
   } catch (e) { if (e.name !== "AbortError") prompt("Copie ce lien :", url); }
 }
-// Alertes de buts : pendant que MonTrio est ouvert (onglet ou application)
+// Alertes de buts.
+//  · Si le relais a les alertes activées (et le téléphone le permet) : de vraies notifications,
+//    même quand MonTrio est fermé (LNH : buts de tes joueurs et de tes équipes, résultat final).
+//  · Sinon : un avis à l'écran pendant que MonTrio est ouvert.
 let alertesOn = memoire("alertes") === "1";
 const vus = new Map();
-function rendreBoutonAlertes() { $("alertes").textContent = `🔔 Alertes de buts : ${alertesOn ? "oui" : "non"}`; $("alertes").classList.toggle("accent", alertesOn); }
+let pushPossible = null; // null = pas encore vérifié
+async function verifierPush() {
+  if (pushPossible !== null) return pushPossible;
+  pushPossible = false;
+  if (!RELAIS || !("serviceWorker" in navigator) || !("PushManager" in window)) return false;
+  try { pushPossible = !!(await (await fetch(`${RELAIS}/alertes/etat`, { cache: "no-store" })).json()).actif; } catch (e) {}
+  return pushPossible;
+}
+const b64uVersOctets = (s) => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4)), (c) => c.charCodeAt(0));
+function favorisLnh() {
+  const fav = favorisObjets().filter((j) => j.lig === "lnh");
+  return { joueurs: fav.map((j) => j.id).filter((id) => /^\d+$/.test(id)), equipes: [...new Set(fav.map((j) => j.eq))] };
+}
+async function abonnementPush(creer) {
+  const reg = await navigator.serviceWorker.ready;
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub && creer) {
+    const { cle } = await (await fetch(`${RELAIS}/alertes/cle`)).json();
+    sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uVersOctets(cle) });
+  }
+  return sub;
+}
+async function synchroniserPush() {
+  if (!alertesOn || !(await verifierPush())) return;
+  try {
+    const sub = await abonnementPush(false);
+    if (sub) await fetch(`${RELAIS}/alertes/abonner`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ abonnement: sub.toJSON(), ...favorisLnh() }) });
+  } catch (e) {}
+}
+function rendreBoutonAlertes() {
+  $("alertes").textContent = `🔔 Alertes de buts : ${alertesOn ? "oui" : "non"}`;
+  $("alertes").classList.toggle("accent", alertesOn);
+}
 $("alertes").onclick = async () => {
-  alertesOn = !alertesOn; memoire("alertes", alertesOn ? "1" : "0"); rendreBoutonAlertes();
-  if (alertesOn && "Notification" in window && Notification.permission === "default") { try { await Notification.requestPermission(); } catch (e) {} }
-  toast(alertesOn ? "Alertes activées : tu seras averti quand tes favoris marquent, tant que MonTrio reste ouvert." : "Alertes désactivées.");
+  const activer = !alertesOn;
+  const iPhoneNav = /iphone|ipad/i.test(navigator.userAgent) && !estInstallee();
+  if (activer && "Notification" in window && Notification.permission === "default") { try { await Notification.requestPermission(); } catch (e) {} }
+  alertesOn = activer; memoire("alertes", alertesOn ? "1" : "0"); rendreBoutonAlertes();
+  if (!activer) {
+    try { const sub = await abonnementPush(false); if (sub) { await fetch(`${RELAIS}/alertes/desabonner`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ abonnement: sub.toJSON() }) }); await sub.unsubscribe(); } } catch (e) {}
+    return toast("Alertes désactivées.");
+  }
+  if (await verifierPush() && "Notification" in window && Notification.permission === "granted") {
+    try {
+      await abonnementPush(true); await synchroniserPush();
+      const { joueurs, equipes } = favorisLnh();
+      return toast(joueurs.length ? `Alertes activées! Ton téléphone t'avertira quand tes favoris de la LNH marquent (${pluriel(equipes.length, "équipe")}), même si MonTrio est fermé.` : "Alertes activées. Ajoute des joueurs de la LNH à tes favoris pour recevoir leurs buts.", 7000);
+    } catch (e) {}
+  }
+  if (iPhoneNav) return toast("Sur iPhone, installe d'abord MonTrio sur ton écran d'accueil pour recevoir des alertes même quand l'app est fermée. En attendant, tu seras averti pendant que MonTrio est ouvert.", 9000);
+  toast("Alertes activées : tu seras averti quand tes favoris marquent, tant que MonTrio reste ouvert.");
 };
+// Quand les favoris changent, on prévient le relais (s'il envoie les alertes)
+const ajouterBase = ajouter, retirerBase = retirer;
+ajouter = function (id) { ajouterBase(id); synchroniserPush(); };
+retirer = function (id) { retirerBase(id); synchroniserPush(); };
 function avertir(titre, texte) {
   toast(`${titre} ${texte}`, 7000);
   if (document.hidden && "Notification" in window && Notification.permission === "granted") {
@@ -738,4 +791,4 @@ rendreUne = async function () { await rendreUneBase(); rendreSemaine(); };
 
 // ---- Démarrage ---------------------------------------------------
 rendreBoutonAlertes();
-demarrer().then(() => verifierAlertes());
+demarrer().then(() => { verifierAlertes(); synchroniserPush(); });

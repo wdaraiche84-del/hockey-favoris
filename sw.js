@@ -6,7 +6,7 @@
 // ouvrir l'app même sans connexion (avec les dernières données vues).
 // Pour forcer une mise à jour chez tout le monde, change VERSION.
 // =============================================================
-const VERSION = "montrio-v13";
+const VERSION = "montrio-v14";
 const ESSENTIEL = ["./", "index.html", "style.css", "app.js", "plus.js", "config.js", "donnees.js", "manifest.webmanifest", "icones/icone-192.png"];
 
 self.addEventListener("install", (e) => {
@@ -29,4 +29,22 @@ self.addEventListener("fetch", (e) => {
       })
       .catch(() => caches.match(e.request, { ignoreSearch: true }).then((r) => r || caches.match("index.html")))
   );
+});
+
+// ---- Alertes sur le téléphone (envoyées par le relais) ----
+self.addEventListener("push", (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (err) { d = { titre: "MonTrio", texte: e.data ? e.data.text() : "" }; }
+  e.waitUntil(self.registration.showNotification(d.titre || "MonTrio", {
+    body: d.texte || "", tag: d.tag || undefined, icon: "icones/icone-192.png", badge: "icones/icone-192.png", data: { url: d.url || "./" },
+  }));
+});
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const url = e.notification.data?.url || "./";
+  e.waitUntil(clients.matchAll({ type: "window", includeUncontrolled: true }).then((fen) => {
+    const ouverte = fen.find((f) => f.url.startsWith(self.registration.scope));
+    if (ouverte) { ouverte.navigate(url).catch(() => {}); return ouverte.focus(); }
+    return clients.openWindow(url);
+  }));
 });
