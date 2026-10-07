@@ -793,3 +793,14 @@ button.score-carte:hover { background: #333; }
 .logo-pastille { display: none; }
 @media (max-width: 640px) { .logo-marque { width: 32px; height: 32px; } .logo-texte { font-size: 1.15rem !important; } }
 @media (max-width: 360px) { .logo-texte b { display: none; } }
+
+/* ---- Profil et carrière d'un joueur ---- */
+.profil { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.profil-ligne { background: var(--carte-2); border-radius: 10px; padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; }
+.profil-ligne small { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--texte-doux); }
+.profil-ligne b { font-size: .9rem; }
+.tableau.carriere tr.lnh td { font-weight: 600; }
+.tableau.carriere td:nth-child(2) { white-space: normal; min-width: 140px; }
+.trophees { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.trophee { background: var(--accent-pale); border-radius: 99px; padding: 4px 10px; font-size: .8rem; font-weight: 600; }
+.trophee small { color: var(--texte-doux); font-weight: 500; margin-left: 4px; }

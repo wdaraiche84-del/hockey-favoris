@@ -79,6 +79,14 @@ async function uneLigue(lig, conf) {
       const pos = POSITIONS[p.position];
       if (!pos || !p.player_id || parId.has(p.player_id)) continue;
       const j = { id: `${lig}-${p.player_id}`, nom: `${p.first_name} ${p.last_name}`.trim(), no: p.tp_jersey_number ? Number(p.tp_jersey_number) : null, pos, eq: cle };
+      // Bio : naissance, taille (pieds-pouces → cm), poids (lb → kg), lance de la gauche ou de la droite
+      const tailleCm = (() => { const m = /(\d+)'\s*(\d+)/.exec(p.height || p.h || ""); return m ? Math.round((Number(m[1]) * 12 + Number(m[2])) * 2.54) : null; })();
+      const poidsKg = Number(p.weight || p.w) ? Math.round(Number(p.weight || p.w) * 0.4536) : null;
+      j.bio = { naissance: p.rawbirthdate || p.birthdate || null, ville: p.birthtown || null, prov: p.birthprov || null, pays: p.birthcntry || null,
+        taille: tailleCm, poids: poidsKg, tir: p.shoots || null };
+      // Repêchage LNH, si le joueur a été repêché
+      const rep = (Array.isArray(p.draftinfo) ? p.draftinfo : []).find((d) => /^NHL$/i.test(d.draft_type || "") && d.draft_year);
+      if (rep) j.rep = { annee: Number(rep.draft_year), eq: (rep.draft_team || "").toUpperCase(), ronde: Number(rep.draft_round) || null, rang: Number(rep.draft_rank) || null };
       parId.set(p.player_id, j); joueurs.push(j);
     }
   }

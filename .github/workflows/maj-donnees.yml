@@ -36,6 +36,10 @@ jobs:
       - name: Aller chercher les stats de la LNH
         run: node scripts/maj-donnees.mjs
 
+      - name: Fiches complètes LNH (bio, repêchage, carrière) — une fois par jour
+        run: node scripts/maj-bios.mjs
+        continue-on-error: true
+
       - name: Aller chercher les stats de la LAH et des juniors
         run: node scripts/maj-autres-ligues.mjs
         continue-on-error: true

@@ -82,8 +82,62 @@ ouvrirFiche = function (id, opt = {}) {
   ajouterRetour();
   majAdresse();
   $("fiche").querySelector(".fermer")?.focus({ preventScroll: true });
+  rendreProfil(id);
   return p;
 };
+
+// ---- Profil du joueur : bio, repêchage, carrière, trophées -------------
+const PAYS = { CAN: "Canada", USA: "États-Unis", SWE: "Suède", FIN: "Finlande", CZE: "Tchéquie", SVK: "Slovaquie", RUS: "Russie", CHE: "Suisse", SUI: "Suisse",
+  DEU: "Allemagne", GER: "Allemagne", AUT: "Autriche", LVA: "Lettonie", LAT: "Lettonie", DNK: "Danemark", DEN: "Danemark", NOR: "Norvège", BLR: "Bélarus",
+  KAZ: "Kazakhstan", FRA: "France", SVN: "Slovénie", SLO: "Slovénie", UKR: "Ukraine", GBR: "Royaume-Uni", NLD: "Pays-Bas", AUS: "Australie", ITA: "Italie",
+  POL: "Pologne", HUN: "Hongrie", JPN: "Japon", CHN: "Chine", KOR: "Corée du Sud", EST: "Estonie", LTU: "Lituanie", "United States": "États-Unis",
+  Canada: "Canada", Sweden: "Suède", Finland: "Finlande", Czechia: "Tchéquie", "Czech Republic": "Tchéquie", Slovakia: "Slovaquie", Russia: "Russie",
+  Switzerland: "Suisse", Germany: "Allemagne", Austria: "Autriche", Latvia: "Lettonie", Denmark: "Danemark", Norway: "Norvège", Belarus: "Bélarus",
+  Kazakhstan: "Kazakhstan", France: "France", Slovenia: "Slovénie", Ukraine: "Ukraine", Netherlands: "Pays-Bas", "United Kingdom": "Royaume-Uni", USA: "États-Unis" };
+const carrieres = {};
+const ageDe = (n) => { const d = new Date(n), a = new Date(); let x = a.getFullYear() - d.getFullYear(); if (a < new Date(a.getFullYear(), d.getMonth(), d.getDate())) x--; return x; };
+const dateNaissance = (n) => { const [y, m, d] = n.split("-").map(Number); return `${d === 1 ? "1er" : d} ${MOIS[m - 1]} ${y}`; };
+async function rendreProfil(id) {
+  const j = joueur(id);
+  if (!j) return;
+  let c = null;
+  if (j.lig === "lnh" && /^\d+$/.test(j.id)) {
+    carrieres[j.id] ||= lireJson(`data/carriere/${j.id}.json`).catch(() => null);
+    c = await carrieres[j.id];
+  }
+  if (modaleActuelle?.t !== "joueur" || modaleActuelle.id !== id) return;
+  const bio = c?.bio || j.bio, rep = c?.rep || j.rep;
+  const boite = $("fiche-profil");
+  if (boite && (bio || rep)) {
+    const t = (val, lib) => (val ? `<div class="profil-ligne"><small>${lib}</small><b>${val}</b></div>` : "");
+    const lieu = bio ? [bio.ville, bio.prov, PAYS[bio.pays] || bio.pays].filter(Boolean).join(", ") : "";
+    const tir = bio?.tir ? `${j.pos === "G" ? "Attrape" : "Lance"} de la ${/^L/i.test(bio.tir) ? "gauche" : "droite"}` : "";
+    const repTxt = rep ? `${rep.annee}${rep.ronde ? `, ${rep.ronde === 1 ? "1re" : `${rep.ronde}e`} ronde` : ""}${rep.rang ? ` (${rep.rang === 1 ? "1er" : `${rep.rang}e`} au total)` : ""}${rep.eq ? ` · ${echapper(D.equipes[rep.eq] ? nomEq(rep.eq) : rep.eq)}` : ""}` : (j.lig === "lnh" && c ? "Jamais repêché" : "");
+    boite.innerHTML = `<h3>Profil</h3><div class="profil">
+      ${t(bio?.naissance ? `${ageDe(bio.naissance)} ans` : "", "Âge")}
+      ${t(bio?.naissance ? `${dateNaissance(bio.naissance)}${lieu ? ` · ${echapper(lieu)}` : ""}` : echapper(lieu), "Naissance")}
+      ${t(bio?.taille ? `${(bio.taille / 100).toFixed(2).replace(".", ",")} m` : "", "Taille")}
+      ${t(bio?.poids ? `${bio.poids} kg` : "", "Poids")}
+      ${t(tir, j.pos === "G" ? "Gant" : "Tir")}
+      ${t(repTxt, "Repêchage LNH")}</div>`;
+  }
+  const bc = $("fiche-carriere");
+  if (!bc || !c?.saisons?.length) return;
+  const gardien = j.pos === "G";
+  const lignes = (type) => c.saisons.filter((s) => s[3] === type);
+  const table = (rows) => `<div class="defile"><table class="tableau journal carriere"><thead><tr><th>Saison</th><th>Équipe</th><th>Ligue</th><th>PJ</th>${gardien ? "<th>V</th><th>D</th><th>DP</th><th>Moy.</th><th>% arr.</th><th>BL</th>" : "<th>B</th><th>A</th><th>PTS</th><th>+/-</th><th>PUN</th>"}</tr></thead><tbody>
+    ${rows.map((s) => `<tr class="${s[1] === "NHL" ? "lnh" : ""}"><td>${s[0]}</td><td>${echapper(s[2])}</td><td>${echapper(s[1] === "NHL" ? "LNH" : s[1] === "AHL" ? "LAH" : s[1] === "QMJHL" ? "LHJMQ" : s[1])}</td><td>${s[4]}</td>${gardien
+      ? `<td>${s[5]}</td><td>${s[6]}</td><td>${s[7]}</td><td>${dec(s[8])}</td><td>${pct3(s[9])}</td><td>${s[10]}</td>`
+      : `<td>${s[5]}</td><td>${s[6]}</td><td class="pts">${s[7]}</td><td>${s[8] == null ? "–" : signe(s[8])}</td><td>${s[9]}</td>`}</tr>`).join("")}</tbody></table></div>`;
+  const totLnh = lignes("s").filter((s) => s[1] === "NHL");
+  const somme = (k) => totLnh.reduce((x, s) => x + (Number(s[k]) || 0), 0);
+  const resume = gardien ? `${somme(4)} matchs · ${somme(5)} victoires · ${somme(10)} blanchissages` : `${somme(4)} matchs · ${somme(5)} buts · ${somme(6)} passes · ${somme(7)} points`;
+  bc.innerHTML = `<h3>Carrière</h3>${totLnh.length ? `<p class="petit-gris" style="margin-top:0">En carrière dans la LNH (saison régulière) : <b>${resume}</b></p>` : ""}
+    ${c.trophees?.length ? `<div class="trophees">${c.trophees.map((x) => `<span class="trophee">🏆 ${echapper(x.nom)} <small>${x.saisons.join(", ")}</small></span>`).join("")}</div>` : ""}
+    ${table(lignes("s").slice().reverse())}
+    ${lignes("e").length ? `<details class="feuille-equipe"><summary>Séries éliminatoires <small>${lignes("e").length} saisons</small></summary>${table(lignes("e").slice().reverse())}</details>` : ""}
+    <p class="petit-gris">Toutes les ligues où il a joué, saison régulière, de la plus récente à la plus ancienne. Source : LNH.</p>`;
+}
 
 // Petits morceaux réutilisés
 const pct3 = (x) => (x == null || isNaN(x) ? "–" : x.toFixed(3).replace(/^0/, ""));

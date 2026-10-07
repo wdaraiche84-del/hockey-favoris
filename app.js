@@ -637,8 +637,10 @@ async function ouvrirFiche(id) {
     corps += `<h3>Saison 2026-27</h3>${htmlStats(j)}`;
     corps += htmlStatsAvancees(j);
   }
+  corps += `<div id="fiche-profil"></div>`;
   if (D.equipes[j.eq]) {
     corps += `<h3>Match par match</h3><div id="fiche-saison"><p class="vide">Chargement…</p></div>`;
+    corps += `<div id="fiche-carriere"></div>`;
   } else {
     corps += `<p class="note-fiche">${echapper(j.note || "Informations à venir.")}</p>`;
   }

@@ -195,6 +195,7 @@ async function nl() {
     const pos = POS[p.position], eq = parId[String(p.teamId)];
     if (!pos || !eq) continue;
     const j = { id: `nl-${p.playerId}`, nom: `${p.firstName} ${p.lastName}`.trim(), no: p.number ? Number(p.number) : null, pos, eq };
+    if (p.birth) j.bio = { naissance: String(p.birth).slice(0, 10), pays: p.nationality || null, taille: p.height || null, poids: p.weight || null, tir: p.hand || null };
     if (pos === "G") j.g = { pj: p.gp || 0, v: p.gw || 0, d: p.gl || 0, dp: 0, moy: p.gp ? +Number(p.gaPerGame || 0).toFixed(2) : null, pct: p.sa ? +(p.svs / p.sa).toFixed(3) : null };
     else j.s = { pj: p.gp || 0, b: p.g || 0, a: p.assists ?? ((p.a1 || 0) + (p.a2 || 0)), pts: p.points || 0, pm: p.plusMinus || 0 };
     joueurs.push(j);
@@ -411,6 +412,8 @@ async function khl() {
       const pos = POS_KHL[p.role_key], eq = parIdEquipe[p.team?.id];
       if (!pos || !eq || parId.has(p.id)) continue;
       const j = { id: `khl-${p.id}`, nom: prenomNom(p.name), no: p.shirt_number ?? null, pos, eq };
+      j.bio = { naissance: p.birthday ? new Date(p.birthday * 1000).toISOString().slice(0, 10) : null, pays: p.country || null,
+        taille: p.height || null, poids: p.weight || null, tir: p.stick ? p.stick.toUpperCase() : null };
       if (p.country && p.country !== "Russia") j.pays = p.country;
       if (pos === "G") {
         const st = p.stats || [];
