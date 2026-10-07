@@ -521,7 +521,7 @@ async function htmlFormeJoueur(j) {
 // La page Meneurs, en onglets pour ne pas s'y perdre : Saison, En forme, Stats avancées, Recrues
 let ongletMeneurs = memoire("onglet-meneurs") || "saison";
 const mmss = (sec) => (sec ? `${Math.floor(sec / 60)}:${String(Math.round(sec % 60)).padStart(2, "0")}` : "–");
-const pctFr = (x, n = 1) => (x == null || isNaN(x) ? "–" : `${(x * 100).toFixed(n).replace(".", ",")} %`);
+const pctFr = (x, n = 1) => (x == null || isNaN(x) ? "–" : `${(x * 100).toFixed(n).replace(".", ",")}\u00a0%`);
 rendreMeneurs = function () {
   const lig = ligue, nom = LIGUES[lig].nom, tous = joueursLigue();
   $("mini-meneurs").innerHTML = htmlMeneurs(listeMeneurs(5, patineur, (j) => j.s.pts), (j) => j.s.pts);
@@ -565,7 +565,7 @@ rendreMeneurs = function () {
       + (tous.some((j) => j.g?.bl != null) ? bloc("Gardiens · Blanchissages", listeMeneurs(10, (j) => j.g && j.g.bl > 0, (j) => j.g.bl), (j) => j.g.bl) : "")
       + (tous.some((j) => j.g?.dq != null) ? bloc("Gardiens · Départs de qualité", listeMeneurs(10, (j) => j.g && j.g.dq > 0, (j) => j.g.dq), (j) => j.g.dq) : "")
       + (tous.some((j) => j.g?.arr != null) ? bloc("Gardiens · Arrêts", listeMeneurs(10, (j) => j.g && j.g.arr > 0, (j) => j.g.arr), (j) => j.g.arr) : "");
-    h = htmlRecords(lig) + h;
+    h = h.replace("</div>", "</div>" + htmlRecords(lig)); // juste sous les onglets
   } else if (onglet === "recrues") {
     const rec = (j) => j.r && j.s && j.s.pj > 0;
     h += `<p class="aide meneurs-aide">Les joueurs qui jouent leur première saison dans ${laLigue(lig)}.</p>`
