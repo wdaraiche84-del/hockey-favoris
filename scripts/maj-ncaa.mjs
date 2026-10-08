@@ -35,7 +35,8 @@ async function page(chemin, essais = 3) {
 // HTML sur une ligne, sans scripts ni images
 const propre = (h) => h.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<svg[\s\S]*?<\/svg>|<img[^>]*>|<!--[\s\S]*?-->/g, "").replace(/\s+/g, " ").replace(/> </g, "><");
 const texte = (h) => String(h || "").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/&#8209;/g, "-").replace(/&amp;/g, "&").replace(/&#039;|&apos;/g, "'").replace(/\s+/g, " ").trim();
-const cellules = (ligne) => [...ligne.matchAll(/<t[dh][^>]*>([\s\S]*?)(?=<t[dh][\s>]|<\/tr>|$)/g)].map((m) => m[1]);
+// Cellules d'une rangée (avec leur balise d'ouverture, pour lire les « data-text »)
+const cellules = (ligne) => [...ligne.matchAll(/<t[dh][\s>][\s\S]*?(?=<t[dh][\s>]|<\/tr>|$)/g)].map((m) => m[0]);
 const num = (x) => { const n = Number(texte(x)); return Number.isFinite(n) ? n : 0; };
 const sansAccent = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 const cleNom = (s) => sansAccent(texte(s)).toLowerCase().replace(/[^a-z]/g, "");
@@ -156,12 +157,13 @@ function lireAlignement(h) {
     if (!id) continue;
     const c = cellules(ligne);
     const pos = (/data-text="([DFG])"/.exec(ligne) || [])[1];
-    const pouces = Number((/data-text="(\d{2})"/.exec(c[5] || "") || [])[1]);
+    const pouces = Number((/data-text="(\d{2})"/.exec(c[5] || "") || [])[1]); // taille en pouces
     const lb = num(c[6]);
     const naissance = (/data-text="(\d{4}-\d{2}-\d{2})"/.exec(c[7] || "") || [])[1] || null;
     const ville = texte(c[8]);
     const rep = /^(\d{4})-([A-Z]{2,3})-(\d+)$/.exec(texte(c[10])); // repêchage LNH, ex. « 2025-EDM-5 » (année, équipe, ronde)
-    bios[id] = { no: num(c[1]) || null, pos: pos === "F" ? "AV" : pos || null,
+    const [nomFamille, prenom] = texte(c[2]).split(",").map((x) => x.trim());
+    bios[id] = { nom: prenom ? `${prenom} ${nomFamille}` : nomFamille, no: num(c[1]) || null, pos: pos === "F" ? "AV" : pos || null,
       bio: { naissance, taille: pouces ? Math.round(pouces * 2.54) : null, poids: lb ? Math.round(lb * 0.4536) : null, ville: ville || null },
       rep: rep ? { annee: Number(rep[1]), eq: rep[2], ronde: Number(rep[3]) } : null };
   }
@@ -198,6 +200,17 @@ function lireStatsEquipe(h, cle, bios) {
     j.pos = "G";
     const arr = num(c[9]), bc = num(c[5]);
     j.g = { pj: num(c[1]), v: num(c[2]), d: num(c[3]), dp: num(c[4]), moy: num(c[7]), pct: arr + bc ? +(arr / (arr + bc)).toFixed(3) : null, bl: num(c[8]), arr, tr: arr + bc };
+    joueurs.push(j);
+  }
+  // Joueurs de l'alignement qui n'ont pas encore joué
+  const vus = new Set(joueurs.map((j) => j.id));
+  for (const [id, b] of Object.entries(bios)) {
+    if (vus.has(`ncaa-${id}`) || !b.nom || !b.pos) continue;
+    const j = { id: `ncaa-${id}`, nom: b.nom, no: b.no ?? null, pos: b.pos, eq: cle };
+    if (b.bio && (b.bio.naissance || b.bio.taille)) j.bio = b.bio;
+    if (b.rep) j.rep = b.rep;
+    if (b.pos === "G") j.g = { pj: 0, v: 0, d: 0, dp: 0, moy: 0, pct: null };
+    else j.s = { pj: 0, b: 0, a: 0, pts: 0, pm: 0 };
     joueurs.push(j);
   }
   return joueurs;
