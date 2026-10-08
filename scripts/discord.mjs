@@ -16,8 +16,8 @@ const SITE = "https://wdaraiche84-del.github.io/hockey-favoris/";
 const ORANGE = 0xEA580C;
 const TOKEN = process.env.DISCORD_TOKEN;
 // Permissions (valeurs de Discord)
-const VOIR = 1 << 10, ECRIRE = 1 << 11, LIENS = 1 << 14, HISTORIQUE = 1 << 16, REACTIONS = 1 << 6;
-const FILS = 2 ** 35 + 2 ** 38; // créer des fils et écrire dans les fils (trop grand pour « << »)
+// (le bot ne peut donner que des droits qu'il a lui-même : voir, écrire, liens, historique)
+const VOIR = 1 << 10, ECRIRE = 1 << 11, LIENS = 1 << 14, HISTORIQUE = 1 << 16;
 
 async function api(chemin, methode = "GET", corps) {
   for (let essai = 1; ; essai++) {
@@ -58,21 +58,22 @@ export async function installer() {
   const salon = (nom) => salons.find((c) => c.type === 0 && c.name === nom);
   const droitsBot = { id: moi, type: 1, allow: String(VOIR | ECRIRE | LIENS | HISTORIQUE), deny: "0" };
 
-  // 2. Salon #résultats, en lecture seule (seul le bot y écrit)
+  // 2. Le bot peut écrire dans la catégorie 📢 INFORMATIONS (en lecture seule pour les membres).
+  //    Discord exige ce droit dans la catégorie avant de le donner dans ses salons.
+  const info = salons.find((c) => c.type === 4 && c.name === "📢 INFORMATIONS");
+  if (info) await api(`/channels/${info.id}/permissions/${moi}`, "PUT", { type: 1, allow: droitsBot.allow, deny: "0" });
+
+  // 3. Salon #résultats : il reprend les réglages de la catégorie (lecture seule, seul le bot écrit)
   let resultats = salon("résultats");
   if (!resultats) {
-    const info = salons.find((c) => c.type === 4 && c.name === "📢 INFORMATIONS");
-    resultats = await api(`/guilds/${g}/channels`, "POST", {
-      name: "résultats", type: 0, parent_id: info?.id, topic: "Le résultat de chaque match de la LNH, dès la fin du match",
-      permission_overwrites: [
-        { id: g, type: 0, allow: String(VOIR | HISTORIQUE | REACTIONS), deny: String(ECRIRE + FILS) },
-        droitsBot,
-      ],
-    });
+    resultats = await api(`/guilds/${g}/channels`, "POST", info
+      ? { name: "résultats", type: 0, parent_id: info.id, topic: "Le résultat de chaque match de la LNH, dès la fin du match" }
+      : { name: "résultats", type: 0, topic: "Le résultat de chaque match de la LNH, dès la fin du match",
+          permission_overwrites: [{ id: g, type: 0, allow: "0", deny: String(ECRIRE) }, droitsBot] });
     console.log("✔ Salon #résultats créé");
   } else console.log("• #résultats existe déjà");
 
-  // 3. Le bot peut écrire dans les salons en lecture seule où il publie
+  // Le bot peut écrire dans les salons en lecture seule où il publie
   for (const nom of ["résultats", "annonces", "bienvenue"]) {
     const c = nom === "résultats" ? resultats : salon(nom);
     if (c) await api(`/channels/${c.id}/permissions/${moi}`, "PUT", { type: 1, allow: droitsBot.allow, deny: "0" });
