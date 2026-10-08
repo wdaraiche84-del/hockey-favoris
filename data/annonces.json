@@ -13,5 +13,10 @@
   "id": "2026-10-09-graphique-points",
   "titre": "📈 Nouveau sur MonTrioHockey : le graphique des points",
   "texte": "Sur la fiche d'un joueur, un graphique montre maintenant ses points **match après match** pendant la saison. Touche une colonne pour voir le match."
+ },
+ {
+  "id": "2026-10-09-photos-epure",
+  "titre": "📷 Nouveau sur MonTrioHockey : les photos des joueurs et un site plus simple",
+  "texte": "• **Photos des joueurs** dans leur fiche (LNH) : la photo libre de droits la plus récente, avec sa date et son auteur.\n• **Un site plus simple** : un accueil plus court, un seul bloc Meneurs (Saison, En feu, Semaine) et un onglet **Stats** qui regroupe les meneurs et les joueurs."
  }
 ]

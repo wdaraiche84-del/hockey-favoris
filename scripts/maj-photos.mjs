@@ -54,11 +54,11 @@ export function choisir(pages, nom, { principale = "", autres = [] } = {}) {
     const titre = p.title.replace(/^File:/, ""), t = simple(titre), mots = titre.replace(/[_-]/g, " ");
     // Jamais : bagarres (règle du site), mises en échec, objets (gants, bâton, chandail…)
     if (/\b(fights?|fighting|brawl|bagarre|checking|checks|hit|hits|gloves?|sticks?|jersey|sweater|helmet|mask|skates?|autograph|signature|card|banner|statue|mural)\b/i.test(mots)) continue;
-    if (titre !== principale) {
-      if (!t.includes(complet)) continue;
-      if (/\b(and|with|vs\.?|team|teams|lineup|group)\b|&/i.test(mots)) continue; // photos de groupe
-      if (autres.some((a) => a !== complet && t.includes(a))) continue; // un autre joueur est nommé
-    }
+    // Ce joueur seul : pas de photo de groupe, aucun autre joueur nommé
+    if (/\b(and|teams?|lineup|group|fans|celebrate|celebrates|celebration)\b|&/i.test(mots)) continue;
+    if (/\bvs\b/i.test(mots) && !t.includes(complet)) continue; // un match sans nom : on ne sait pas qui est sur la photo
+    if (autres.some((a) => a !== complet && t.includes(a))) continue;
+    if (titre !== principale && !t.includes(complet)) continue; // la photo principale est déjà celle du joueur
     const licence = sansHtml(md.LicenseShortName?.value);
     if (!LICENCES.test(licence)) continue;
     const d = dateDe(md.DateTimeOriginal?.value);
