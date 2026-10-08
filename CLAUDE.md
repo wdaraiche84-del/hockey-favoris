@@ -50,7 +50,7 @@ Adresse actuelle : https://wdaraiche84-del.github.io/hockey-favoris/ (GitHub Pag
 - **Explorer une source de données** : les requêtes du bac à sable vers les sites des ligues sont bloquées. Il faut passer par un workflow temporaire, qui écrit dans la branche orpheline `exploration`, puis le supprimer.
 
 ## À faire / en attente
-- **Alertes de buts** : Will doit déployer le nouveau `worker.js` dans Cloudflare, créer le KV `ABONNES` et un cron chaque minute (voir `relais/LISEZMOI.md`), puis tester sur un vrai téléphone.
+- **Alertes** : activées dans Cloudflare le 8 octobre 2026 (relais `empty-forest-740ehockey-relais`, KV `montrio-abonnes` relié sous `ABONNES`, cron chaque minute). Reste à confirmer qu'elles arrivent sur un vrai téléphone pendant un match. Le relais `old-pine-be0ehockey-relais` ne sert pas : on peut le supprimer.
 - **Au lancement** :
   - brancher montriohockey.ca : DNS, fichier `CNAME` ;
   - changer `SITE` dans `scripts/maj-partage.mjs`, les balises meta d'`index.html`, `robots.txt`, `sitemap.xml` et `SITE_PRINCIPAL` du relais ;
