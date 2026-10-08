@@ -96,7 +96,7 @@ a { color: inherit; }
 .bandeau-vide { color: var(--bandeau-doux); font-size: .85rem; align-self: center; }
 
 /* ---- Les pages ---- */
-.pages { max-width: 1200px; margin: 18px auto 0; padding: 0 16px 40px; }
+.pages { max-width: 1200px; margin: 18px auto 0; padding: 0 16px 40px; touch-action: pan-y pinch-zoom; } /* le navigateur garde le défilement vertical, les glissés de côté vont au site */
 .page { display: flex; flex-direction: column; gap: 18px; }
 .page[hidden] { display: none; }
 .vers-gauche { animation: glisse-g .16s ease-out; }
@@ -885,3 +885,5 @@ button.score-carte:hover { background: #333; }
 .texte-long p { line-height: 1.6; margin: 0 0 10px; }
 .texte-long h3 { margin-top: 22px; }
 .texte-long .mini-titre { margin-top: 14px; }
+/* Les tableaux larges (ex. Stats d'équipe) défilent de côté au lieu d'être coupés */
+.grille-tables > *, .table-bloc { min-width: 0; }

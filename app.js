@@ -872,19 +872,36 @@ window.addEventListener("popstate", () => {
   else if (location.hash) { if (!ouvrirDepuisAdresse()) allerA(pageDeLAdresse()); } // (le navigateur n'envoie pas toujours « hashchange » ici)
   else if (!$("fiche-fond").hidden) fermerFiche();
 });
+// Glisser le doigt vers la gauche ou la droite change de page.
+// (plus tolérant qu'avant : un geste un peu en diagonale compte aussi,
+// et on ne réagit pas si le doigt part d'une zone qui défile de côté, ex. un tableau)
 let toucheDepart = null;
+function defileDeCote(el) {
+  for (; el && el !== document.body; el = el.parentElement) {
+    if (el.matches?.("input, textarea, select")) return true;
+    const o = getComputedStyle(el).overflowX;
+    if ((o === "auto" || o === "scroll") && el.scrollWidth > el.clientWidth + 2) return true;
+  }
+  return false;
+}
 $("pages").addEventListener("touchstart", (e) => {
-  const zone = e.target.closest(".defile, .bandeau-matchs, .jours, input");
-  toucheDepart = zone ? null : { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  toucheDepart = e.touches.length === 1 && !defileDeCote(e.target) ? { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() } : null;
 }, { passive: true });
-$("pages").addEventListener("touchend", (e) => {
-  if (!toucheDepart) return;
-  const dx = e.changedTouches[0].clientX - toucheDepart.x, dy = e.changedTouches[0].clientY - toucheDepart.y;
-  toucheDepart = null;
-  if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+$("pages").addEventListener("touchmove", (e) => {
+  if (toucheDepart) { toucheDepart.dx = e.touches[0].clientX - toucheDepart.x; toucheDepart.dy = e.touches[0].clientY - toucheDepart.y; }
+}, { passive: true });
+function finGlisse(e) {
+  const d = toucheDepart; toucheDepart = null;
+  if (!d) return;
+  const dx = e.changedTouches?.[0] ? e.changedTouches[0].clientX - d.x : d.dx ?? 0;
+  const dy = e.changedTouches?.[0] ? e.changedTouches[0].clientY - d.y : d.dy ?? 0;
+  const vite = Date.now() - d.t < 300; // un petit coup rapide suffit
+  if (Math.abs(dx) < (vite ? 40 : 60) || Math.abs(dx) < Math.abs(dy) * 1.2) return;
   const i = PAGES.indexOf(pageActuelle) + (dx < 0 ? 1 : -1);
   if (i >= 0 && i < PAGES.length) location.hash = "#/" + PAGES[i];
-}, { passive: true });
+}
+$("pages").addEventListener("touchend", finGlisse, { passive: true });
+$("pages").addEventListener("touchcancel", finGlisse, { passive: true }); // le navigateur annule parfois le geste en cours de route
 
 // ---- 18. Démarrage --------------------------------------------
 function rafraichir() {
