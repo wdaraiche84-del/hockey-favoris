@@ -51,17 +51,19 @@ export function choisir(pages, nom, { principale = "", autres = [] } = {}) {
   for (const p of pages) {
     const ii = p.imageinfo?.[0], md = ii?.extmetadata || {};
     if (!ii?.thumburl || ii.mime !== "image/jpeg") continue;
-    const titre = p.title.replace(/^File:/, ""), t = simple(titre);
+    const titre = p.title.replace(/^File:/, ""), t = simple(titre), mots = titre.replace(/[_-]/g, " ");
+    // Jamais : bagarres (règle du site), mises en échec, objets (gants, bâton, chandail…)
+    if (/\b(fights?|fighting|brawl|bagarre|checking|checks|hit|hits|gloves?|sticks?|jersey|sweater|helmet|mask|skates?|autograph|signature|card|banner|statue|mural)\b/i.test(mots)) continue;
     if (titre !== principale) {
       if (!t.includes(complet)) continue;
-      if (/\b(and|with|vs\.?|team|teams|lineup|group|gloves?|sticks?|jersey|sweater|helmet|mask|skates?|autograph|signature|card|banner|statue|mural)\b|&/i.test(titre.replace(/[_-]/g, " "))) continue;
+      if (/\b(and|with|vs\.?|team|teams|lineup|group)\b|&/i.test(mots)) continue; // photos de groupe
       if (autres.some((a) => a !== complet && t.includes(a))) continue; // un autre joueur est nommé
     }
     const licence = sansHtml(md.LicenseShortName?.value);
     if (!LICENCES.test(licence)) continue;
     const d = dateDe(md.DateTimeOriginal?.value);
     if (!d) continue;
-    bonnes.push({ u: ii.thumburl, f: ii.descriptionurl, a: sansHtml(md.Artist?.value).slice(0, 80) || "Auteur inconnu", l: licence, d });
+    bonnes.push({ u: ii.thumburl.split("?")[0], f: ii.descriptionurl, a: sansHtml(md.Artist?.value).slice(0, 80) || "Auteur inconnu", l: licence, d });
   }
   return bonnes.sort((x, y) => y.d.localeCompare(x.d))[0] || null;
 }

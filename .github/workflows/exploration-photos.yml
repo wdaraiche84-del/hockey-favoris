@@ -14,7 +14,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: node scripts/maj-photos.mjs 2>&1 | tee /tmp/journal.txt
+      - run: for i in 1 2 3 4 5; do node scripts/maj-photos.mjs; done 2>&1 | tee /tmp/journal.txt
       - run: |
           cp data/photos.json /tmp/photos.json
           git config user.name "robot-exploration"
