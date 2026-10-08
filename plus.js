@@ -898,8 +898,18 @@ $("alertes").onclick = async () => {
 };
 // Quand les favoris changent, on prévient le relais (s'il envoie les alertes)
 const ajouterBase = ajouter, retirerBase = retirer;
-ajouter = function (id) { ajouterBase(id); synchroniserPush(); };
-retirer = function (id) { retirerBase(id); synchroniserPush(); };
+// On confirme d'un message, et la fenêtre de recherche se met à jour (le + devient ⭐)
+ajouter = function (id) {
+  const deja = favoris.includes(id);
+  ajouterBase(id); synchroniserPush();
+  if (!$("recherche-fond").hidden) rendreRecherche();
+  if (!deja) toast(`⭐ ${joueur(id)?.nom || "Joueur"} est ajouté à tes favoris.`);
+};
+retirer = function (id) {
+  retirerBase(id); synchroniserPush();
+  if (!$("recherche-fond").hidden) rendreRecherche();
+  toast(`${joueur(id)?.nom || "Joueur"} est retiré de tes favoris.`);
+};
 function avertir(titre, texte) {
   toast(`${titre} ${texte}`, 7000);
   if (document.hidden && "Notification" in window && Notification.permission === "granted") {

@@ -542,7 +542,7 @@ const ORDRE_POS = ["C", "AG", "AD", "AV", "D", "G"];
 function ligneJoueur(j) {
   return `<li>${pastille(j)}
     <div class="infos" data-fiche="${j.id}"><strong>${echapper(j.nom)}</strong><span>${etiquetteLigue(j)} ${NOMS_POS[j.pos] || j.pos} · ${echapper(courtEq(j.eq))}</span></div>
-    ${favoris.includes(j.id) ? `<button class="btn leger" disabled aria-label="Déjà dans tes favoris">⭐</button>` : `<button class="btn accent" data-ajouter="${j.id}" aria-label="Ajouter ${echapper(j.nom)} à mes favoris">+</button>`}
+    ${favoris.includes(j.id) ? `<button class="btn leger btn-fav-ok" data-retirer="${j.id}" aria-label="Retirer ${echapper(j.nom)} de mes favoris" title="Dans tes favoris (toucher pour retirer)">⭐</button>` : `<button class="btn accent" data-ajouter="${j.id}" aria-label="Ajouter ${echapper(j.nom)} à mes favoris">+</button>`}
   </li>`;
 }
 // Fenêtre de recherche : ouverte par le bouton 🔍 (ou la touche « / »)
