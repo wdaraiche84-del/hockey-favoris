@@ -68,7 +68,8 @@ TZ = ZoneInfo("America/Toronto")
 def quand(debut):
     d = datetime.datetime.fromisoformat(debut.replace("Z", "+00:00")).astimezone(TZ)
     jour = "1er" if d.day == 1 else str(d.day)
-    return f"{JOURS[d.weekday()].capitalize()} {jour} {MOIS[d.month - 1]}", f"{d.hour} h" + (f" {d.minute:02d}" if d.minute else "")
+    # « HE » : heure de l'Est (l'image ne peut pas connaître le fuseau de la personne qui la voit)
+    return f"{JOURS[d.weekday()].capitalize()} {jour} {MOIS[d.month - 1]}", f"{d.hour} h" + (f" {d.minute:02d}" if d.minute else "") + " HE"
 
 def droite(t):
     if t.get("type") == "match":
@@ -147,7 +148,8 @@ def main():
         except ImportError:  # sur GitHub : on installe le navigateur seulement quand il y a des images à faire
             subprocess.run([sys.executable, "-m", "pip", "install", "-q", "--break-system-packages", "playwright"], check=True)
             subprocess.run([sys.executable, "-m", "playwright", "install", "--with-deps", "chromium"], check=True)
-            from playwright.sync_api import sync_playwright
+            # Python ne voit pas un module installé pendant qu'il roule : on relance le script, qui le trouvera
+            os.execv(sys.executable, [sys.executable] + sys.argv)
         with sync_playwright() as p:
             b = p.chromium.launch()
             pg = b.new_page(viewport={"width": 1200, "height": 630}, device_scale_factor=0.5)

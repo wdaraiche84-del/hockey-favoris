@@ -102,6 +102,11 @@ async function publierDiscord(c) {
   const [g] = await api("/users/@me/guilds");
   const salon = (await api(`/guilds/${g.id}/channels`)).find((x) => x.type === 0 && x.name === "lnh");
   if (!salon) return false;
+  // Déjà publié aujourd'hui (par un autre passage du robot)? Alors on ne le republie pas
+  const moi = (await api("/users/@me")).id;
+  const recents = await api(`/channels/${salon.id}/messages?limit=20`);
+  if (recents.some((m) => m.author?.id === moi && dateQc(new Date(m.timestamp)) === dateQc(new Date())
+    && (m.embeds || []).some((e) => e.title?.startsWith("📊 Le chiffre du jour")))) return true;
   await api(`/channels/${salon.id}/messages`, "POST", {
     embeds: [{ title: `📊 Le chiffre du jour : ${c.chiffre}`, description: `**${c.chiffre}** ${c.texte}.\n${c.detail}.`, url: SITE + c.lien, color: 0xEA580C,
       footer: { text: "MonTrioHockey · chaque matin, une stat de la LNH" } }],
