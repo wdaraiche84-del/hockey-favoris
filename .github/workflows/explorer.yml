@@ -1,0 +1,29 @@
+# Tâche temporaire : explorer une source de données (NCAA).
+name: Explorer
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/magical-wozniak-ido4qi]
+    paths: ["scripts/explorer.mjs"]
+permissions:
+  contents: write
+jobs:
+  explorer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/explorer.mjs > explo.txt 2>&1 || true
+      - name: Ranger le résultat sur une branche à part
+        run: |
+          git config user.name "robot-stats"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mv explo.txt /tmp/explo.txt
+          git checkout --orphan exploration
+          git rm -rfq .
+          mv /tmp/explo.txt explo.txt
+          git add explo.txt
+          git commit -qm "Résultat de l'exploration"
+          git push -f origin exploration
