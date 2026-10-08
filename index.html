@@ -39,7 +39,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <!-- Le « ?v=… » oblige les navigateurs à prendre la nouvelle version après chaque changement -->
-  <link rel="stylesheet" href="style.css?v=35">
+  <link rel="stylesheet" href="style.css?v=36">
   <!-- Pour installer MonTrioHockey comme une application sur le téléphone -->
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#111111">
@@ -157,6 +157,10 @@
             <div class="titre-section"><h2>Ce soir pour tes favoris</h2><a class="lien-plus" href="#/favoris">Mes favoris ›</a></div>
             <div id="soir"></div>
           </section>
+          <section id="bloc-chiffre" class="bloc bloc-chiffre" hidden>
+            <div class="titre-section"><h2>📊 Le chiffre du jour <span class="tag-ligue">LNH</span></h2></div>
+            <div id="chiffre-du-jour"></div>
+          </section>
           <section class="bloc">
             <div class="titre-section"><h2>Meneurs <span class="tag-ligue" data-nom-ligue></span></h2><a class="lien-plus" href="#/meneurs">Voir tout ›</a></div>
             <ol id="mini-meneurs" class="meneurs"></ol>
@@ -194,8 +198,9 @@
           <div class="outils-favoris">
             <button id="alertes" class="btn leger" title="Un avis 30 minutes avant le match, à chaque but de tes favoris de la LNH et à la fin du match, sur ton téléphone ou ton ordinateur">🔔 Alertes : non</button>
           </div></div>
+        <div id="mes-equipes"></div>
         <div id="cartes-favoris" class="cartes"></div>
-        <p class="petit-gris">Tes favoris peuvent venir de toutes les ligues. Pour en ajouter, va dans l'onglet <a href="#/joueurs">Joueurs</a>.</p>
+        <p class="petit-gris">Tes favoris peuvent venir de toutes les ligues. Pour ajouter un joueur, va dans l'onglet <a href="#/joueurs">Joueurs</a>. Pour ajouter une équipe, touche-la dans le <a href="#/classement">Classement</a>, puis ⭐ Ajouter à mes équipes.</p>
       </section>
       <section class="bloc">
         <div class="titre-section">
@@ -280,10 +285,10 @@
     <article id="fiche" class="fiche" role="dialog" aria-modal="true"></article>
   </div>
 
-  <script src="config.js?v=35"></script>
-  <script src="donnees.js?v=35"></script>
-  <script src="app.js?v=35"></script>
-  <script src="plus.js?v=35"></script>
+  <script src="config.js?v=36"></script>
+  <script src="donnees.js?v=36"></script>
+  <script src="app.js?v=36"></script>
+  <script src="plus.js?v=36"></script>
   <div id="toasts" class="toasts" aria-live="polite"></div>
 </body>
 </html>

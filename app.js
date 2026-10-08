@@ -180,9 +180,17 @@ function nettoyerFavoris() {
 }
 const liguesDesFavoris = (liste) => [...new Set(liste.map((id) => (/^([a-z]+)-\d+$/.exec(id) || [])[1]).filter((l) => LIGUES[l]))];
 const favorisObjets = () => favoris.map((id) => joueur(id)).filter(Boolean);
-const equipesFavorites = () => [...new Set(favorisObjets().map((j) => j.eq).filter((e) => D.equipes[e]))];
 function ajouter(id) { if (!favoris.includes(id)) favoris.push(id); sauverFavoris(); rafraichir(); }
 function retirer(id) { favoris = favoris.filter((f) => f !== id); sauverFavoris(); rafraichir(); }
+// Mes équipes : choisies directement (toutes ligues), en plus des équipes de mes joueurs favoris
+let mesEquipes = [];
+function lireMesEquipes() {
+  try { const l = JSON.parse(memoire("mes-equipes-hockey") || "[]"); return Array.isArray(l) ? l.map(String) : []; } catch (e) { return []; }
+}
+const sauverMesEquipes = () => memoire("mes-equipes-hockey", JSON.stringify(mesEquipes));
+const equipesFavorites = () => [...new Set([...mesEquipes, ...favorisObjets().map((j) => j.eq)].filter((e) => D.equipes[e]))];
+function ajouterEquipe(eq) { if (!mesEquipes.includes(eq)) mesEquipes.push(eq); sauverMesEquipes(); rafraichir(); }
+function retirerEquipe(eq) { mesEquipes = mesEquipes.filter((e) => e !== eq); sauverMesEquipes(); rafraichir(); }
 
 // ---- 4. Choix de la ligue ------------------------------------
 const GROUPES_LIGUES = [["Pro", ["lnh", "ahl"]], ["Junior", ["lhjmq", "ohl", "whl"]], ["Europe", ["khl", "shl", "liiga", "nl"]], ["Universitaire", ["ncaa"]]];
@@ -340,7 +348,7 @@ async function rendreUne() {
 async function rendreSoir() {
   const favs = favorisObjets(), eqs = equipesFavorites();
   const ceSoir = D.cal.filter((m) => m.date === AUJ && (eqs.includes(m.dom) || eqs.includes(m.ext)));
-  if (!favs.length) { $("soir").innerHTML = `<p class="vide">Ajoute des joueurs à tes favoris pour suivre leurs matchs ici.</p>`; return; }
+  if (!favs.length && !eqs.length) { $("soir").innerHTML = `<p class="vide">Ajoute des joueurs ou des équipes à tes favoris pour suivre leurs matchs ici.</p>`; return; }
   if (!ceSoir.length) {
     const p = eqs.map(prochainMatch).filter((x) => x && x.debut).sort((a, b) => a.debut.localeCompare(b.debut))[0];
     $("soir").innerHTML = `<p class="vide">Pas de match ce soir pour tes favoris. Repose-toi! 😄${p ? `<br>Prochain rendez-vous : <button class="lien-match" data-match="${p.id}"><strong>${dateLongue(dateLocale(p))}</strong>, ${echapper(courtEq(p.ext))} @ ${echapper(courtEq(p.dom))} à ${heureDe(p, false)} ›</button>` : ""}</p>`;
@@ -354,7 +362,7 @@ async function rendreSoir() {
       : estFini(m) ? `<strong>Final ${m.se}-${m.sd}${suffixeFin(m)}</strong>` : `<strong>${heureDe(m)}</strong>`;
     h += `<div class="soir-match cliquable" data-match="${m.id}" role="button" tabindex="0" aria-label="Voir le match">
       <div class="soir-tete"><strong><span class="tag-ligue petit">${LIGUES[ligueDe(m.dom)].nom}</span> ${echapper(courtEq(m.ext))} @ ${echapper(courtEq(m.dom))}</strong><span>${statut}</span></div>
-      <div class="soir-joueurs">${lesMiens.map((j) => {
+      <div class="soir-joueurs">${lesMiens.length ? "" : [m.ext, m.dom].filter((e) => mesEquipes.includes(e)).map((e) => `<button class="puce-joueur" data-equipe-fiche="${e}">⭐ ${echapper(courtEq(e))}</button>`).join("")}${lesMiens.map((j) => {
         const p = pts[j.id];
         const txt = estGardienLigne(p) ? `🧤 ${nomDeFamille(j)} : ${p[1]} arrêts sur ${p[2]}` : ptsLigne(p) > 0 ? `🔥 ${nomDeFamille(j)} : ${p[0]} B, ${p[1]} A` : nomDeFamille(j);
         return `<button class="puce-joueur ${ptsLigne(p) > 0 || estGardienLigne(p) ? "chaud" : ""}" data-fiche="${j.id}">${echapper(txt)}</button>`;
@@ -397,12 +405,38 @@ function htmlProchain(j) {
   if (!p) return "Saison terminée";
   return `<button class="lien-match" data-match="${p.id}">Prochain : <strong>${dateLocale(p) === AUJ ? "ce soir" : dateLongue(dateLocale(p))}</strong> ${p.dom === j.eq ? "vs" : "@"} ${abr(adversaire(p, j.eq))} · ${heureDe(p, false)} ›</button>`;
 }
+// Une carte par équipe favorite : rang, fiche, match en direct, prochain match ou dernier résultat
+function htmlMesEquipes() {
+  const eqs = mesEquipes.filter((e) => D.equipes[e]);
+  if (!eqs.length) return "";
+  return `<h3 class="mini-titre">Mes équipes</h3><div class="cartes cartes-equipes">${eqs.map((eq) => {
+    const b = bilan(eq), lig = ligueDe(eq), t = (D.classement[lig] || []).find((x) => x.eq === eq);
+    const rang = t ? trierEquipes(D.classement[lig].filter((x) => x.conf === t.conf)).findIndex((x) => x.eq === eq) + 1 : 0;
+    const dernier = matchsDe(eq).filter(estFini).slice(-1)[0];
+    const res = dernier ? resultatPour(dernier, eq) : null;
+    return `<div class="carte-joueur carte-equipe">
+      <div class="haut"><span class="numero equipe-pastille">${abr(eq)}</span><div><h3>${echapper(nomEq(eq))}</h3>
+        <div class="equipe"><span class="tag-ligue petit">${LIGUES[lig].nom}</span> ${rang ? `${ieme(rang)} · ${echapper(NOMS_CONF[t.conf] || t.conf || "")}` : ""}</div></div></div>
+      <div class="bas">
+        <div class="stats"><div><b>${fmtBilan(b.tous)}</b><small>V-D-DP</small></div><div><b>${t?.pts ?? "–"}</b><small>PTS</small></div>
+          <div><b>${serieFr(t?.serie) || "–"}</b><small>Séquence</small></div></div>
+        ${res ? `<button class="lien-match" data-match="${dernier.id}">Dernier : <strong class="${res.classe}">${res.texte}</strong> ${dernier.dom === eq ? "vs" : "@"} ${abr(adversaire(dernier, eq))} ›</button>` : ""}
+        <div class="prochain">${htmlProchain({ eq })}</div>
+        <div class="actions">
+          <button class="btn" data-equipe-fiche="${eq}">Voir l'équipe</button>
+          <button class="btn leger" data-equipe-retirer="${eq}" aria-label="Retirer ${echapper(nomEq(eq))} de mes équipes">Retirer</button>
+        </div>
+      </div>
+    </div>`;
+  }).join("")}</div>${favorisObjets().length ? `<h3 class="mini-titre">Mes joueurs</h3>` : ""}`;
+}
 function rendreFavoris() {
   const favs = favorisObjets();
-  $("nb-favoris").textContent = favs.length;
+  $("nb-favoris").textContent = favs.length + mesEquipes.filter((e) => D.equipes[e]).length;
+  $("mes-equipes").innerHTML = htmlMesEquipes();
   if (!favs.length) {
     const idees = D.joueurs.filter((j) => j.lig === "lnh" && j.s).sort((a, b) => b.s.pts - a.s.pts).slice(0, 4);
-    $("cartes-favoris").innerHTML = `<div><p class="vide">Ta liste est vide. Pour commencer, essaie un de ces joueurs en feu :</p>
+    $("cartes-favoris").innerHTML = `<div><p class="vide">${mesEquipes.some((e) => D.equipes[e]) ? "Ajoute aussi des joueurs, par exemple un de ces joueurs en feu :" : "Ta liste est vide. Pour commencer, essaie un de ces joueurs en feu, ou ajoute une équipe depuis le Classement :"}</p>
       <div class="suggestions">${idees.map((j) => `<button class="btn leger" data-ajouter="${j.id}">+ ${echapper(j.nom)} (${abr(j.eq)})</button>`).join("")}</div></div>`;
     return;
   }
@@ -444,7 +478,8 @@ function rendreCalendrier() {
   $("calendrier").innerHTML = h;
   const ms = D.cal.filter((m) => m.date === jourChoisi && (eqs.includes(m.dom) || eqs.includes(m.ext)));
   $("detail-jour").innerHTML = `<p class="detail-titre">${dateLongue(jourChoisi)}${jourChoisi === AUJ ? " · aujourd'hui" : ""}</p>` + (ms.length ? ms.map((m) => {
-    const qui = favorisObjets().filter((j) => j.eq === m.dom || j.eq === m.ext).map(nomDeFamille).join(", ");
+    const qui = favorisObjets().filter((j) => j.eq === m.dom || j.eq === m.ext).map(nomDeFamille).join(", ")
+      || [m.ext, m.dom].filter((e) => mesEquipes.includes(e)).map(courtEq).join(", ");
     return `<div class="soir-match cliquable" data-match="${m.id}" role="button" tabindex="0"><div class="soir-tete"><strong><span class="tag-ligue petit">${LIGUES[ligueDe(m.dom)].nom}</span> ${echapper(courtEq(m.ext))} @ ${echapper(courtEq(m.dom))}</strong>
       <span>${estDirect(m) ? '<span class="badge-direct">EN DIRECT</span> ' : ""}<strong>${estFini(m) || estDirect(m) ? `${m.se}-${m.sd}` : heureDe(m)}</strong></span></div>
       <p class="petit-gris" style="margin-top:6px">Tes favoris : ${echapper(qui)} <span class="voir-match">${estFini(m) ? "Sommaire" : "Avant-match"} ›</span></p></div>`;
@@ -714,8 +749,10 @@ document.addEventListener("keydown", (e) => { if (e.key === "Escape") fermerFich
 
 // ---- 13. Un seul « écouteur » pour tous les boutons ------------
 document.addEventListener("click", (e) => {
-  const b = e.target.closest("[data-fiche],[data-ajouter],[data-retirer],[data-jour],[data-match],[data-equipe-fiche]");
+  const b = e.target.closest("[data-fiche],[data-ajouter],[data-retirer],[data-jour],[data-match],[data-equipe-fiche],[data-equipe-ajouter],[data-equipe-retirer]");
   if (!b) return;
+  if (b.dataset.equipeAjouter) { ajouterEquipe(b.dataset.equipeAjouter); if (b.hasAttribute("data-garder")) ouvrirEquipe(b.dataset.equipeAjouter); return; }
+  if (b.dataset.equipeRetirer) { retirerEquipe(b.dataset.equipeRetirer); if (b.hasAttribute("data-garder")) ouvrirEquipe(b.dataset.equipeRetirer); return; }
   if (b.dataset.equipeFiche) return ouvrirEquipe(b.dataset.equipeFiche);
   if (b.dataset.match && !b.dataset.fiche) return ouvrirMatch(b.dataset.match);
   if (b.dataset.ajouter) { ajouter(b.dataset.ajouter); if (b.hasAttribute("data-garder")) ouvrirFiche(b.dataset.ajouter); }
@@ -939,9 +976,9 @@ function rafraichir() {
 async function demarrer() {
   allerA(pageDeLAdresse());
   rendreChoixLigue();
-  favoris = lireFavoris();
-  // On charge la LNH, la ligue choisie et les ligues des favoris
-  const aCharger = [...new Set(["lnh", ligue, ...liguesDesFavoris(favoris)])];
+  favoris = lireFavoris(); mesEquipes = lireMesEquipes();
+  // On charge la LNH, la ligue choisie et les ligues des favoris (joueurs et équipes)
+  const aCharger = [...new Set(["lnh", ligue, ...liguesDesFavoris(favoris), ...mesEquipes.map(ligDeId)])];
   const res = await Promise.allSettled(aCharger.map(charger));
   if (res[0].status === "rejected" && !D.charge[ligue]) {
     montrerErreur("Les données n'ont pas pu être chargées pour l'instant. Réessaie dans quelques minutes.");

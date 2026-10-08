@@ -40,12 +40,15 @@ Adresse actuelle : https://wdaraiche84-del.github.io/hockey-favoris/ (GitHub Pag
   5. `maj-ncaa.mjs` (NCAA, Division 1 masculine : pages de College Hockey News ; stats et alignements relus seulement quand l'équipe vient de jouer ; état dans `data/ligues/ncaa/etat.json`)
   6. `maj-images.py` (images d'aperçu 600 × 315)
   7. `maj-partage.mjs` (mini-pages de partage, ex. `lnh/joueur/nick-suzuki/8480018/`)
+  8. `chiffre-du-jour.mjs` (une fois par jour après 8 h : `data/chiffre-du-jour.json`, affiché sur l'accueil et publié dans #lnh)
+  9. `surveillance.mjs` (étapes en échec, scores figés, relais muet → message dans #modération ; état dans `data/surveillance.json`)
 - **Format des lignes de match** (`data/points/…`) :
   - patineur : `[B, A, +/-, tirs, PUN, TG]`
   - gardien : `["G", arrêts, tirs, BC, décision, TG]`
 - **Relais Cloudflare** (`relais/worker.js`) : le direct pendant les matchs et les alertes (rappel 30 min avant le match, buts, résultat final). Voir `relais/LISEZMOI.md`.
 - **Discord** : serveur de support. Le relais fait aussi le bot (résultats LNH dans #résultats, /score, /joueur, /classement, bouton 🔔 Annonces ; secrets Cloudflare `DISCORD_TOKEN` et `DISCORD_PUBLIC_KEY`). `.github/workflows/discord.yml` (secret GitHub `DISCORD_TOKEN`) installe #résultats, le bouton et les commandes, et publie les nouvelles entrées de `data/annonces.json` dans #annonces : **ajouter une entrée à chaque grosse nouveauté**. Outil de création du serveur : `outils/discord/`.
 - **Avec Will** : une seule méthode, une étape à la fois, des liens directs ; tester avant d'envoyer ; un seul fichier au même nom (pas de versions multiples).
+- **Mes équipes** : équipes favorites choisies directement (clé `mes-equipes-hockey` dans le navigateur, variable `mesEquipes`) ; `equipesFavorites()` = mes équipes + équipes des joueurs favoris.
 - **Adresses** :
   - fenêtres : `#/joueur/ID`, `#/equipe/ID`, `#/match/ID`, `#/comparer/A/B`, `#/a-propos`
   - adresses lisibles : `PREFIXE` dans `plus.js` et dans `scripts/maj-partage.mjs`
@@ -63,9 +66,7 @@ Adresse actuelle : https://wdaraiche84-del.github.io/hockey-favoris/ (GitHub Pag
 - **Compteur de visites** : Cloudflare Web Analytics (constante `ANALYTIQUE` dans `config.js`, site `wdaraiche84-del.github.io`). Au lancement, ajouter montriohockey.ca dans Web Analytics.
 - **Courriel de contact** : Will veut `contact@montriohockey.ca`, à créer avec le nom de domaine au lancement (la constante `CONTACT` dans `plus.js` ; page À propos).
 - **Idées** :
-  - équipe favorite ;
   - cartes de stats à partager ;
-  - « chiffre du jour » ;
   - graphique des points d'un joueur ;
   - rythme de la saison ;
   - gardiens de la Liiga ;
