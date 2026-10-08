@@ -17,7 +17,7 @@
 # écrit dans ce fichier. Ne le partage avec personne.
 # =============================================================
 
-import getpass
+import re
 import urllib.request
 import discord
 
@@ -368,8 +368,14 @@ class Bot(discord.Client):
 
 
 if __name__ == "__main__":
-    jeton = getpass.getpass("Colle le jeton (token) du bot puis Entrée (il reste invisible) : ").strip()
-    id_serveur = int(input("Numéro (ID) du serveur : ").strip())
+    print("⚠️  Ne fais pas de capture d'écran pendant que le jeton est affiché.")
+    # On garde seulement les caractères d'un vrai jeton (enlève les espaces et caractères invisibles collés par erreur)
+    jeton = re.sub(r"[^A-Za-z0-9._\-]", "", input("Colle le jeton (token) du bot (Ctrl+V ou clic droit) puis Entrée : "))
+    if len(jeton) < 50 or jeton.count(".") != 2:
+        input("\n❌ Ce jeton ne semble pas complet. Recopie-le (onglet Bot → Reset Token → Copy) et relance. Appuie sur Entrée.")
+        raise SystemExit
+    print("\n" * 40)  # cache le jeton de l'écran
+    id_serveur = int(re.sub(r"\D", "", input("Numéro (ID) du serveur : ")))
     print("\nVeux-tu EFFACER tous les salons et rôles du serveur et repartir à neuf?")
     print("(Oui si le serveur est neuf ou si tu avais lancé une autre version du code. Les messages seront perdus.)")
     repartir = input("Écris oui ou non : ").strip().lower() in ("oui", "o", "yes", "y")
