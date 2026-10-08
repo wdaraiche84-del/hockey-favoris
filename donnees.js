@@ -4,12 +4,12 @@
 // Ici, on garde seulement ce qu'aucune source ne publie.
 // =============================================================
 
-// ---- Joueurs hors LNH ---------------------------------------
-const AUTRES_JOUEURS = [
-  { id: "hage", nom: "Michael Hage", no: null, pos: "C", eq: "MICH",
-    note: "Espoir du Canadien. Joue à l'Université du Michigan (NCAA) en 2026-27. Ses stats seront ajoutées avec les autres ligues." },
-];
-const AUTRES_EQUIPES = { MICH: "Université du Michigan (NCAA)" };
+// ---- Joueurs d'une ligue qui n'est pas sur le site -----------
+// (vide pour l'instant : Michael Hage est maintenant avec la NCAA)
+const AUTRES_JOUEURS = [];
+const AUTRES_EQUIPES = {};
+// Anciens identifiants de favoris → nouveaux (ex. quand une ligue arrive sur le site)
+const ANCIENS_IDS = { hage: "ncaa-59709" };
 
 // ---- Favoris au premier passage : aucun (chacun choisit les siens) --
 const FAVORIS_DE_DEPART = [];

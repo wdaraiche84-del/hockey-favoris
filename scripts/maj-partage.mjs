@@ -21,9 +21,9 @@ const SITE = "https://wdaraiche84-del.github.io/hockey-favoris/";
 const IMAGE = SITE + "icones/apercu.png";
 
 // Le préfixe des adresses : le nom français de la ligue
-const PREFIXE = { lnh: "lnh", ahl: "lah", lhjmq: "lhjmq", ohl: "ohl", whl: "whl", khl: "khl", shl: "shl", liiga: "liiga", nl: "nl" };
+const PREFIXE = { lnh: "lnh", ahl: "lah", lhjmq: "lhjmq", ohl: "ohl", whl: "whl", khl: "khl", shl: "shl", liiga: "liiga", nl: "nl", ncaa: "ncaa" };
 const slugUrl = (t) => String(t).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "x";
-const LIGUES = { lnh: "LNH", ahl: "LAH", lhjmq: "LHJMQ", ohl: "OHL", whl: "WHL", khl: "KHL", shl: "SHL", liiga: "Liiga", nl: "National League" };
+const LIGUES = { lnh: "LNH", ahl: "LAH", lhjmq: "LHJMQ", ohl: "OHL", whl: "WHL", khl: "KHL", shl: "SHL", liiga: "Liiga", nl: "National League", ncaa: "NCAA" };
 const POS = { AG: "Ailier gauche", C: "Centre", AD: "Ailier droit", AV: "Attaquant", D: "Défenseur", G: "Gardien" };
 const lireJson = async (f) => { try { return JSON.parse(await readFile(f, "utf8")); } catch { return null; } };
 const esc = (t) => String(t ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);

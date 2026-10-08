@@ -1,6 +1,6 @@
 # MonTrioHockey : notes pour Claude
 
-Site de hockey en français, fait pour le Québec : scores, classements, stats, récits de match et favoris pour 9 ligues (LNH, LAH, LHJMQ, OHL, WHL, KHL, SHL, Liiga, National League).
+Site de hockey en français, fait pour le Québec : scores, classements, stats, récits de match et favoris pour 10 ligues (LNH, LAH, LHJMQ, OHL, WHL, KHL, SHL, Liiga, National League, NCAA).
 Le propriétaire s'appelle **Will**. Il est débutant en programmation : explique simplement, en français, sans jargon.
 Adresse actuelle : https://wdaraiche84-del.github.io/hockey-favoris/ (GitHub Pages, branche `main`). Nom de domaine prévu au lancement : montriohockey.ca.
 
@@ -37,8 +37,9 @@ Adresse actuelle : https://wdaraiche84-del.github.io/hockey-favoris/ (GitHub Pag
   2. `maj-bios.mjs`
   3. `maj-autres-ligues.mjs` (LAH et ligues juniors, via HockeyTech)
   4. `maj-europe.mjs` (KHL, SHL, Liiga, NL)
-  5. `maj-images.py` (images d'aperçu 600 × 315)
-  6. `maj-partage.mjs` (mini-pages de partage, ex. `lnh/joueur/nick-suzuki/8480018/`)
+  5. `maj-ncaa.mjs` (NCAA, Division 1 masculine : pages de College Hockey News ; stats et alignements relus seulement quand l'équipe vient de jouer ; état dans `data/ligues/ncaa/etat.json`)
+  6. `maj-images.py` (images d'aperçu 600 × 315)
+  7. `maj-partage.mjs` (mini-pages de partage, ex. `lnh/joueur/nick-suzuki/8480018/`)
 - **Format des lignes de match** (`data/points/…`) :
   - patineur : `[B, A, +/-, tirs, PUN, TG]`
   - gardien : `["G", arrêts, tirs, BC, décision, TG]`
@@ -56,13 +57,13 @@ Adresse actuelle : https://wdaraiche84-del.github.io/hockey-favoris/ (GitHub Pag
   - changer `SITE` dans `scripts/maj-partage.mjs`, les balises meta d'`index.html`, `robots.txt`, `sitemap.xml` et `SITE_PRINCIPAL` du relais ;
   - Google Search Console.
 - **Noté pour plus tard** : ajouter « HE » après l'heure dans les aperçus de liens partagés (image et texte).
-- **Avant le lancement** : un compteur de visites qui respecte la vie privée, un test sur iPhone, et un courriel de contact (la constante `CONTACT` dans `plus.js` ; page À propos).
+- **Avant le lancement** : un compteur de visites qui respecte la vie privée et un test sur iPhone.
+- **Courriel de contact** : Will veut `contact@montriohockey.ca`, à créer avec le nom de domaine au lancement (la constante `CONTACT` dans `plus.js` ; page À propos).
 - **Idées** :
   - équipe favorite ;
   - cartes de stats à partager ;
   - « chiffre du jour » ;
   - graphique des points d'un joueur ;
   - rythme de la saison ;
-  - NCAA ;
   - gardiens de la Liiga ;
   - salaires (seulement si une source légale existe).
