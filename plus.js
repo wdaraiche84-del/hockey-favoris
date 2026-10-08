@@ -1141,7 +1141,7 @@ document.addEventListener("click", (e) => {
 // ---- À propos et confidentialité (Loi 25 du Québec) -------------
 // Adresse : #/a-propos. Pour ajouter un courriel de contact plus tard : remplir CONTACT ci-dessous.
 const CONTACT = "";
-const MAJ_CONFIDENTIALITE = "7 octobre 2026";
+const MAJ_CONFIDENTIALITE = "8 octobre 2026";
 function ouvrirAPropos() {
   noterModale({ t: "apropos", id: "x" });
   const contact = CONTACT ? `<a href="mailto:${CONTACT}">${CONTACT}</a>` : "une adresse de contact sera ajoutée sous peu";
@@ -1160,6 +1160,8 @@ function ouvrirAPropos() {
     <p>Pour que le site se souvienne de tes choix, ton navigateur garde quelques réglages <b>sur ton appareil seulement</b> : tes favoris, la ligue choisie, le mode clair ou sombre et tes préférences d'affichage. Ces informations ne nous sont jamais envoyées. Tu peux les effacer en tout temps avec le bouton ci-dessous ou dans les réglages de ton navigateur.</p>
     <h4 class="mini-titre">Les alertes (si tu les actives)</h4>
     <p>Si tu actives les alertes, ton navigateur crée une adresse de notification anonyme. Nous la gardons avec la liste de tes joueurs favoris de la LNH (et de leurs équipes), seulement pour t'envoyer les alertes. Aucun nom ni courriel n'y est rattaché. Quand tu désactives les alertes, ces informations sont supprimées.</p>
+    ${ANALYTIQUE ? `<h4 class="mini-titre">Le compteur de visites</h4>
+    <p>Pour savoir combien de personnes visitent le site, nous utilisons <b>Cloudflare Web Analytics</b>. Il ne dépose aucun témoin (cookie), ne crée aucun profil et ne te suit pas d'un site à l'autre. Nous voyons seulement des totaux : nombre de visites, pages vues, pays et type d'appareil.</p>` : ""}
     <h4 class="mini-titre">Les services utilisés</h4>
     <p>Le site est hébergé par <b>GitHub Pages</b>. Le direct et les alertes passent par <b>Cloudflare</b>. Les polices de caractères viennent de <b>Google Fonts</b>. Comme pour tout site Web, ces services reçoivent l'adresse IP de ton appareil pour pouvoir t'envoyer les pages. Ils appliquent leurs propres politiques de confidentialité. Nous n'utilisons aucun outil de publicité ni de statistiques de visites qui te suit d'un site à l'autre.</p>
     <h4 class="mini-titre">Tes droits</h4>
@@ -1180,4 +1182,11 @@ document.addEventListener("click", (e) => { if (e.target.closest("[data-a-propos
 
 // ---- Démarrage ---------------------------------------------------
 rendreBoutonAlertes();
+// Compteur de visites : seulement si le « token » est dans config.js
+if (ANALYTIQUE) {
+  const s = document.createElement("script");
+  s.defer = true; s.src = "https://static.cloudflareinsights.com/beacon.min.js";
+  s.dataset.cfBeacon = JSON.stringify({ token: ANALYTIQUE });
+  document.head.appendChild(s);
+}
 demarrer().then(() => { verifierAlertes(); synchroniserPush(); });

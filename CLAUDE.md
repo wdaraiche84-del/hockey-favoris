@@ -57,7 +57,8 @@ Adresse actuelle : https://wdaraiche84-del.github.io/hockey-favoris/ (GitHub Pag
   - changer `SITE` dans `scripts/maj-partage.mjs`, les balises meta d'`index.html`, `robots.txt`, `sitemap.xml` et `SITE_PRINCIPAL` du relais ;
   - Google Search Console.
 - **Noté pour plus tard** : ajouter « HE » après l'heure dans les aperçus de liens partagés (image et texte).
-- **Avant le lancement** : un compteur de visites qui respecte la vie privée et un test sur iPhone.
+- **Avant le lancement** : un test sur iPhone.
+- **Compteur de visites** : Cloudflare Web Analytics (constante `ANALYTIQUE` dans `config.js`, site `wdaraiche84-del.github.io`). Au lancement, ajouter montriohockey.ca dans Web Analytics.
 - **Courriel de contact** : Will veut `contact@montriohockey.ca`, à créer avec le nom de domaine au lancement (la constante `CONTACT` dans `plus.js` ; page À propos).
 - **Idées** :
   - équipe favorite ;
