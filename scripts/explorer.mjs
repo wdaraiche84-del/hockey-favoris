@@ -1,47 +1,45 @@
-// Temporaire : quelles sources publient le hockey NCAA?
+// Temporaire : 2e tour, stats des joueurs NCAA
 const UA = { "User-Agent": "Mozilla/5.0 (MonTrio, site de fan)" };
-async function voir(url, n = 1500) {
-  try {
-    const r = await fetch(url, { headers: UA });
-    const t = await r.text();
-    console.log(`\n===== ${r.status} ${r.headers.get("content-type")} ${url} (${t.length} car.)`);
-    console.log(t.slice(0, n));
-    try { return JSON.parse(t); } catch { return t; }
-  } catch (e) { console.log(`\n===== ERREUR ${url} : ${e.message}`); return null; }
-}
-const cles = (o, p = "", prof = 0) => { if (!o || typeof o !== "object" || prof > 3) return; for (const [k, v] of Object.entries(o).slice(0, 25)) { console.log(`${p}${k}: ${Array.isArray(v) ? `[${v.length}]` : typeof v === "object" && v ? "{}" : JSON.stringify(v)?.slice(0, 80)}`); if (v && typeof v === "object") cles(Array.isArray(v) ? v[0] : v, p + "  ", prof + 1); } };
+async function lire(url) { try { const r = await fetch(url, { headers: UA }); const t = await r.text(); console.log(`\n===== ${r.status} ${url} (${t.length} car.)`); return t; } catch (e) { console.log(`\n===== ERREUR ${url} ${e.message}`); return ""; } }
+const liens = (t, re) => [...new Set([...t.matchAll(/href="([^"]+)"/g)].map((m) => m[1]).filter((h) => re.test(h)))];
+const texte = (h) => h.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/g, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
 
-// --- ESPN ---
-const E = "https://site.api.espn.com/apis/site/v2/sports/hockey/mens-college-hockey";
-for (const d of ["20261003", "20261004", "20261010"]) {
-  const s = await voir(`${E}/scoreboard?dates=${d}&limit=200&groups=50`, 600);
-  if (s?.events) console.log("ESPN matchs", d, ":", s.events.length, s.events.slice(0, 3).map((e) => `${e.id} ${e.name} ${e.status?.type?.name}`));
-  if (d === "20261003" && s?.events?.[0]) { console.log("--- structure d'un match"); cles(s.events[0]); }
-}
-const sb = await voir(`${E}/scoreboard?dates=20261003&limit=200`, 0);
-const ev = sb?.events?.find((e) => e.status?.type?.completed) || sb?.events?.[0];
-if (ev) {
-  const sm = await voir(`${E}/summary?event=${ev.id}`, 300);
-  if (sm && typeof sm === "object") { console.log("--- summary"); cles(sm); console.log("--- boxscore.players[0]"); console.log(JSON.stringify(sm.boxscore?.players?.[0])?.slice(0, 3000)); }
-}
-await voir(`${E}/teams?limit=100`, 500);
-await voir("https://site.api.espn.com/apis/v2/sports/hockey/mens-college-hockey/standings", 1500);
-await voir(`${E}/standings`, 500);
+// --- College Hockey News ---
+let t = await lire("https://www.collegehockeynews.com/stats/");
+console.log(liens(t, /stats|box|team/).slice(0, 60).join("\n"));
+const i = t.indexOf("<table"); console.log(t.slice(i, i + 2500));
+t = await lire("https://www.collegehockeynews.com/schedules/?date=20261003");
+const box = liens(t, /box/); console.log(box.slice(0, 15).join("\n"));
+if (box[0]) { const b = await lire(new URL(box[0], "https://www.collegehockeynews.com").href); console.log(texte(b).slice(0, 4000)); const j = b.indexOf("<table"); console.log(b.slice(j, j + 3000)); }
+t = await lire("https://www.collegehockeynews.com/reports/team/Michigan/31");
+console.log(liens(t, /stats|roster|team|player/).slice(0, 40).join("\n"));
+t = await lire("https://www.collegehockeynews.com/stats/team/Michigan/31");
+console.log(texte(t).slice(0, 3000));
+t = await lire("https://www.collegehockeynews.com/standings/");
+console.log(texte(t).slice(0, 1500));
+t = await lire("https://www.collegehockeynews.com/robots.txt"); console.log(t.slice(0, 1500));
 
 // --- NCAA.com ---
-const N = "https://data.ncaa.com/casablanca";
-const ns = await voir(`${N}/scoreboard/icehockey-men/d1/2026/10/03/scoreboard.json`, 800);
-const g = ns?.games?.[0]?.game;
-if (g) {
-  console.log("--- structure NCAA"); cles(ns.games[0]);
-  const id = g.gameID || g.url?.split("/").pop();
-  const bx = await voir(`${N}/game/${id}/boxscore.json`, 2500);
-  await voir(`https://data.ncaa.com/casablanca/game/${id}/gameInfo.json`, 800);
-}
-await voir("https://www.ncaa.com/standings/icehockey-men/d1", 300);
-await voir("https://www.ncaa.com/stats/icehockey-men/d1/current/individual/566", 300);
+t = await lire("https://www.ncaa.com/stats/icehockey-men/d1");
+console.log(liens(t, /stats\/icehockey/).slice(0, 40).join("\n"));
+t = await lire("https://www.ncaa.com/scoreboard/icehockey-men/d1/2026/10/03/all-conf");
+console.log(liens(t, /game\//).slice(0, 10).join("\n"));
+console.log((t.match(/https?:\/\/[a-z.]*ncaa\.com\/[^"' ]*(json|graphql)[^"' ]*/g) || []).slice(0, 10).join("\n"));
+const g = liens(t, /^\/game\/\d+/)[0];
+if (g) { const b = await lire("https://www.ncaa.com" + g + "/boxscore"); console.log((b.match(/https?:\/\/[a-z.]*ncaa\.com\/[^"' ]*/g) || []).filter((u) => /json|graphql|sdata/.test(u)).slice(0, 10).join("\n")); console.log(texte(b).slice(0, 2000)); }
 
-// --- Autres ---
-await voir("https://www.collegehockeynews.com/stats/", 300);
-await voir("https://www.uscho.com/standings/d-i-men/", 300);
-await voir("https://www.collegehockeystats.net/", 300);
+// --- ESPN : stats par équipe / athlète ---
+const E = "https://site.api.espn.com/apis/site/v2/sports/hockey/mens-college-hockey";
+const eq = JSON.parse((await lire(`${E}/teams?limit=200`)) || "{}").sports?.[0]?.leagues?.[0]?.teams?.map((x) => x.team) || [];
+console.log("équipes ESPN :", eq.length);
+const mich = eq.find((x) => /Michigan Wolverines/.test(x.displayName));
+if (mich) {
+  console.log("Michigan id", mich.id);
+  t = await lire(`${E}/teams/${mich.id}/roster`); console.log(t.slice(0, 1500));
+  t = await lire(`${E}/teams/${mich.id}/statistics`); console.log(t.slice(0, 1500));
+  t = await lire(`https://site.web.api.espn.com/apis/common/v3/sports/hockey/mens-college-hockey/teams/${mich.id}/statistics`); console.log(t.slice(0, 800));
+  const ros = JSON.parse((await lire(`${E}/teams/${mich.id}/roster`)) || "{}");
+  const a = (ros.athletes || []).flatMap((x) => x.items || [x]).find((x) => /Hage/.test(x.fullName || "")) || (ros.athletes || []).flatMap((x) => x.items || [x])[0];
+  if (a) { console.log("athlète", a.id, a.fullName); t = await lire(`https://site.web.api.espn.com/apis/common/v3/sports/hockey/mens-college-hockey/athletes/${a.id}/stats`); console.log(t.slice(0, 1500)); t = await lire(`https://sports.core.api.espn.com/v2/sports/hockey/leagues/mens-college-hockey/seasons/2027/types/2/athletes/${a.id}/statistics`); console.log(t.slice(0, 1500)); }
+}
+t = await lire("https://site.api.espn.com/apis/v2/sports/hockey/mens-college-hockey/standings?season=2027"); console.log(t.slice(0, 2500));
