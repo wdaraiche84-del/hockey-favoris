@@ -44,6 +44,8 @@ Adresse actuelle : https://wdaraiche84-del.github.io/hockey-favoris/ (GitHub Pag
   - patineur : `[B, A, +/-, tirs, PUN, TG]`
   - gardien : `["G", arrêts, tirs, BC, décision, TG]`
 - **Relais Cloudflare** (`relais/worker.js`) : le direct pendant les matchs et les alertes (rappel 30 min avant le match, buts, résultat final). Voir `relais/LISEZMOI.md`.
+- **Discord** : serveur de support. Le relais fait aussi le bot (résultats LNH dans #résultats, /score, /joueur, /classement, bouton 🔔 Annonces ; secrets Cloudflare `DISCORD_TOKEN` et `DISCORD_PUBLIC_KEY`). `.github/workflows/discord.yml` (secret GitHub `DISCORD_TOKEN`) installe #résultats, le bouton et les commandes, et publie les nouvelles entrées de `data/annonces.json` dans #annonces : **ajouter une entrée à chaque grosse nouveauté**. Outil de création du serveur : `outils/discord/`.
+- **Avec Will** : une seule méthode, une étape à la fois, des liens directs ; tester avant d'envoyer ; un seul fichier au même nom (pas de versions multiples).
 - **Adresses** :
   - fenêtres : `#/joueur/ID`, `#/equipe/ID`, `#/match/ID`, `#/comparer/A/B`, `#/a-propos`
   - adresses lisibles : `PREFIXE` dans `plus.js` et dans `scripts/maj-partage.mjs`

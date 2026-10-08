@@ -1,0 +1,50 @@
+# =============================================================
+# ROBOT DISCORD : installe le bot sur le serveur et publie les
+# annonces de data/annonces.json dans #annonces.
+# Se lance tout seul quand data/annonces.json change, ou à la main
+# (onglet « Actions » → « Discord » → « Run workflow »).
+# Il faut le secret GitHub DISCORD_TOKEN (le jeton du bot).
+# =============================================================
+name: Discord
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["data/annonces.json", "scripts/discord.mjs"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: discord
+  cancel-in-progress: false
+
+jobs:
+  discord:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Installer le bot et publier les annonces
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+        run: node scripts/discord.mjs
+      - name: Noter les annonces publiées
+        run: |
+          git config user.name "robot-stats"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/discord.json 2>/dev/null || true
+          if git diff --staged --quiet; then
+            echo "Rien de nouveau."
+          else
+            git commit -q -m "Discord : annonces publiées"
+            for essai in 1 2 3; do
+              git pull -q --rebase -X theirs && git push -q && exit 0
+              git rebase --abort 2>/dev/null || true
+              sleep 10
+            done
+            exit 1
+          fi
