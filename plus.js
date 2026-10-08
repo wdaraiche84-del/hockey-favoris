@@ -368,8 +368,8 @@ function htmlFaceAFace(m) {
   if (!autres.length) return "";
   const v = { [m.dom]: 0, [m.ext]: 0 }, finis = [...autres, m].filter(estFini);
   for (const x of finis) v[x.sd > x.se ? x.dom : x.ext]++;
-  const ligneNeutre = (x, d = estFini(x) || estDirect(x) ? x.date : dateLocale(x)) => `<button class="ligne-cal" data-match="${x.id}"><span class="lc-date">${d === AUJ ? "Ce soir" : dateCourte(d) + (d.slice(0, 4) !== AUJ.slice(0, 4) ? ` ${d.slice(0, 4)}` : "")}</span>
-    <span class="lc-adv"><b>${abr(x.ext)}</b> @ <b>${abr(x.dom)}</b></span><span class="lc-res">${estFini(x) || estDirect(x) ? `${x.se}-${x.sd}${suffixeFin(x)}` : heureDe(x, false)}</span></button>`;
+  const ligneNeutre = (x) => { const d = estFini(x) || estDirect(x) ? x.date : dateLocale(x); return `<button class="ligne-cal" data-match="${x.id}"><span class="lc-date">${d === AUJ ? "Ce soir" : dateCourte(d) + (d.slice(0, 4) !== AUJ.slice(0, 4) ? ` ${d.slice(0, 4)}` : "")}</span>
+    <span class="lc-adv"><b>${abr(x.ext)}</b> @ <b>${abr(x.dom)}</b></span><span class="lc-res">${estFini(x) || estDirect(x) ? `${x.se}-${x.sd}${suffixeFin(x)}` : heureDe(x, false)}</span></button>`; };
   return `<h3>Entre eux cette saison</h3>${finis.length ? `<p class="petit-gris" style="margin-top:0">${abr(m.ext)} : ${pluriel(v[m.ext], "victoire")} · ${abr(m.dom)} : ${pluriel(v[m.dom], "victoire")}</p>` : ""}
     <div class="liste-cal">${autres.map(ligneNeutre).join("")}</div>`;
 }
