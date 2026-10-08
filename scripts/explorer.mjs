@@ -1,45 +1,20 @@
-// Temporaire : 2e tour, stats des joueurs NCAA
+// Temporaire : 3e tour, structure des pages de College Hockey News
 const UA = { "User-Agent": "Mozilla/5.0 (MonTrio, site de fan)" };
-async function lire(url) { try { const r = await fetch(url, { headers: UA }); const t = await r.text(); console.log(`\n===== ${r.status} ${url} (${t.length} car.)`); return t; } catch (e) { console.log(`\n===== ERREUR ${url} ${e.message}`); return ""; } }
+const B = "https://www.collegehockeynews.com";
+async function lire(url) { try { const r = await fetch(url, { headers: UA }); const t = await r.text(); console.log(`\n\n######## ${r.status} ${url} (${t.length} car.)`); return t; } catch (e) { console.log(`\n######## ERREUR ${url} ${e.message}`); return ""; } }
+const propre = (h) => h.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<svg[\s\S]*?<\/svg>/g, "").replace(/\s+/g, " ").replace(/> </g, "><");
+const tables = (h, n = 3, max = 3500) => { const p = propre(h); let i = 0, k = 0; while (k < n && (i = p.indexOf("<table", i)) >= 0) { console.log(`--- table ${k}:`, p.slice(i, i + max)); i++; k++; } };
+const apres = (h, mot, n = 3000) => { const p = propre(h); const i = p.indexOf(mot); console.log(`--- après « ${mot} » :`, i < 0 ? "(absent)" : p.slice(i, i + n)); };
 const liens = (t, re) => [...new Set([...t.matchAll(/href="([^"]+)"/g)].map((m) => m[1]).filter((h) => re.test(h)))];
-const texte = (h) => h.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/g, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
 
-// --- College Hockey News ---
-let t = await lire("https://www.collegehockeynews.com/stats/");
-console.log(liens(t, /stats|box|team/).slice(0, 60).join("\n"));
-const i = t.indexOf("<table"); console.log(t.slice(i, i + 2500));
-t = await lire("https://www.collegehockeynews.com/schedules/?date=20261003");
-const box = liens(t, /box/); console.log(box.slice(0, 15).join("\n"));
-if (box[0]) { const b = await lire(new URL(box[0], "https://www.collegehockeynews.com").href); console.log(texte(b).slice(0, 4000)); const j = b.indexOf("<table"); console.log(b.slice(j, j + 3000)); }
-t = await lire("https://www.collegehockeynews.com/reports/team/Michigan/31");
-console.log(liens(t, /stats|roster|team|player/).slice(0, 40).join("\n"));
-t = await lire("https://www.collegehockeynews.com/stats/team/Michigan/31");
-console.log(texte(t).slice(0, 3000));
-t = await lire("https://www.collegehockeynews.com/standings/");
-console.log(texte(t).slice(0, 1500));
-t = await lire("https://www.collegehockeynews.com/robots.txt"); console.log(t.slice(0, 1500));
-
-// --- NCAA.com ---
-t = await lire("https://www.ncaa.com/stats/icehockey-men/d1");
-console.log(liens(t, /stats\/icehockey/).slice(0, 40).join("\n"));
-t = await lire("https://www.ncaa.com/scoreboard/icehockey-men/d1/2026/10/03/all-conf");
-console.log(liens(t, /game\//).slice(0, 10).join("\n"));
-console.log((t.match(/https?:\/\/[a-z.]*ncaa\.com\/[^"' ]*(json|graphql)[^"' ]*/g) || []).slice(0, 10).join("\n"));
-const g = liens(t, /^\/game\/\d+/)[0];
-if (g) { const b = await lire("https://www.ncaa.com" + g + "/boxscore"); console.log((b.match(/https?:\/\/[a-z.]*ncaa\.com\/[^"' ]*/g) || []).filter((u) => /json|graphql|sdata/.test(u)).slice(0, 10).join("\n")); console.log(texte(b).slice(0, 2000)); }
-
-// --- ESPN : stats par équipe / athlète ---
-const E = "https://site.api.espn.com/apis/site/v2/sports/hockey/mens-college-hockey";
-const eq = JSON.parse((await lire(`${E}/teams?limit=200`)) || "{}").sports?.[0]?.leagues?.[0]?.teams?.map((x) => x.team) || [];
-console.log("équipes ESPN :", eq.length);
-const mich = eq.find((x) => /Michigan Wolverines/.test(x.displayName));
-if (mich) {
-  console.log("Michigan id", mich.id);
-  t = await lire(`${E}/teams/${mich.id}/roster`); console.log(t.slice(0, 1500));
-  t = await lire(`${E}/teams/${mich.id}/statistics`); console.log(t.slice(0, 1500));
-  t = await lire(`https://site.web.api.espn.com/apis/common/v3/sports/hockey/mens-college-hockey/teams/${mich.id}/statistics`); console.log(t.slice(0, 800));
-  const ros = JSON.parse((await lire(`${E}/teams/${mich.id}/roster`)) || "{}");
-  const a = (ros.athletes || []).flatMap((x) => x.items || [x]).find((x) => /Hage/.test(x.fullName || "")) || (ros.athletes || []).flatMap((x) => x.items || [x])[0];
-  if (a) { console.log("athlète", a.id, a.fullName); t = await lire(`https://site.web.api.espn.com/apis/common/v3/sports/hockey/mens-college-hockey/athletes/${a.id}/stats`); console.log(t.slice(0, 1500)); t = await lire(`https://sports.core.api.espn.com/v2/sports/hockey/leagues/mens-college-hockey/seasons/2027/types/2/athletes/${a.id}/statistics`); console.log(t.slice(0, 1500)); }
-}
-t = await lire("https://site.api.espn.com/apis/v2/sports/hockey/mens-college-hockey/standings?season=2027"); console.log(t.slice(0, 2500));
+let t = await lire(`${B}/stats/overall.php`); tables(t, 1, 5000);
+t = await lire(`${B}/stats/overall-goalie.php`); tables(t, 1, 3000);
+t = await lire(`${B}/stats/team/Michigan/31`); tables(t, 3, 4000);
+t = await lire(`${B}/reports/roster/Michigan/31`); tables(t, 1, 3000);
+t = await lire(`${B}/schedules/?date=20261003`); apres(t, "Niagara", 3000);
+console.log(liens(t, /standings|schedules\/\?date|scoreboard/).slice(0, 30).join("\n"));
+t = await lire(`${B}/schedules/?date=20261010`); apres(t, "Michigan", 2500);
+t = await lire(`${B}/box/final/20261003/nia/rit/`); tables(t, 12, 3000);
+t = await lire(`${B}/`); console.log(liens(t, /standing/i).join("\n"));
+for (const u of ["/standings/conference.php", "/reports/standings/", "/standings/index.php", "/ratings/standings.php"]) { t = await lire(B + u); if (t.includes("<table")) tables(t, 1, 2500); }
+t = await lire(`${B}/schedules/team/Michigan/31`); tables(t, 1, 3000);
