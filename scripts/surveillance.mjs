@@ -15,7 +15,7 @@ import { readFile, writeFile } from "node:fs/promises";
 const FICHIER = "data/surveillance.json";
 const RELAIS = "https://empty-forest-740ehockey-relais.w-daraiche84.workers.dev";
 const LIGUES = { lnh: "LNH", ahl: "LAH", lhjmq: "LHJMQ", ohl: "OHL", whl: "WHL", khl: "KHL", shl: "SHL", liiga: "Liiga", nl: "National League", ncaa: "NCAA" };
-const ETAPES = { lnh: "les stats de la LNH", bios: "les fiches des joueurs de la LNH", autres: "la LAH et les juniors", europe: "les ligues d'Europe",
+const ETAPES = { lnh: "les stats de la LNH", bios: "les fiches des joueurs de la LNH", photos: "les photos des joueurs", autres: "la LAH et les juniors", europe: "les ligues d'Europe",
   ncaa: "la NCAA", images: "les images de partage", partage: "les liens de partage", chiffre: "le chiffre du jour" };
 const lireJson = async (f, defaut) => { try { return JSON.parse(await readFile(f, "utf8")); } catch { return defaut; } };
 

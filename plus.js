@@ -94,6 +94,7 @@ ouvrirFiche = function (id, opt = {}) {
   majAdresse();
   $("fiche").querySelector(".fermer")?.focus({ preventScroll: true });
   rendreProfil(id);
+  afficherPhoto(id);
   return p;
 };
 
@@ -668,7 +669,9 @@ function htmlStatsAvancees(j) {
   if (s.rv != null) jeu += t(s.rv, s.rv > 1 ? "rondelles perdues" : "rondelle perdue");
   if (s.pun != null) jeu += t(s.pun, s.pun > 1 ? "minutes de punition" : "minute de punition");
   if (s.pprov != null) jeu += nb(s.pprov, "punition provoquée", "punitions provoquées");
-  return groupe("Attaque", att) + groupe("Unités spéciales", spe) + groupe("Temps de jeu et travail", jeu);
+  const tout = groupe("Attaque", att) + groupe("Unités spéciales", spe) + groupe("Temps de jeu et travail", jeu);
+  // Repliées par défaut : la fiche reste courte, les curieux ouvrent « Plus de stats »
+  return tout ? `<details class="plus-stats"><summary>Plus de stats</summary>${tout}</details>` : "";
 }
 
 // Les records de la saison mesurés par le système de suivi de la LNH
@@ -1060,7 +1063,7 @@ async function rendreRecits() {
     cartes.push(`<article class="recit-carte ${fav ? "favori" : ""}" data-match="${m.id}" tabindex="0" role="button">
       <div class="rc-score"><span class="${gagne(m.ext) ? "gagne" : ""}"><b>${abr(m.ext)}</b> ${m.se}</span><span class="rc-tiret">–</span><span class="${gagne(m.dom) ? "gagne" : ""}">${m.sd} <b>${abr(m.dom)}</b></span><small>Final${suffixeFin(m)}${fav ? " · ⭐" : ""}</small></div>
       <p>${vide ? "Le récit arrive dès que les statistiques du match sont disponibles." : recitMatch(m, lignes)}</p>
-      <span class="rc-lien">Sommaire du match ›</span></article>`);
+      <span class="rc-lien">Lire la suite ›</span></article>`);
   }
   if (jeton !== jetonRecits) return;
   $("recits-date").textContent = dateLongue(date);
@@ -1079,7 +1082,7 @@ async function rendreSemaine() {
   const jeton = ++jetonSemaine, lig = ligue, debut = decaler(AUJ, -6); // aujourd'hui et les 6 jours d'avant
   const ms = matchsLigue(lig).filter((m) => estFini(m) && m.date >= debut && m.date <= AUJ);
   const boite = $("semaine");
-  if (!ms.length) { boite.innerHTML = `<p class="vide">Aucun match dans les 7 derniers jours.</p>`; return; }
+  if (!ms.length) { boite.innerHTML = `<p class="vide">Aucun match dans les 7 derniers jours.</p>`; $("mini-semaine").innerHTML = `<li class="vide">Aucun match dans les 7 derniers jours.</li>`; return; }
   const joueurs = new Map(), equipes = new Map();
   for (const m of ms) {
     for (const eq of [m.dom, m.ext]) {
@@ -1108,8 +1111,9 @@ async function rendreSemaine() {
     ${top[0] ? carte("Joueur de la semaine", `data-fiche="${top[0].j.id}"`, echapper(top[0].j.nom), `${abr(top[0].j.eq)} · ${top[0].b} B, ${top[0].a} A en ${pluriel(top[0].pj, "match")}`) : ""}
     ${g ? carte("Gardien de la semaine", `data-fiche="${g.j.id}"`, echapper(g.j.nom), `${abr(g.j.eq)} · ${pct3(g.sv / g.sa)} en ${pluriel(g.pj, "match")}`) : ""}
     ${e ? carte("Équipe de la semaine", `data-equipe-fiche="${e.eq}"`, echapper(nomEq(e.eq)), `${e.v}-${e.d}-${e.dp} · ${signe(e.bp - e.bc)} au différentiel`) : ""}
-    ${mdm ? carte("Match de la semaine", `data-match="${mdm.id}"`, `${abr(mdm.ext)} ${mdm.se} – ${mdm.sd} ${abr(mdm.dom)}${suffixeFin(mdm)}`, dateLongue(mdm.date)) : ""}</div>
-    ${top.length ? `<h4 class="mini-titre sem-titre">Les meilleurs pointeurs</h4><ol class="meneurs">${top.map((x) => `<li data-fiche="${x.j.id}"><span class="nom">${echapper(x.j.nom)}${favoris.includes(x.j.id) ? " ⭐" : ""}<small>${echapper(courtEq(x.j.eq))} · ${x.b} B, ${x.a} A en ${pluriel(x.pj, "match")}</small></span><span class="val">${x.b + x.a}</span></li>`).join("")}</ol>` : ""}`;
+    ${mdm ? carte("Match de la semaine", `data-match="${mdm.id}"`, `${abr(mdm.ext)} ${mdm.se} – ${mdm.sd} ${abr(mdm.dom)}${suffixeFin(mdm)}`, dateLongue(mdm.date)) : ""}</div>`;
+  $("mini-semaine").innerHTML = top.length ? top.map((x) => `<li data-fiche="${x.j.id}"><span class="nom">${echapper(x.j.nom)}${favoris.includes(x.j.id) ? " ⭐" : ""}<small>${echapper(courtEq(x.j.eq))} · ${x.b} B, ${x.a} A en ${pluriel(x.pj, "match")}</small></span><span class="val">${x.b + x.a}</span></li>`).join("")
+    : `<li class="vide">Aucun point cette semaine.</li>`;
 }
 const rendreUneBase = rendreUne;
 rendreUne = async function () { await rendreUneBase(); rendreSemaine(); };
@@ -1231,4 +1235,33 @@ async function rendreChiffreDuJour() {
     <b class="cdj-nombre">${echapper(String(c.chiffre))}</b><span><span class="cdj-texte">${echapper(c.texte)}</span><small>${echapper(c.detail || "")}</small></span></button>`;
   $("bloc-chiffre").hidden = false;
 }
+// ---- Accueil : un seul bloc Meneurs, trois périodes (Saison, En feu, Semaine) ----
+document.querySelector(".bloc-meneurs").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-mm]");
+  if (!b) return;
+  for (const o of b.parentElement.children) { o.classList.toggle("actif", o === b); $(o.dataset.mm).hidden = o !== b; }
+  $("mm-note").textContent = b.dataset.note;
+});
+
+// ---- Photo du joueur dans sa fiche ----
+// Seulement des photos libres de droits (Wikimedia Commons, voir scripts/maj-photos.mjs).
+// La licence exige d'indiquer l'auteur et la licence : on les écrit sous le nom, avec la date de la photo.
+let photosJoueurs = null;
+function datePhoto(d) {
+  const [a, m, j] = d.split("-");
+  return j ? `le ${Number(j)}${j === "01" ? "er" : ""} ${MOIS[m - 1]} ${a}` : m ? `en ${MOIS[m - 1]} ${a}` : `en ${a}`;
+}
+async function afficherPhoto(id) {
+  photosJoueurs ||= lireJson("data/photos.json").catch(() => null);
+  const p = (await photosJoueurs)?.photos?.[id];
+  if (!p || modaleActuelle?.t !== "joueur" || modaleActuelle.id !== id) return;
+  const haut = $("fiche").querySelector(".fiche-haut"), num = haut?.querySelector(".numero");
+  if (!num) return;
+  const img = document.createElement("img");
+  Object.assign(img, { className: "fiche-photo", src: p.u, alt: `Photo de ${joueur(id)?.nom || "ce joueur"}` });
+  img.onerror = () => { img.replaceWith(num); haut.querySelector(".credit-photo")?.remove(); }; // photo introuvable : on remet le numéro
+  num.replaceWith(img);
+  haut.querySelector(":scope > div")?.insertAdjacentHTML("beforeend", `<p class="credit-photo">📷 Photo prise ${datePhoto(p.d)} · <a href="${echapper(p.f)}" target="_blank" rel="noopener">${echapper(p.a)}, ${echapper(p.l)}, via Wikimedia Commons</a></p>`);
+}
+
 demarrer().then(() => { verifierAlertes(); synchroniserPush(); rendreChiffreDuJour(); });

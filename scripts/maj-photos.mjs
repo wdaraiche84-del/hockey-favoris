@@ -3,9 +3,11 @@
 // Seulement des photos libres de droits, prises sur Wikimedia Commons
 // (la banque d'images de Wikipédia) : licences CC BY, CC BY-SA, CC0 ou
 // domaine public. Pour chaque joueur :
-//   1. Wikidata donne sa catégorie Commons (grâce à son numéro LNH) ;
-//   2. on garde la photo DATÉE la plus récente dont le nom contient le
-//      nom du joueur (pour éviter les photos d'équipe ou d'autres joueurs).
+//   1. Wikidata donne sa catégorie Commons et sa photo principale (celle
+//      choisie par Wikipédia), grâce à son numéro LNH ;
+//   2. on garde la photo DATÉE la plus récente parmi sa photo principale
+//      et les photos de sa catégorie dont le titre contient son nom complet,
+//      sans le nom d'un autre joueur ni un objet (gants, bâton, chandail…).
 // Résultat : data/photos.json, avec pour chaque photo son auteur, sa
 // licence et sa date (affichés sous la photo, comme la licence l'exige).
 // Chaque joueur est revérifié aux 14 jours (au plus 250 par passage).
@@ -41,16 +43,20 @@ export function dateDe(brut) {
   return [m[1], m[2], m[3]].filter(Boolean).join("-");
 }
 
-// La meilleure photo parmi celles d'une catégorie : libre, datée, au nom du joueur, la plus récente
-export function choisir(pages, nom) {
-  const famille = simple(nom.split(" ").slice(1).join(" ") || nom);
+// La meilleure photo : libre, datée, la plus récente. La photo principale (choisie par Wikipédia)
+// est acceptée telle quelle ; les autres doivent montrer ce joueur seul, et pas un objet.
+export function choisir(pages, nom, { principale = "", autres = [] } = {}) {
+  const complet = simple(nom);
   const bonnes = [];
   for (const p of pages) {
     const ii = p.imageinfo?.[0], md = ii?.extmetadata || {};
     if (!ii?.thumburl || ii.mime !== "image/jpeg") continue;
-    const titre = p.title.replace(/^File:/, "");
-    if (!simple(titre).includes(famille)) continue;
-    if (/\b(and|vs\.?|team|teams|lineup|group)\b|&/i.test(titre)) continue; // photos de groupe
+    const titre = p.title.replace(/^File:/, ""), t = simple(titre);
+    if (titre !== principale) {
+      if (!t.includes(complet)) continue;
+      if (/\b(and|with|vs\.?|team|teams|lineup|group|gloves?|sticks?|jersey|sweater|helmet|mask|skates?|autograph|signature|card|banner|statue|mural)\b|&/i.test(titre.replace(/[_-]/g, " "))) continue;
+      if (autres.some((a) => a !== complet && t.includes(a))) continue; // un autre joueur est nommé
+    }
     const licence = sansHtml(md.LicenseShortName?.value);
     if (!LICENCES.test(licence)) continue;
     const d = dateDe(md.DateTimeOriginal?.value);
@@ -58,6 +64,12 @@ export function choisir(pages, nom) {
     bonnes.push({ u: ii.thumburl, f: ii.descriptionurl, a: sansHtml(md.Artist?.value).slice(0, 80) || "Auteur inconnu", l: licence, d });
   }
   return bonnes.sort((x, y) => y.d.localeCompare(x.d))[0] || null;
+}
+
+async function fichiers(titres) {
+  const p = new URLSearchParams({ action: "query", format: "json", formatversion: "2", titles: titres.join("|"), prop: "imageinfo",
+    iiprop: "url|mime|extmetadata", iiurlwidth: "330", iiextmetadatafilter: "DateTimeOriginal|LicenseShortName|Artist" });
+  return (await lire(`https://commons.wikimedia.org/w/api.php?${p}`)).query?.pages || [];
 }
 
 async function categorie(cat) {
@@ -80,24 +92,30 @@ if (process.argv[1]?.endsWith("maj-photos.mjs")) {
   if (!aFaire.length) { console.log("Photos : tout est à jour."); process.exit(0); }
 
   // 1. Wikidata : numéro LNH → catégorie Commons (une seule requête pour tout le groupe)
-  const requete = `SELECT ?id ?cat WHERE { VALUES ?id { ${aFaire.map((j) => `"${j.id}"`).join(" ")} } ?p wdt:P3522 ?id ; wdt:P373 ?cat . }`;
+  const requete = `SELECT ?id ?cat ?img WHERE { VALUES ?id { ${aFaire.map((j) => `"${j.id}"`).join(" ")} } ?p wdt:P3522 ?id . OPTIONAL { ?p wdt:P373 ?cat } OPTIONAL { ?p wdt:P18 ?img } }`;
   const res = await lire("https://query.wikidata.org/sparql", { method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/sparql-results+json" },
     body: new URLSearchParams({ query: requete }) });
-  const cats = new Map(res.results.bindings.map((b) => [b.id.value, b.cat.value]));
+  const cats = new Map(), principales = new Map();
+  for (const b of res.results.bindings) {
+    if (b.cat) cats.set(b.id.value, b.cat.value);
+    if (b.img) principales.set(b.id.value, decodeURIComponent(b.img.value.split("/").pop()).replace(/_/g, " "));
+  }
+  const autres = lnh.joueurs.map((j) => simple(j.nom));
 
   // 2. Commons : la photo la plus récente de chaque joueur
   let trouvees = 0, erreurs = 0;
   for (const j of aFaire) {
-    const cat = cats.get(String(j.id));
+    const cat = cats.get(String(j.id)), principale = principales.get(String(j.id));
     try {
-      const photo = cat ? choisir(await categorie(cat), j.nom) : null;
+      const pages = [...(cat ? await categorie(cat) : []), ...(principale ? await fichiers([`File:${principale}`]) : [])];
+      const photo = choisir(pages, j.nom, { principale, autres });
       if (photo) { etat.photos[j.id] = photo; trouvees++; } else delete etat.photos[j.id];
       etat.vu[j.id] = jourQc;
     } catch (e) { erreurs++; }
-    if (cat) await pause(300); // poli envers Wikimedia
+    if (cat || principale) await pause(300); // poli envers Wikimedia
   }
   await writeFile(FICHIER, JSON.stringify(etat) + "\n");
-  console.log(`Photos : ${aFaire.length} joueurs vérifiés (${cats.size} avec une catégorie Commons), ${trouvees} photos, ${erreurs} erreurs. Total : ${Object.keys(etat.photos).length} photos.`);
+  console.log(`Photos : ${aFaire.length} joueurs vérifiés (${cats.size} avec une catégorie Commons, ${principales.size} avec une photo principale), ${trouvees} photos, ${erreurs} erreurs. Total : ${Object.keys(etat.photos).length} photos.`);
   if (erreurs > aFaire.length / 2) process.exit(1);
 }
