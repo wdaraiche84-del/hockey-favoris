@@ -18,8 +18,8 @@ RACINE = pathlib.Path(__file__).resolve().parent.parent
 POLICES = RACINE / "scripts" / "polices"
 SORTIE = RACINE / "images" / "partage"
 VERSION = "5"  # changer ce chiffre refait toutes les images (nouveau dessin)
-LIGUES = {"lnh": "LNH", "ahl": "LAH", "lhjmq": "LHJMQ", "ohl": "OHL", "whl": "WHL", "khl": "KHL", "shl": "SHL", "liiga": "Liiga", "nl": "National League"}
-PAYS = {"lnh": "Ligue nationale de hockey", "ahl": "Ligue américaine de hockey", "lhjmq": "Junior · Québec et Maritimes", "ohl": "Junior · Ontario", "whl": "Junior · Ouest canadien et américain", "khl": "Russie", "shl": "Suède", "liiga": "Finlande", "nl": "Suisse"}
+LIGUES = {"lnh": "LNH", "ahl": "LAH", "lhjmq": "LHJMQ", "ohl": "OHL", "whl": "WHL", "khl": "KHL", "shl": "SHL", "liiga": "Liiga", "nl": "National League", "ncaa": "NCAA"}
+PAYS = {"lnh": "Ligue nationale de hockey", "ahl": "Ligue américaine de hockey", "lhjmq": "Junior · Québec et Maritimes", "ohl": "Junior · Ontario", "whl": "Junior · Ouest canadien et américain", "khl": "Russie", "shl": "Suède", "liiga": "Finlande", "nl": "Suisse", "ncaa": "Universitaire · États-Unis"}
 POS = {"AG": "Ailier gauche", "C": "Centre", "AD": "Ailier droit", "AV": "Attaquant", "D": "Défenseur", "G": "Gardien"}
 LOGO = (RACINE / "icones" / "logo.svg").read_text().replace("<svg ", '<svg width="150" height="150" ', 1)
 

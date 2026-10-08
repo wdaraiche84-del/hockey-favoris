@@ -60,6 +60,7 @@ const LIGUES = {
   liiga: { nom: "Liiga", long: "Finlande", pointsSeulement: true },
   shl:   { nom: "SHL",   long: "Suède" },
   nl:    { nom: "NL",    long: "Suisse · National League" },
+  ncaa:  { nom: "NCAA",  long: "Universitaire · États-Unis" },
 };
 const NOMS_CONF = { Eastern: "Association de l'Est", Western: "Association de l'Ouest" };
 const NOMS_DIV = { Atlantic: "Division Atlantique", Metropolitan: "Division Métropolitaine", Central: "Division Centrale", Pacific: "Division Pacifique" };
@@ -168,7 +169,8 @@ function prochainMatch(eq) {
 // ---- 3. Les favoris (gardés dans le navigateur du visiteur) --
 let favoris = [];
 function lireFavoris() {
-  try { const s = memoire("mes-favoris-hockey"); if (s) return JSON.parse(s); } catch (e) {}
+  // Les anciens identifiants (ex. "hage", avant que sa ligue soit sur le site) sont convertis
+  try { const s = memoire("mes-favoris-hockey"); if (s) return JSON.parse(s).map((id) => ANCIENS_IDS[id] || id); } catch (e) {}
   return [...FAVORIS_DE_DEPART];
 }
 const sauverFavoris = () => memoire("mes-favoris-hockey", JSON.stringify(favoris));
@@ -183,7 +185,7 @@ function ajouter(id) { if (!favoris.includes(id)) favoris.push(id); sauverFavori
 function retirer(id) { favoris = favoris.filter((f) => f !== id); sauverFavoris(); rafraichir(); }
 
 // ---- 4. Choix de la ligue ------------------------------------
-const GROUPES_LIGUES = [["Pro", ["lnh", "ahl"]], ["Junior", ["lhjmq", "ohl", "whl"]], ["Europe", ["khl", "shl", "liiga", "nl"]]];
+const GROUPES_LIGUES = [["Pro", ["lnh", "ahl"]], ["Junior", ["lhjmq", "ohl", "whl"]], ["Europe", ["khl", "shl", "liiga", "nl"]], ["Universitaire", ["ncaa"]]];
 function rendreChoixLigue() {
   $("choix-ligue").innerHTML = GROUPES_LIGUES.map(([g, ls]) => `<div class="groupe-ligues"><span class="groupe-nom">${g}</span>${ls.map((k) =>
     `<button class="puce-ligue ${k === ligue ? "actif" : ""}" data-ligue="${k}" role="tab" aria-selected="${k === ligue}" title="${LIGUES[k].long}">${LIGUES[k].nom}</button>`).join("")}</div>`).join("");
@@ -884,7 +886,7 @@ function allerA(page) {
   fermerRecherche();
 }
 // Adresse lisible d'un joueur, d'une équipe ou d'un match (voir plus.js)
-const adresseJolie = () => /\/(lnh|lah|lhjmq|ohl|whl|khl|shl|liiga|nl)\/(joueur|equipe|match)\/([^/]+)\/(?:([^/]+)\/)?$/.exec(location.pathname);
+const adresseJolie = () => /\/(lnh|lah|lhjmq|ohl|whl|khl|shl|liiga|nl|ncaa)\/(joueur|equipe|match)\/([^/]+)\/(?:([^/]+)\/)?$/.exec(location.pathname);
 const pageDeLAdresse = () => (location.hash.match(/^#\/(\w+)/) || [])[1] || "accueil";
 window.addEventListener("hashchange", () => { if (!ouvrirDepuisAdresse()) allerA(pageDeLAdresse()); });
 // Retour / avant dans l'historique vers une adresse lisible (sans « # »)

@@ -43,7 +43,7 @@ function routeModale() {
 }
 // Adresses lisibles, comme les grands sites : lnh/joueur/nick-suzuki/8480018/
 // (même règle que le robot scripts/maj-partage.mjs, qui crée une page pour chacune)
-const PREFIXE = { lnh: "lnh", ahl: "lah", lhjmq: "lhjmq", ohl: "ohl", whl: "whl", khl: "khl", shl: "shl", liiga: "liiga", nl: "nl" };
+const PREFIXE = { lnh: "lnh", ahl: "lah", lhjmq: "lhjmq", ohl: "ohl", whl: "whl", khl: "khl", shl: "shl", liiga: "liiga", nl: "nl", ncaa: "ncaa" };
 const slugUrl = (t) => String(t).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "x";
 function cheminJoli(type, id) {
   if (type === "joueur") { const j = joueur(id); return j && j.lig ? `${PREFIXE[j.lig]}/joueur/${slugUrl(j.nom)}/${j.id}/` : null; }
@@ -303,7 +303,8 @@ function article(eq) {
   // Les surnoms au pluriel : « les Canadiens », « les Hitmen », « les ZSC Lions »
   if (/(s|men)$/i.test(n)) return { le: `les ${n}`, du: `des ${n}`, au: `aux ${n}`, pl: true };
   // En Europe, les autres équipes portent surtout un nom de ville : pas d'article (« Fribourg-Gottéron », « de Lausanne »)
-  if (["khl", "shl", "liiga", "nl"].includes(ligueDe(eq))) {
+  // En NCAA aussi : on parle de « Michigan » ou de « Boston College », sans article
+  if (["khl", "shl", "liiga", "nl", "ncaa"].includes(ligueDe(eq))) {
     const voy = /^[aeiouhéèêàâîôûAEIOUHÉÈÄÖÜ]/.test(n);
     return { le: n, du: `${voy ? "d'" : "de "}${n}`, au: `à ${n}`, pl: false };
   }
@@ -313,6 +314,11 @@ function article(eq) {
 const majuscule = (t) => t.charAt(0).toUpperCase() + t.slice(1);
 const JOURS_LONGS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
 function recitMatch(m, lignes) {
+  // Match nul (possible en NCAA après la prolongation)
+  if (m.sd === m.se) {
+    const a1 = article(m.ext), a2 = article(m.dom), jourN = JOURS_LONGS[versDate(m.date).getDay()];
+    return echapper(`${majuscule(a1.le)} et ${a2.le} ont fait match nul ${m.se}-${m.sd}, ${jourN}, après la prolongation.`);
+  }
   const gagnantDom = m.sd > m.se, W = gagnantDom ? m.dom : m.ext, L = gagnantDom ? m.ext : m.dom;
   const sw = Math.max(m.sd, m.se), sl = Math.min(m.sd, m.se), ecart = sw - sl;
   const aW = article(W), aL = article(L), v = (a, sing, plur) => (a.pl ? plur : sing);
@@ -1143,9 +1149,9 @@ function ouvrirAPropos() {
   montrerModale(`<div class="fiche-haut">${boutonRetour()}<div><h2>À propos</h2><p>MonTrioHockey : le hockey de toutes les ligues, en français.</p></div><button class="fermer" aria-label="Fermer">✕</button></div>
   <div class="fiche-corps texte-long">
     <h3>Le site</h3>
-    <p>MonTrioHockey est un site de fan indépendant, fait au Québec. Il regroupe les scores, les classements, les stats et des récits de match pour 9 ligues : LNH, LAH, LHJMQ, OHL, WHL, KHL, SHL, Liiga et National League. Ajoute tes joueurs préférés à tes favoris et suis leurs matchs, peu importe où ils jouent.</p>
+    <p>MonTrioHockey est un site de fan indépendant, fait au Québec. Il regroupe les scores, les classements, les stats et des récits de match pour 10 ligues : LNH, LAH, LHJMQ, OHL, WHL, KHL, SHL, Liiga, National League et NCAA (hockey universitaire américain). Ajoute tes joueurs préférés à tes favoris et suis leurs matchs, peu importe où ils jouent.</p>
     <h3>D'où viennent les données</h3>
-    <p>Les statistiques proviennent des données publiques des ligues. Elles sont mises à jour automatiquement environ aux 30 minutes, et en direct pendant les matchs. Les récits, les 3 étoiles et les performances sont écrits automatiquement par MonTrioHockey à partir de ces statistiques. Malgré nos efforts, une erreur peut se glisser : les sites officiels des ligues font foi.</p>
+    <p>Les statistiques proviennent des données publiques des ligues. Pour la NCAA, elles viennent de <b>College Hockey News</b> (collegehockeynews.com). Elles sont mises à jour automatiquement environ aux 30 minutes, et en direct pendant les matchs. Les récits, les 3 étoiles et les performances sont écrits automatiquement par MonTrioHockey à partir de ces statistiques. Malgré nos efforts, une erreur peut se glisser : les sites officiels des ligues font foi.</p>
     <p>MonTrioHockey n'est affilié à aucune ligue ni à aucune équipe. Les noms des ligues et des équipes appartiennent à leurs propriétaires respectifs.</p>
 
     <h3 id="confidentialite">Confidentialité</h3>

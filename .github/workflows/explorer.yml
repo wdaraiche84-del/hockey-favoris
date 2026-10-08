@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches: [claude/magical-wozniak-ido4qi]
-    paths: ["scripts/explorer.mjs"]
+    paths: ["scripts/explorer.mjs", "scripts/maj-ncaa.mjs"]
 permissions:
   contents: write
 jobs:
@@ -15,7 +15,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: node scripts/explorer.mjs > explo.txt 2>&1 || true
+      - run: (time node scripts/maj-ncaa.mjs) > explo.txt 2>&1 || true
+      - run: mkdir -p pages && cp -r data/ligues/ncaa pages/
       - name: Ranger le résultat sur une branche à part
         run: |
           git config user.name "robot-stats"
