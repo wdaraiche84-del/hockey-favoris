@@ -19,7 +19,7 @@ const TOKEN = process.env.DISCORD_TOKEN;
 // (le bot ne peut donner que des droits qu'il a lui-même : voir, écrire, liens, historique)
 const VOIR = 1 << 10, ECRIRE = 1 << 11, LIENS = 1 << 14, HISTORIQUE = 1 << 16;
 
-async function api(chemin, methode = "GET", corps) {
+export async function api(chemin, methode = "GET", corps) {
   for (let essai = 1; ; essai++) {
     const r = await fetch(API + chemin, {
       method: methode,
@@ -79,6 +79,15 @@ export async function installer() {
     if (c) await api(`/channels/${c.id}/permissions/${moi}`, "PUT", { type: 1, allow: droitsBot.allow, deny: "0" });
   }
   console.log("✔ Le bot peut écrire dans #résultats, #annonces et #bienvenue");
+
+  // Le bot peut écrire dans #modération (salon privé de l'équipe) pour la surveillance du site
+  const equipe = salons.find((c) => c.type === 4 && c.name === "🔒 ÉQUIPE");
+  const moderation = salon("modération");
+  if (equipe && moderation) {
+    await api(`/channels/${equipe.id}/permissions/${moi}`, "PUT", { type: 1, allow: droitsBot.allow, deny: "0" });
+    await api(`/channels/${moderation.id}/permissions/${moi}`, "PUT", { type: 1, allow: droitsBot.allow, deny: "0" });
+    console.log("✔ Le bot peut écrire dans #modération (surveillance du site)");
+  }
 
   // 4. Le rôle du bot doit être au-dessus de 🔔 Annonces pour pouvoir le donner
   const annonces = roles.find((r) => r.name === "🔔 Annonces");

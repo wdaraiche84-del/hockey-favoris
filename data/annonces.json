@@ -3,5 +3,10 @@
   "id": "2026-10-08-discord",
   "titre": "🤖 Le bot MonTrioHockey arrive sur Discord!",
   "texte": "• **#résultats** : le résultat de chaque match de la LNH, dès la fin du match.\n• **/score** : les matchs du jour, en direct.\n• **/joueur** : les stats d'un joueur (ex. `/joueur Suzuki`).\n• **/classement** : le classement de la LNH.\n• Le bouton **🔔 Recevoir les annonces** dans #bienvenue pour être mentionné lors des grosses nouveautés.\n\nEt le site compte maintenant **10 ligues**, avec la NCAA!"
+ },
+ {
+  "id": "2026-10-09-equipes-chiffre",
+  "titre": "⭐ Nouveau sur MonTrioHockey : tes équipes favorites et le chiffre du jour",
+  "texte": "• **Tes équipes favorites** : sur la page d'une équipe (n'importe quelle ligue), touche **⭐ Ajouter à mes équipes**. Ses matchs apparaissent dans « Ce soir pour tes favoris », dans ton calendrier et dans Mes favoris. Pour la LNH, les alertes suivent aussi ton équipe.\n• **📊 Le chiffre du jour** : chaque matin, une stat étonnante de la LNH sur l'accueil du site, et ici dans #lnh."
  }
 ]

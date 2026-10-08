@@ -34,33 +34,57 @@ jobs:
           node-version: 20
 
       - name: Aller chercher les stats de la LNH
+        id: lnh
         run: node scripts/maj-donnees.mjs
 
       - name: Fiches complètes LNH (bio, repêchage, carrière) — une fois par jour
+        id: bios
         run: node scripts/maj-bios.mjs
         continue-on-error: true
 
       - name: Aller chercher les stats de la LAH et des juniors
+        id: autres
         run: node scripts/maj-autres-ligues.mjs
         continue-on-error: true
 
       - name: Aller chercher les ligues européennes (KHL, SHL, Liiga, NL)
+        id: europe
         run: node scripts/maj-europe.mjs
         continue-on-error: true
 
       - name: Aller chercher la NCAA (hockey universitaire)
+        id: ncaa
         run: node scripts/maj-ncaa.mjs
         continue-on-error: true
 
       - name: Faire les images de partage (seulement les nouvelles)
+        id: images
         run: python3 scripts/maj-images.py
         continue-on-error: true
 
       - name: Préparer les liens de partage (un aperçu par joueur, équipe et match)
+        id: partage
         run: node scripts/maj-partage.mjs
         continue-on-error: true
 
+      - name: Le chiffre du jour (une fois par jour, après 8 h ; publié aussi dans #lnh sur Discord)
+        id: chiffre
+        run: node scripts/chiffre-du-jour.mjs
+        continue-on-error: true
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+
+      - name: Surveiller les robots (message dans #modération sur Discord si un problème apparaît)
+        if: always()
+        continue-on-error: true
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          ETAPES: '{"lnh":"${{ steps.lnh.outcome }}","bios":"${{ steps.bios.outcome }}","autres":"${{ steps.autres.outcome }}","europe":"${{ steps.europe.outcome }}","ncaa":"${{ steps.ncaa.outcome }}","images":"${{ steps.images.outcome }}","partage":"${{ steps.partage.outcome }}","chiffre":"${{ steps.chiffre.outcome }}"}'
+          LIEN_EXECUTION: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node scripts/surveillance.mjs
+
       - name: Enregistrer les nouvelles données
+        if: always()
         run: |
           git config user.name "robot-stats"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

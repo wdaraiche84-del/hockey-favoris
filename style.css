@@ -730,8 +730,14 @@ button.score-carte:hover { background: #333; }
 /* Téléphone et tablette : « Ce soir pour tes favoris » passe en premier sur l'accueil */
 @media (max-width: 960px) {
   [data-page="accueil"] .grille-2 > .pile { display: contents; }
-  [data-page="accueil"] .bloc-soir { order: -1; }
+  [data-page="accueil"] .bloc-soir, [data-page="accueil"] .bloc-chiffre { order: -1; }
 }
+/* ---- Le chiffre du jour ---- */
+.cdj { display: flex; align-items: center; gap: 16px; width: 100%; text-align: left; background: none; border: 0; padding: 0; color: inherit; font: inherit; cursor: pointer; }
+.cdj-nombre { font-family: var(--titre); font-weight: 800; font-size: 3.4rem; line-height: 1; color: var(--accent); min-width: 64px; text-align: center; }
+.cdj-texte { display: block; font-weight: 600; }
+.cdj small { display: block; margin-top: 4px; color: var(--texte-doux); }
+.cdj:hover .cdj-texte { text-decoration: underline; }
 
 /* ---- Meneurs en onglets, stats avancées, recrues ---- */
 .meneurs-onglets { grid-column: 1 / -1; max-width: 560px; margin: 0; }

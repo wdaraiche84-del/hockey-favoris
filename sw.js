@@ -6,8 +6,8 @@
 // ouvrir l'app même sans connexion (avec les dernières données vues).
 // Pour forcer une mise à jour chez tout le monde, change VERSION.
 // =============================================================
-const VERSION = "montrio-v35";
-const ESSENTIEL = ["./", "index.html", "style.css?v=35", "app.js?v=35", "plus.js?v=35", "config.js?v=35", "donnees.js?v=35", "manifest.webmanifest", "icones/icone-192.png"];
+const VERSION = "montrio-v36";
+const ESSENTIEL = ["./", "index.html", "style.css?v=36", "app.js?v=36", "plus.js?v=36", "config.js?v=36", "donnees.js?v=36", "manifest.webmanifest", "icones/icone-192.png"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(ESSENTIEL)).then(() => self.skipWaiting()));

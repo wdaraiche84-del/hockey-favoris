@@ -430,7 +430,9 @@ async function ouvrirEquipe(eq, opt = {}) {
   const e = D.equipes[eq];
   let h = `<div class="fiche-haut equipe-haut">${boutonRetour()}<span class="numero equipe-pastille">${abr(eq)}</span>
     <div><h2>${echapper(nomEq(eq))}</h2><p><span class="tag-ligue petit">${LIGUES[lig].nom}</span> ${[e.conf, e.div].filter((x, i, a) => x && a.indexOf(x) === i && x !== LIGUES[lig].nom).map(echapper).join(" · ")}</p>
-      <p class="fiche-boutons">        <button class="btn fantome" data-partager="equipe/${eq}" data-titre="${echapper(nomEq(eq))} · MonTrioHockey">↗ Partager</button></p></div>
+      <p class="fiche-boutons">${mesEquipes.includes(eq) ? `<button class="btn leger" data-equipe-retirer="${eq}" data-garder>★ Retirer de mes équipes</button>`
+        : `<button class="btn accent" data-equipe-ajouter="${eq}" data-garder>⭐ Ajouter à mes équipes</button>`}
+        <button class="btn fantome" data-partager="equipe/${eq}" data-titre="${echapper(nomEq(eq))} · MonTrioHockey">↗ Partager</button></p></div>
     <button class="fermer" aria-label="Fermer">✕</button></div><div class="fiche-corps">`;
   h += `<div class="tuiles">
     ${tuile(r ? ieme(r.ligueRang) : "–", `rang · ${LIGUES[lig].nom}`)}
@@ -861,7 +863,8 @@ async function verifierPush() {
 const b64uVersOctets = (s) => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4)), (c) => c.charCodeAt(0));
 function favorisLnh() {
   const fav = favorisObjets().filter((j) => j.lig === "lnh");
-  return { joueurs: fav.map((j) => j.id).filter((id) => /^\d+$/.test(id)), equipes: [...new Set(fav.map((j) => j.eq))] };
+  const equipes = [...fav.map((j) => j.eq), ...mesEquipes.filter((e) => ligDeId(e) === "lnh")];
+  return { joueurs: fav.map((j) => j.id).filter((id) => /^\d+$/.test(id)), equipes: [...new Set(equipes)].filter((e) => /^[A-Z]{3}$/.test(e)) };
 }
 async function abonnementPush(creer) {
   // On n'attend jamais plus de 4 secondes (ex. navigation privée sans « service worker »)
@@ -904,7 +907,7 @@ $("alertes").onclick = async () => {
     try {
       await abonnementPush(true); await synchroniserPush();
       const { joueurs, equipes } = favorisLnh();
-      return toast(joueurs.length ? `Alertes activées! Ton téléphone t'avertira 30 minutes avant le match, quand tes favoris de la LNH marquent et à la fin du match (${pluriel(equipes.length, "équipe")}), même si MonTrioHockey est fermé.` : "Alertes activées. Ajoute des joueurs de la LNH à tes favoris pour recevoir les rappels de matchs et leurs buts.", 7000);
+      return toast(joueurs.length || equipes.length ? `Alertes activées! Ton téléphone t'avertira 30 minutes avant le match, quand tes favoris de la LNH marquent et à la fin du match (${pluriel(equipes.length, "équipe")}), même si MonTrioHockey est fermé.` : "Alertes activées. Ajoute des joueurs de la LNH à tes favoris pour recevoir les rappels de matchs et leurs buts.", 7000);
     } catch (e) {}
   }
   if (iPhoneNav) return toast("Sur iPhone, installe d'abord MonTrioHockey sur ton écran d'accueil pour recevoir des alertes même quand l'app est fermée. En attendant, tu seras averti pendant que MonTrioHockey est ouvert.", 9000);
@@ -919,6 +922,10 @@ ajouter = function (id) {
   if (!$("recherche-fond").hidden) rendreRecherche();
   if (!deja) toast(`⭐ ${joueur(id)?.nom || "Joueur"} est ajouté à tes favoris.`);
 };
+// Mes équipes : on prévient le relais (alertes) et on confirme d'un message
+const ajouterEquipeBase = ajouterEquipe, retirerEquipeBase = retirerEquipe;
+ajouterEquipe = function (eq) { ajouterEquipeBase(eq); synchroniserPush(); toast(`⭐ ${nomEq(eq)} est ajoutée à tes équipes.`); };
+retirerEquipe = function (eq) { retirerEquipeBase(eq); synchroniserPush(); toast(`${nomEq(eq)} est retirée de tes équipes.`); };
 retirer = function (id) {
   retirerBase(id); synchroniserPush();
   if (!$("recherche-fond").hidden) rendreRecherche();
@@ -1189,4 +1196,14 @@ if (ANALYTIQUE) {
   s.dataset.cfBeacon = JSON.stringify({ token: ANALYTIQUE });
   document.head.appendChild(s);
 }
-demarrer().then(() => { verifierAlertes(); synchroniserPush(); });
+// Le chiffre du jour (choisi chaque matin par le robot, voir scripts/chiffre-du-jour.mjs)
+async function rendreChiffreDuJour() {
+  const c = await lireJson("data/chiffre-du-jour.json").catch(() => null);
+  if (!c || !c.chiffre || c.date < decaler(AUJ, -1)) return; // rien, ou trop vieux
+  const lien = /^#\/(joueur|equipe|match)\/(.+)$/.exec(c.lien || "") || [];
+  const attr = { joueur: "data-fiche", equipe: "data-equipe-fiche", match: "data-match" }[lien[1]];
+  $("chiffre-du-jour").innerHTML = `<button class="cdj" ${attr ? `${attr}="${echapper(lien[2])}"` : ""}>
+    <b class="cdj-nombre">${echapper(String(c.chiffre))}</b><span><span class="cdj-texte">${echapper(c.texte)}</span><small>${echapper(c.detail || "")}</small></span></button>`;
+  $("bloc-chiffre").hidden = false;
+}
+demarrer().then(() => { verifierAlertes(); synchroniserPush(); rendreChiffreDuJour(); });
