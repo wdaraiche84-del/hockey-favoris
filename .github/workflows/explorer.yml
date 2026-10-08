@@ -21,9 +21,11 @@ jobs:
           git config user.name "robot-stats"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           mv explo.txt /tmp/explo.txt
+          mkdir -p pages && mv pages /tmp/pages
           git checkout --orphan exploration
           git rm -rfq .
           mv /tmp/explo.txt explo.txt
-          git add explo.txt
+          mv /tmp/pages pages
+          git add explo.txt pages
           git commit -qm "Résultat de l'exploration"
           git push -f origin exploration
