@@ -15,4 +15,4 @@ const SECONDES_DIRECT = 20;
 // Compteur de visites (Cloudflare Web Analytics : sans témoins ni suivi).
 // C'est le « token » du bout de code donné par Cloudflare ; il n'est pas secret.
 // Laisse vide pour ne rien compter.
-const ANALYTIQUE = "";
+const ANALYTIQUE = "7528b43f97be40a9b466f2f7b8f1c8b5";
