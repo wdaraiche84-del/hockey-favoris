@@ -43,3 +43,29 @@ Largement suffisant pour commencer : le relais n'écrit dans son espace que
 lorsqu'un but est marqué ou qu'un match se termine.
 Sur iPhone, les alertes fonctionnent seulement si MonTrioHockey est installé sur
 l'écran d'accueil (iOS 16.4 ou plus récent).
+
+## Le bot Discord (résultats, commandes, bouton 🔔 Annonces)
+
+Le relais sert aussi de bot Discord :
+- le résultat de chaque match de la LNH dans **#résultats**, dès la fin du match ;
+- les commandes **/score**, **/joueur** et **/classement** ;
+- le bouton **🔔 Recevoir les annonces** (dans #bienvenue) qui donne ou enlève le rôle.
+
+Le robot GitHub `.github/workflows/discord.yml` installe le salon #résultats,
+le bouton et les commandes, et publie dans #annonces chaque nouvelle entrée de
+`data/annonces.json`.
+
+À configurer une fois :
+1. **Cloudflare** → le relais → **Settings** → **Variables and Secrets** :
+   - `DISCORD_TOKEN` (type **Secret**) : le jeton du bot ;
+   - `DISCORD_PUBLIC_KEY` (type **Text**) : la « Public Key » de l'application
+     (Discord Developer Portal → General Information).
+2. **Discord Developer Portal** → General Information → **Interactions Endpoint URL** :
+   `https://TON-RELAIS.workers.dev/discord` → Save.
+3. **GitHub** → Settings → Secrets and variables → Actions → secret `DISCORD_TOKEN`
+   (le même jeton).
+4. Inviter le bot avec les permissions : Manage Roles, Manage Channels, View Channels,
+   Send Messages, Embed Links, Read Message History (portées `bot` et `applications.commands`).
+5. Dans Discord : Paramètres du serveur → Rôles → glisser le rôle du bot **au-dessus**
+   de « 🔔 Annonces ».
+6. GitHub → Actions → **Discord** → **Run workflow**.
