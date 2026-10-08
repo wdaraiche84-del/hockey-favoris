@@ -8,5 +8,10 @@
   "id": "2026-10-09-equipes-chiffre",
   "titre": "⭐ Nouveau sur MonTrioHockey : tes équipes favorites et le chiffre du jour",
   "texte": "• **Tes équipes favorites** : sur la page d'une équipe (n'importe quelle ligue), touche **⭐ Ajouter à mes équipes**. Ses matchs apparaissent dans « Ce soir pour tes favoris », dans ton calendrier et dans Mes favoris. Pour la LNH, les alertes suivent aussi ton équipe.\n• **📊 Le chiffre du jour** : chaque matin, une stat étonnante de la LNH sur l'accueil du site, et ici dans #lnh."
+ },
+ {
+  "id": "2026-10-09-graphique-points",
+  "titre": "📈 Nouveau sur MonTrioHockey : le graphique des points",
+  "texte": "Sur la fiche d'un joueur, un graphique montre maintenant ses points **match après match** pendant la saison. Touche une colonne pour voir le match."
  }
 ]

@@ -76,7 +76,8 @@ for (const lig of Object.keys(LIGUES).filter((l) => l !== "lnh")) {
 const nomEq = (k) => equipes[k]?.nom || k;
 const abr = (k) => equipes[k]?.abr || k;
 const dateFr = (d) => new Intl.DateTimeFormat("fr-CA", { weekday: "long", day: "numeric", month: "long", timeZone: "America/Toronto" }).format(new Date(d)).replace(/^(\D+ )1 /, "$11er ");
-const heureFr = (d) => new Intl.DateTimeFormat("fr-CA", { hour: "numeric", minute: "2-digit", timeZone: "America/Toronto" }).format(new Date(d));
+// Heure de l'Est, précisée par « HE » (un aperçu ne peut pas connaître le fuseau de la personne qui le lit) : « 19 h HE », « 19 h 30 HE »
+const heureFr = (d) => new Intl.DateTimeFormat("fr-CA", { hour: "numeric", minute: "2-digit", timeZone: "America/Toronto" }).format(new Date(d)).replace(/ h 00$/, " h") + " HE";
 
 // ---- Les mini-pages ----
 const pages = new Map(); // chemin → contenu

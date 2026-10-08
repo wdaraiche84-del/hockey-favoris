@@ -732,7 +732,7 @@ async function ouvrirFiche(id) {
     <div class="fiche-corps">${corps}</div>`;
   $("fiche-fond").hidden = false;
   $("fiche-fond").scrollTop = 0;
-  if (D.equipes[j.eq]) $("fiche-saison").innerHTML = (await htmlFormeJoueur(j)) + (await htmlMatchParMatch(j));
+  if (D.equipes[j.eq]) $("fiche-saison").innerHTML = (await htmlFormeJoueur(j)) + (await htmlGraphiquePoints(j)) + (await htmlMatchParMatch(j));
 }
 let pousses = 0; // combien d'adresses de fenêtres on a ajoutées à l'historique
 function fermerFiche() {

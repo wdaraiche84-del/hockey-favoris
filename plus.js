@@ -527,6 +527,31 @@ async function rendreChauds() {
     ${LIGUES[lig].pointsSeulement ? "" : `<section class="bloc"><div class="titre-section"><h2>Séquences de points <span class="tag-ligue">${LIGUES[lig].nom}</span></h2><span class="sur-titre">En cours</span></div><ol class="meneurs">${htmlChauds(seq.slice(0, 10), (x) => x.sequence, (x) => `${x.sequence} matchs de suite`)}</ol></section>`}
     ${f.some((x) => x.j.pos === "G") ? "" : "<!--"}<section class="bloc"><div class="titre-section"><h2>Gardiens en forme <span class="tag-ligue">${LIGUES[lig].nom}</span></h2><span class="sur-titre">5 derniers matchs</span></div><ol class="meneurs">${htmlChauds(gar.slice(0, 10), (x) => pct3(x.sv / x.sa), (x) => `${x.sv} arrêts sur ${x.sa} en ${pluriel(x.pj, "match")}`)}</ol></section>${f.some((x) => x.j.pos === "G") ? "" : "-->"}`;
 }
+// Graphique des points dans la fiche d'un joueur : une colonne par match joué, du plus ancien au plus récent
+async function htmlGraphiquePoints(j) {
+  if (!j.lig || j.pos === "G" || LIGUES[j.lig]?.pointsSeulement) return ""; // Liiga : seulement les matchs avec des points, le graphique tromperait
+  const pts = await points(j.eq);
+  const joues = matchsDe(j.eq).filter((m) => estFini(m) && Array.isArray(pts[m.id]?.[j.id]) && !estGardienLigne(pts[m.id][j.id]));
+  if (joues.length < 2) return "";
+  const vals = joues.map((m) => ({ m, b: pts[m.id][j.id][0] || 0, a: pts[m.id][j.id][1] || 0 })).map((x) => ({ ...x, p: x.b + x.a }));
+  const haut = Math.max(3, ...vals.map((x) => x.p));
+  const total = vals.reduce((s, x) => s + x.p, 0);
+  const sommet = vals.reduce((best, x, i) => (x.p > vals[best].p ? i : best), 0); // le meilleur match (le premier, s'il y en a plusieurs)
+  const lignes = Array.from({ length: haut }, (_, i) => i + 1).filter((n) => haut <= 4 || n % 2 === 0 || n === haut);
+  const colonnes = vals.map((x, i) => {
+    const info = `${dateCourte(x.m.date)} ${x.m.dom === j.eq ? "vs" : "@"} ${abr(adversaire(x.m, j.eq))} : ${x.p ? `${x.b} B, ${x.a} A` : "aucun point"}`;
+    return `<button class="gp-col ${i < vals.length / 2 ? "gauche" : "droite"}" data-match="${x.m.id}" data-info="${echapper(info)}" aria-label="${echapper(info)}">
+      ${i === sommet && x.p ? `<span class="gp-etiquette" style="bottom:${(x.p / haut) * 100}%">${x.p}</span>` : ""}
+      <span class="gp-barre ${x.p ? "" : "zero"}" style="height:${x.p ? (x.p / haut) * 100 : 0}%"></span></button>`;
+  }).join("");
+  return `<div class="gp" role="figure" aria-label="Points de ${echapper(j.nom)} match par match">
+    <div class="gp-tete"><strong>Points match par match</strong><span>${pluriel(total, "point")} en ${pluriel(vals.length, "match")} · ${dec(total / vals.length, 2)} par match</span></div>
+    <div class="gp-zone">
+      <div class="gp-axe">${lignes.map((n) => `<span style="bottom:${(n / haut) * 100}%">${n}</span>`).join("")}<span style="bottom:0">0</span></div>
+      <div class="gp-plot">${lignes.map((n) => `<i class="gp-grille" style="bottom:${(n / haut) * 100}%"></i>`).join("")}<div class="gp-cols">${colonnes}</div></div>
+    </div>
+    <p class="petit-gris">Du plus ancien au plus récent. Touche une colonne pour voir le match.</p></div>`;
+}
 // Forme récente dans la fiche d'un joueur
 async function htmlFormeJoueur(j) {
   if (!j.lig || LIGUES[j.lig].sansJoueurs) return "";

@@ -28,6 +28,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main # toujours la version la plus récente (un robot en attente pourrait sinon partir d'une vieille copie et refaire ce qui est déjà fait)
 
       - uses: actions/setup-node@v4
         with:
