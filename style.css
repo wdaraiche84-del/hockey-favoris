@@ -896,3 +896,23 @@ button.score-carte:hover { background: #333; }
 .tableau tr.coupe td { border-bottom: 2px dashed var(--accent); }
 .note-coupe { grid-column: 1 / -1; margin-top: 6px; }
 .btn-fav-ok { font-size: 1rem; }
+
+/* ---- Graphique des points d'un joueur (une colonne par match) ---- */
+.gp { margin: 14px 0 6px; }
+.gp-tete { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.gp-tete span { color: var(--texte-doux); font-size: .85rem; }
+.gp-zone { display: flex; gap: 6px; height: 130px; margin-top: 22px; }
+.gp-axe { position: relative; width: 14px; flex: none; }
+.gp-axe span { position: absolute; right: 0; transform: translateY(50%); font-size: .7rem; color: var(--texte-doux); line-height: 1; }
+.gp-plot { position: relative; flex: 1; min-width: 0; border-bottom: 1px solid var(--ligne); }
+.gp-grille { position: absolute; left: 0; right: 0; height: 0; border-top: 1px solid var(--ligne); opacity: .6; }
+.gp-cols { position: absolute; inset: 0; display: flex; align-items: flex-end; gap: 2px; }
+.gp-col { position: relative; flex: 1 1 0; max-width: 24px; min-width: 2px; height: 100%; display: flex; align-items: flex-end; justify-content: center; padding: 0; border: 0; background: none; cursor: pointer; }
+.gp-barre { display: block; width: 100%; background: #EA580C; border-radius: 4px 4px 0 0; min-height: 0; }
+.gp-barre.zero { height: 2px !important; background: var(--ligne); border-radius: 0; }
+.gp-col:hover .gp-barre:not(.zero), .gp-col:focus-visible .gp-barre:not(.zero) { background: #C2410C; }
+.gp-etiquette { position: absolute; left: 50%; transform: translate(-50%, -2px); font-size: .72rem; font-weight: 700; color: var(--texte); white-space: nowrap; }
+.gp-col::after { content: attr(data-info); position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: var(--texte); color: var(--fond); font-size: .75rem; padding: 4px 8px; border-radius: 6px; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .12s; z-index: 2; }
+.gp-col:hover::after, .gp-col:focus-visible::after { opacity: 1; }
+.gp-col.gauche::after { left: 0; transform: none; } /* l'info s'ouvre vers l'intérieur du graphique, jamais hors de l'écran */
+.gp-col.droite::after { left: auto; right: 0; transform: none; }
