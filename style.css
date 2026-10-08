@@ -190,7 +190,7 @@ a { color: inherit; }
 @media (prefers-reduced-motion: reduce) { .badge-direct, .puce.direct { animation: none; } }
 
 /* ---- Cartes de favoris ---- */
-.cartes { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.cartes { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); gap: 12px; }
 .carte-joueur { border-radius: 10px; overflow: hidden; border: 1px solid var(--ligne); background: var(--carte); display: flex; flex-direction: column; animation: apparait .25s ease-out; }
 @keyframes apparait { from { opacity: 0; transform: translateY(6px); } }
 .carte-joueur .haut { background: linear-gradient(135deg, #262626, #171717); color: #fff; padding: 12px; display: flex; align-items: center; gap: 10px; }

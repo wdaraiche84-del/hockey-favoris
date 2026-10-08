@@ -697,13 +697,15 @@ async function ouvrirFiche(id) {
   $("fiche-fond").scrollTop = 0;
   if (D.equipes[j.eq]) $("fiche-saison").innerHTML = (await htmlFormeJoueur(j)) + (await htmlMatchParMatch(j));
 }
+let pousses = 0; // combien d'adresses de fenêtres on a ajoutées à l'historique
 function fermerFiche() {
   const ouverte = !$("fiche-fond").hidden;
   $("fiche-fond").hidden = true;
   if (ouverte && (/^#\/(joueur|equipe|match|comparer)\/|^#\/a-propos/.test(location.hash) || adresseJolie())) {
-    if (history.state?.montrio) history.back(); // retire l'adresse de la fenêtre (comme le bouton Retour)
+    if (pousses > 0) { const n = pousses; pousses = 0; history.go(-n); } // on retire toutes les adresses des fenêtres
     else history.replaceState(null, "", document.baseURI.replace(/#.*$/, "") + "#/" + (pageActuelle || "accueil"));
   }
+  pousses = 0;
 }
 $("fiche-fond").addEventListener("click", (e) => { if (e.target.id === "fiche-fond" || e.target.closest(".fermer")) fermerFiche(); });
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") fermerFiche(); });
@@ -887,6 +889,10 @@ const pageDeLAdresse = () => (location.hash.match(/^#\/(\w+)/) || [])[1] || "acc
 window.addEventListener("hashchange", () => { if (!ouvrirDepuisAdresse()) allerA(pageDeLAdresse()); });
 // Retour / avant dans l'historique vers une adresse lisible (sans « # »)
 window.addEventListener("popstate", () => {
+  const surFenetre = adresseJolie() || /^#\/(joueur|equipe|match|comparer|a-propos)/.test(location.hash);
+  // Retour d'une fenêtre à celle d'avant (ex. match → équipe)
+  if (!$("fiche-fond").hidden && surFenetre && pileModale.length) { pousses = Math.max(0, pousses - 1); revenirLocal(); return; }
+  if (!$("fiche-fond").hidden && !surFenetre) { pousses = 0; $("fiche-fond").hidden = true; allerA(pageDeLAdresse()); return; }
   if (!location.hash && adresseJolie()) ouvrirDepuisAdresse();
   else if (location.hash) { if (!ouvrirDepuisAdresse()) allerA(pageDeLAdresse()); } // (le navigateur n'envoie pas toujours « hashchange » ici)
   else if (!$("fiche-fond").hidden) fermerFiche();

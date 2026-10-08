@@ -18,7 +18,7 @@ function noterModale(entree) {
   if ($("fiche-fond").hidden) { pileModale = []; modaleActuelle = null; }
   const pareil = modaleActuelle && modaleActuelle.t === entree.t && modaleActuelle.id === entree.id;
   if (modaleActuelle && !pareil && !entree.retour) pileModale.push(modaleActuelle);
-  modaleActuelle = { t: entree.t, id: entree.id, id2: entree.id2 };
+  modaleActuelle = { t: entree.t, id: entree.id, id2: entree.id2, retour: !!entree.retour };
 }
 const boutonRetour = () => (pileModale.length ? `<button class="retour" data-retour aria-label="Retour">‹ Retour</button>` : "");
 function ajouterRetour() {
@@ -63,11 +63,20 @@ function majAdresse() {
   if (!r) return;
   const url = new URL(r, document.baseURI).href;
   if (url === location.href) return;
+  // Chaque fenêtre ouverte par-dessus une autre a sa propre entrée dans l'historique :
+  // le bouton Retour du téléphone revient donc à la fenêtre d'avant (match → équipe → joueur → page)
   const dejaModale = /^#\/(joueur|equipe|match|comparer|a-propos)/.test(location.hash) || adresseJolie();
-  if (dejaModale) history.replaceState(history.state, "", url);
-  else history.pushState({ montrio: true }, "", url);
+  // (arrivé par un lien direct : l'adresse actuelle est déjà celle de la fenêtre, on la remplace)
+  if (modaleActuelle?.retour || (dejaModale && !pileModale.length)) history.replaceState(history.state, "", url);
+  else { history.pushState({ montrio: true }, "", url); pousses++; }
 }
+// Bouton « ‹ Retour » du site : on passe par l'historique, comme le bouton du téléphone
 function revenir() {
+  if (pousses > 1 && pileModale.length) return history.back();
+  revenirLocal();
+}
+// (appelé aussi quand on recule dans l'historique)
+function revenirLocal() {
   const e = pileModale.pop();
   if (!e) return fermerFiche();
   const r = { retour: true };
