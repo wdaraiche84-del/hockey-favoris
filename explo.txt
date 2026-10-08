@@ -1,5 +1,0 @@
-NCAA : 63 équipes, 1752 joueurs, 1035 matchs, 29 feuilles lues, 63 équipes relues.
-
-real	2m38.723s
-user	0m1.921s
-sys	0m0.297s
