@@ -74,7 +74,7 @@ jobs:
         env:
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
 
-      - name: Surveiller les robots (message dans #modération sur Discord si un problème apparaît)
+      - name: Surveiller les robots (message dans #surveillance sur Discord si un problème apparaît)
         if: always()
         continue-on-error: true
         env:
