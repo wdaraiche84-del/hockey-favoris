@@ -41,7 +41,7 @@ Adresse actuelle : https://wdaraiche84-del.github.io/hockey-favoris/ (GitHub Pag
   6. `maj-images.py` (images d'aperçu 600 × 315)
   7. `maj-partage.mjs` (mini-pages de partage, ex. `lnh/joueur/nick-suzuki/8480018/`)
   8. `chiffre-du-jour.mjs` (une fois par jour après 8 h : `data/chiffre-du-jour.json`, affiché sur l'accueil et publié dans #lnh)
-  9. `surveillance.mjs` (étapes en échec, scores figés, relais muet → message dans #modération ; état dans `data/surveillance.json`)
+  9. `surveillance.mjs` (étapes en échec, scores figés, relais muet → message dans #surveillance ; état dans `data/surveillance.json`)
 - **Format des lignes de match** (`data/points/…`) :
   - patineur : `[B, A, +/-, tirs, PUN, TG]`
   - gardien : `["G", arrêts, tirs, BC, décision, TG]`

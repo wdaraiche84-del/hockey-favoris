@@ -1,6 +1,6 @@
 // =============================================================
 // LA SURVEILLANCE DES ROBOTS (dernière étape de maj-donnees.yml)
-// Vérifie que tout roule et prévient l'équipe dans #modération sur
+// Vérifie que tout roule et prévient l'équipe dans #surveillance sur
 // Discord quand un problème apparaît, puis quand il est réglé :
 //   - une étape du robot a échoué (stats LNH, juniors, Europe, NCAA…) ;
 //   - les scores d'une ligue ne se mettent plus à jour (des matchs
@@ -62,8 +62,8 @@ async function prevenirDiscord(nouveaux, regles) {
   if (!process.env.DISCORD_TOKEN) { console.log("(pas de DISCORD_TOKEN : pas de message Discord)"); return; }
   const { api } = await import("./discord.mjs");
   const [g] = await api("/users/@me/guilds");
-  const salon = (await api(`/guilds/${g.id}/channels`)).find((c) => c.type === 0 && c.name === "modération");
-  if (!salon) { console.log("Pas de salon #modération"); return; }
+  const salon = (await api(`/guilds/${g.id}/channels`)).find((c) => c.type === 0 && c.name === "surveillance");
+  if (!salon) throw new Error("pas encore de salon #surveillance (le robot Discord le crée)");
   const lien = process.env.LIEN_EXECUTION ? `\n[Voir les détails dans GitHub](${process.env.LIEN_EXECUTION})` : "";
   const lignes = [
     ...nouveaux.map(([, t]) => `⚠️ ${t}`),

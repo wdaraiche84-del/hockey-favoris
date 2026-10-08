@@ -80,14 +80,22 @@ export async function installer() {
   }
   console.log("✔ Le bot peut écrire dans #résultats, #annonces et #bienvenue");
 
-  // Le bot peut écrire dans #modération (salon privé de l'équipe) pour la surveillance du site
-  const equipe = salons.find((c) => c.type === 4 && c.name === "🔒 ÉQUIPE");
-  const moderation = salon("modération");
-  if (equipe && moderation) {
-    await api(`/channels/${equipe.id}/permissions/${moi}`, "PUT", { type: 1, allow: droitsBot.allow, deny: "0" });
-    await api(`/channels/${moderation.id}/permissions/${moi}`, "PUT", { type: 1, allow: droitsBot.allow, deny: "0" });
-    console.log("✔ Le bot peut écrire dans #modération (surveillance du site)");
-  }
+  // Salon privé #surveillance (l'équipe seulement) où le bot signale les pannes du site.
+  // Le bot ne voit pas la catégorie 🔒 ÉQUIPE (Discord refuse qu'il s'y ajoute) : il crée donc son propre salon.
+  try {
+    if (!salon("surveillance")) {
+      const mods = roles.find((r) => r.name === "🛡️ Modérateur");
+      await api(`/guilds/${g}/channels`, "POST", {
+        name: "surveillance", type: 0, topic: "Messages automatiques : pannes et retours à la normale du site (équipe seulement)",
+        permission_overwrites: [
+          { id: g, type: 0, allow: "0", deny: String(VOIR) },
+          ...(mods ? [{ id: mods.id, type: 0, allow: String(VOIR | HISTORIQUE), deny: "0" }] : []),
+          droitsBot,
+        ],
+      });
+      console.log("✔ Salon privé #surveillance créé (équipe seulement)");
+    } else console.log("• #surveillance existe déjà");
+  } catch (e) { console.log("⚠️ #surveillance :", e.message); }
 
   // 4. Le rôle du bot doit être au-dessus de 🔔 Annonces pour pouvoir le donner
   const annonces = roles.find((r) => r.name === "🔔 Annonces");
