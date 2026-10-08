@@ -300,14 +300,13 @@ async function corpsMatchJoue(m) {
 // Articles selon le nom court : « les Canadiens », « le Lightning », « l'Avalanche »
 function article(eq) {
   const n = courtEq(eq).trim();
+  const sansArticle = () => ({ le: n, du: `${/^[aeiouhéèêàâîôûAEIOUHÉÈÄÖÜ]/.test(n) ? "d'" : "de "}${n}`, au: `à ${n}`, pl: false });
+  // En NCAA, on parle de l'université sans article (« Michigan », « Canisius », « de Boston College »)
+  if (ligueDe(eq) === "ncaa") return sansArticle();
   // Les surnoms au pluriel : « les Canadiens », « les Hitmen », « les ZSC Lions »
   if (/(s|men)$/i.test(n)) return { le: `les ${n}`, du: `des ${n}`, au: `aux ${n}`, pl: true };
   // En Europe, les autres équipes portent surtout un nom de ville : pas d'article (« Fribourg-Gottéron », « de Lausanne »)
-  // En NCAA aussi : on parle de « Michigan » ou de « Boston College », sans article
-  if (["khl", "shl", "liiga", "nl", "ncaa"].includes(ligueDe(eq))) {
-    const voy = /^[aeiouhéèêàâîôûAEIOUHÉÈÄÖÜ]/.test(n);
-    return { le: n, du: `${voy ? "d'" : "de "}${n}`, au: `à ${n}`, pl: false };
-  }
+  if (["khl", "shl", "liiga", "nl"].includes(ligueDe(eq))) return sansArticle();
   if (/^[aeiouhéèêàâîôûAEIOUHÉÈ]/.test(n)) return { le: `l'${n}`, du: `de l'${n}`, au: `à l'${n}`, pl: false };
   return { le: `le ${n}`, du: `du ${n}`, au: `au ${n}`, pl: false };
 }

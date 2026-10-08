@@ -2,7 +2,7 @@
 
 Tes joueurs de hockey préférés, toutes les ligues, au même endroit.
 
-Scores, classement, meneurs et stats de la LNH, de la LAH, des ligues junior (LHJMQ, OHL, WHL) et de l'Europe (KHL, SHL, Liiga, National League), avec le suivi de tes joueurs préférés.
+Scores, classement, meneurs et stats de la LNH, de la LAH, des ligues junior (LHJMQ, OHL, WHL) de l'Europe (KHL, SHL, Liiga, National League) et du hockey universitaire américain (NCAA), avec le suivi de tes joueurs préférés.
 
 ## Les fichiers
 
@@ -16,10 +16,11 @@ Scores, classement, meneurs et stats de la LNH, de la LAH, des ligues junior (LH
 | `config.js` | Les réglages (adresse du relais pour le direct) |
 | `donnees.js` | Ce qu'aucune source ne publie : les joueurs hors des ligues suivies |
 | `data/` | Les données de la LNH, mises à jour automatiquement par le robot |
-| `data/ligues/` | Les données de la LAH, de la LHJMQ, de l'OHL, de la WHL, de la Liiga et de la KHL |
+| `data/ligues/` | Les données de la LAH, de la LHJMQ, de l'OHL, de la WHL, de la Liiga, de la KHL, de la SHL, de la NL et de la NCAA |
 | `scripts/maj-donnees.mjs` | Le robot qui va chercher les données des 32 équipes de la LNH |
 | `scripts/maj-autres-ligues.mjs` | Le robot de la LAH et des juniors |
 | `scripts/maj-europe.mjs` | Le robot des ligues d'Europe : KHL, SHL (Suède), Liiga (Finlande), National League (Suisse) |
+| `scripts/maj-ncaa.mjs` | Le robot de la NCAA (source : College Hockey News) |
 | `.github/workflows/maj-donnees.yml` | Dit à GitHub de lancer le robot toutes les 30 minutes environ |
 | `relais/` | Le relais optionnel pour le direct à la seconde (voir `relais/LISEZMOI.md`) |
 
