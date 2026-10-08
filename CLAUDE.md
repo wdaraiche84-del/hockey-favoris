@@ -42,7 +42,7 @@ Adresse actuelle : https://wdaraiche84-del.github.io/hockey-favoris/ (GitHub Pag
 - **Format des lignes de match** (`data/points/…`) :
   - patineur : `[B, A, +/-, tirs, PUN, TG]`
   - gardien : `["G", arrêts, tirs, BC, décision, TG]`
-- **Relais Cloudflare** (`relais/worker.js`) : le direct pendant les matchs et les alertes de buts. Voir `relais/LISEZMOI.md`.
+- **Relais Cloudflare** (`relais/worker.js`) : le direct pendant les matchs et les alertes (rappel 30 min avant le match, buts, résultat final). Voir `relais/LISEZMOI.md`.
 - **Adresses** :
   - fenêtres : `#/joueur/ID`, `#/equipe/ID`, `#/match/ID`, `#/comparer/A/B`, `#/a-propos`
   - adresses lisibles : `PREFIXE` dans `plus.js` et dans `scripts/maj-partage.mjs`
@@ -59,7 +59,6 @@ Adresse actuelle : https://wdaraiche84-del.github.io/hockey-favoris/ (GitHub Pag
 - **Avant le lancement** : un compteur de visites qui respecte la vie privée, un test sur iPhone, et un courriel de contact (la constante `CONTACT` dans `plus.js` ; page À propos).
 - **Idées** :
   - équipe favorite ;
-  - rappels avant les matchs ;
   - cartes de stats à partager ;
   - « chiffre du jour » ;
   - graphique des points d'un joueur ;

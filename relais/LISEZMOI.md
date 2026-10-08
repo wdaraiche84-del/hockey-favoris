@@ -4,9 +4,10 @@ Le relais fait deux choses :
 
 1. **Le direct** : les scores et les points de tes favoris se rafraîchissent
    toutes les 20 secondes pendant les matchs de la LNH.
-2. **Les alertes sur le téléphone** : une notification quand un de tes
-   favoris de la LNH marque ou obtient une passe, quand ton équipe marque,
-   et le résultat final — même quand MonTrioHockey est fermé.
+2. **Les alertes sur le téléphone** : un rappel 30 minutes avant le match,
+   une notification quand un de tes favoris de la LNH marque ou obtient une
+   passe, quand ton équipe marque, et le résultat final — même quand
+   MonTrioHockey est fermé.
 
 ## Mettre le code à jour (à faire chaque fois que `relais/worker.js` change)
 
