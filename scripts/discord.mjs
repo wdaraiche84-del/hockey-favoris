@@ -112,8 +112,15 @@ export async function publierAnnonces({ salon, annonces }) {
   const etat = await lireJson("data/discord.json", { annonces: [] });
   const c = salon("annonces");
   if (!c) { console.log("• Pas de salon #annonces"); return; }
+  // Ce qui est déjà dans #annonces (au cas où deux lancements se croisent)
+  const moi = (await api("/users/@me")).id;
+  const dejaPubliees = new Set((await api(`/channels/${c.id}/messages?limit=50`))
+    .filter((m) => m.author?.id === moi).flatMap((m) => (m.embeds || []).map((e) => e.title)));
   for (const a of liste) {
-    if (etat.annonces.includes(a.id)) continue;
+    if (etat.annonces.includes(a.id) || dejaPubliees.has(a.titre)) {
+      if (!etat.annonces.includes(a.id)) etat.annonces.push(a.id);
+      continue;
+    }
     await api(`/channels/${c.id}/messages`, "POST", {
       content: annonces ? `<@&${annonces.id}>` : "",
       embeds: [{ title: a.titre, description: a.texte, color: ORANGE, url: a.lien || SITE, footer: { text: "MonTrioHockey" } }],
