@@ -454,11 +454,11 @@ $("sem-suiv").onclick = () => { debutSemaine = decaler(debutSemaine, 7); rendreC
 // ---- 10. Classement et meneurs (ligue choisie) ----------------
 let vueClassement = "conf";
 const trierEquipes = (l) => [...l].sort((a, b) => b.pts - a.pts || a.pj - b.pj || b.v - a.v);
-function tableClassement(titre, liste) {
+function tableClassement(titre, liste, coupes = []) {
   const eqs = equipesFavorites();
   return `<div class="table-bloc"><h3>${echapper(titre)}</h3><div class="defile"><table class="tableau">
     <thead><tr><th>#</th><th>Équipe</th><th>PJ</th><th>V</th><th>D</th><th>DP</th><th>PTS</th><th class="large">BP</th><th class="large">BC</th><th>Diff</th><th class="large">10 dern.</th><th class="large">Dom.</th><th class="large">Ext.</th><th class="large">Série</th></tr></thead><tbody>
-    ${trierEquipes(liste).map((t, i) => { const b = bilan(t.eq), diff = t.bp - t.bc; return `<tr class="${eqs.includes(t.eq) ? "favori" : ""}"><td>${i + 1}</td>
+    ${trierEquipes(liste).map((t, i) => { const b = bilan(t.eq), diff = t.bp - t.bc; return `<tr class="${eqs.includes(t.eq) ? "favori" : ""} ${coupes.includes(i + 1) ? "coupe" : ""}"><td>${i + 1}</td>
       <td class="eq"><button class="lien-equipe" data-equipe-fiche="${t.eq}"><span class="abr">${abr(t.eq)}</span> ${simplifier(courtEq(t.eq)).trim() !== simplifier(abr(t.eq)) ? `<span class="nom-long">${echapper(courtEq(t.eq))}</span>` : ""}</button></td>
       <td>${t.pj}</td><td>${t.v}</td><td>${t.d}</td><td>${t.dp}</td><td class="pts">${t.pts}</td>
       <td class="large">${t.bp}</td><td class="large">${t.bc}</td><td class="${diff > 0 ? "plus" : diff < 0 ? "moins" : ""}">${diff > 0 ? "+" : ""}${diff}</td>
@@ -466,18 +466,37 @@ function tableClassement(titre, liste) {
   </tbody></table></div></div>`;
 }
 const groupes = (liste, cle) => [...new Set(liste.map((t) => t[cle]).filter(Boolean))];
+// Format des séries en Europe : une ligne pointillée sous les équipes qualifiées
+const FORMATS_SERIES = {
+  shl: { vue: "ligue", coupes: [6, 10], note: "1 à 6 : directement en quarts de finale · 7 à 10 : ronde préliminaire des séries." },
+  liiga: { vue: "ligue", coupes: [6, 10], note: "1 à 6 : directement en quarts de finale · 7 à 10 : ronde préliminaire des séries." },
+  nl: { vue: "ligue", coupes: [6, 10], note: "1 à 6 : directement en quarts de finale · 7 à 10 : ronde préliminaire des séries (play-in)." },
+  khl: { vue: "conf", coupes: [8], note: "Les 8 premiers de chaque association font les séries." },
+};
 function rendreClassement() {
   const c = D.classement[ligue] || [];
   $("vue-series").hidden = ligue !== "lnh";
-  if (vueClassement === "series" && ligue !== "lnh") { vueClassement = "conf"; document.querySelectorAll("[data-vue]").forEach((x) => x.classList.toggle("actif", x.dataset.vue === "conf")); }
+  // Onglets utiles seulement : pas d'« Associations » ni de « Divisions » dans une ligue à un seul groupe (SHL, Liiga, NL),
+  // pas de « Divisions » quand elles sont les mêmes que les associations (LHJMQ)
+  const nbConf = new Set(c.map((t) => t.conf).filter(Boolean)).size, nbDiv = new Set(c.map((t) => t.div).filter(Boolean)).size;
+  const divUtiles = nbDiv > 1 && c.some((t) => t.div !== t.conf);
+  document.querySelector('[data-vue="conf"]').hidden = nbConf <= 1 && c.length > 0;
+  document.querySelector('[data-vue="div"]').hidden = !divUtiles && c.length > 0;
+  const cachee = (v) => document.querySelector(`[data-vue="${v}"]`)?.hidden;
+  if (cachee(vueClassement) || (vueClassement === "series" && ligue !== "lnh")) {
+    vueClassement = nbConf > 1 ? "conf" : "ligue";
+    document.querySelectorAll("[data-vue]").forEach((x) => x.classList.toggle("actif", x.dataset.vue === vueClassement));
+  }
   if (vueClassement === "series") { $("tables-classement").classList.add("une-col"); return rendreSeries(); }
   if (vueClassement === "stats") { $("tables-classement").classList.add("une-col"); return rendreStatsEquipes(); }
   if (!c.length) { $("tables-classement").innerHTML = `<p class="vide">Classement à venir.</p>`; return; }
+  const f = FORMATS_SERIES[ligue], coupes = f && f.vue === vueClassement ? f.coupes : [];
   let h = "";
-  if (vueClassement === "ligue") h = tableClassement(`Toute ${laLigue(ligue)}`, c);
-  else for (const g of groupes(c, vueClassement)) h += tableClassement(g, c.filter((t) => t[vueClassement] === g));
+  if (vueClassement === "ligue") h = tableClassement(`Toute ${laLigue(ligue)}`, c, coupes);
+  else for (const g of groupes(c, vueClassement)) h += tableClassement(g, c.filter((t) => t[vueClassement] === g), coupes);
+  if (coupes.length) h += `<p class="petit-gris note-coupe">La ligne pointillée marque la limite. ${f.note}</p>`;
   $("tables-classement").innerHTML = h;
-  $("tables-classement").classList.toggle("une-col", vueClassement === "ligue");
+  $("tables-classement").classList.toggle("une-col", vueClassement === "ligue" || nbConf <= 1);
 }
 document.querySelectorAll("[data-vue]").forEach((b) => b.onclick = () => {
   vueClassement = b.dataset.vue;

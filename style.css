@@ -887,3 +887,5 @@ button.score-carte:hover { background: #333; }
 .texte-long .mini-titre { margin-top: 14px; }
 /* Les tableaux larges (ex. Stats d'équipe) défilent de côté au lieu d'être coupés */
 .grille-tables > *, .table-bloc { min-width: 0; }
+.tableau tr.coupe td { border-bottom: 2px dashed var(--accent); }
+.note-coupe { grid-column: 1 / -1; margin-top: 6px; }
