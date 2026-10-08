@@ -5,7 +5,8 @@
 //     (les navigateurs n'ont pas le droit de les lire directement).
 //  2. Les alertes sur le téléphone : chaque minute, il regarde les
 //     matchs de la LNH et envoie une notification aux visiteurs
-//     abonnés quand un de leurs favoris marque, ou à la fin du match.
+//     abonnés : 30 minutes avant le match, quand un de leurs favoris
+//     marque, et à la fin du match.
 // Instructions d'installation : voir relais/LISEZMOI.md
 // Rien de secret ici : la clé d'envoi des alertes est créée par le
 // relais lui-même au premier usage et gardée dans son espace (KV).
@@ -112,8 +113,16 @@ export async function verifierMatchs(env, envoyer = envoyerPush) {
     const id = String(g.id), dom = g.homeTeam?.abbrev, ext = g.awayTeam?.abbrev;
     const enCours = g.gameState === "LIVE" || g.gameState === "CRIT";
     const fini = g.gameState === "FINAL" || g.gameState === "OFF";
-    if (!enCours && !fini) continue;
     const avant = etat[id];
+    if (!enCours && !fini) {
+      // Rappel une seule fois, dans les 30 minutes avant le début du match
+      const minutes = Math.round((Date.parse(g.startTimeUTC) - Date.now()) / 60000);
+      if ((g.gameState === "FUT" || g.gameState === "PRE") && minutes > 0 && minutes <= 30 && !avant) {
+        avis.push({ equipes: [dom, ext], titre: `⏰ ${ext} – ${dom} commence bientôt`, texte: `Mise au jeu dans ${minutes} minute${minutes > 1 ? "s" : ""}`, url: `#/match/${id}`, tag: `avant-${id}` });
+        etat[id] = { buts: 0, fini: false }; change = true; // le match est surveillé dès la première seconde
+      }
+      continue;
+    }
     const buts = g.goals || [];
     if (!avant) {
       // Premier passage : si le match vient de commencer, on surveille dès maintenant ;

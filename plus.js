@@ -6,7 +6,7 @@
 //   C. Fiche d'une équipe
 //   D. Forme récente : joueurs en feu, séquences de points
 //   E. Comparateur de joueurs
-//   F. Partage, alertes de buts, lexique
+//   F. Partage, alertes, lexique
 //   G. Liens directs (#/joueur/…, #/equipe/…, #/match/…)
 // =============================================================
 
@@ -838,9 +838,9 @@ async function partager(chemin, titre) {
     toast("Lien copié! Tu peux le coller dans un message.");
   } catch (e) { if (e.name !== "AbortError") prompt("Copie ce lien :", url); }
 }
-// Alertes de buts.
+// Alertes (avant le match, buts, fin du match).
 //  · Si le relais a les alertes activées (et le téléphone le permet) : de vraies notifications,
-//    même quand MonTrioHockey est fermé (LNH : buts de tes joueurs et de tes équipes, résultat final).
+//    même quand MonTrioHockey est fermé (LNH : rappel 30 min avant le match, buts de tes joueurs et de tes équipes, résultat final).
 //  · Sinon : un avis à l'écran pendant que MonTrioHockey est ouvert.
 let alertesOn = memoire("alertes") === "1";
 const vus = new Map();
@@ -881,7 +881,7 @@ async function synchroniserPush() {
   } catch (e) {}
 }
 function rendreBoutonAlertes() {
-  $("alertes").textContent = `🔔 Alertes de buts : ${alertesOn ? "oui" : "non"}`;
+  $("alertes").textContent = `🔔 Alertes : ${alertesOn ? "oui" : "non"}`;
   $("alertes").classList.toggle("accent", alertesOn);
 }
 $("alertes").onclick = async () => {
@@ -899,7 +899,7 @@ $("alertes").onclick = async () => {
     try {
       await abonnementPush(true); await synchroniserPush();
       const { joueurs, equipes } = favorisLnh();
-      return toast(joueurs.length ? `Alertes activées! Ton téléphone t'avertira quand tes favoris de la LNH marquent (${pluriel(equipes.length, "équipe")}), même si MonTrioHockey est fermé.` : "Alertes activées. Ajoute des joueurs de la LNH à tes favoris pour recevoir leurs buts.", 7000);
+      return toast(joueurs.length ? `Alertes activées! Ton téléphone t'avertira 30 minutes avant le match, quand tes favoris de la LNH marquent et à la fin du match (${pluriel(equipes.length, "équipe")}), même si MonTrioHockey est fermé.` : "Alertes activées. Ajoute des joueurs de la LNH à tes favoris pour recevoir les rappels de matchs et leurs buts.", 7000);
     } catch (e) {}
   }
   if (iPhoneNav) return toast("Sur iPhone, installe d'abord MonTrioHockey sur ton écran d'accueil pour recevoir des alertes même quand l'app est fermée. En attendant, tu seras averti pendant que MonTrioHockey est ouvert.", 9000);
@@ -1153,7 +1153,7 @@ function ouvrirAPropos() {
     <p><b>En bref : pas de compte, pas de publicité, pas de suivi.</b> Nous ne recueillons ni ton nom, ni ton courriel, ni ta position.</p>
     <h4 class="mini-titre">Ce qui reste sur ton appareil</h4>
     <p>Pour que le site se souvienne de tes choix, ton navigateur garde quelques réglages <b>sur ton appareil seulement</b> : tes favoris, la ligue choisie, le mode clair ou sombre et tes préférences d'affichage. Ces informations ne nous sont jamais envoyées. Tu peux les effacer en tout temps avec le bouton ci-dessous ou dans les réglages de ton navigateur.</p>
-    <h4 class="mini-titre">Les alertes de buts (si tu les actives)</h4>
+    <h4 class="mini-titre">Les alertes (si tu les actives)</h4>
     <p>Si tu actives les alertes, ton navigateur crée une adresse de notification anonyme. Nous la gardons avec la liste de tes joueurs favoris de la LNH (et de leurs équipes), seulement pour t'envoyer les alertes. Aucun nom ni courriel n'y est rattaché. Quand tu désactives les alertes, ces informations sont supprimées.</p>
     <h4 class="mini-titre">Les services utilisés</h4>
     <p>Le site est hébergé par <b>GitHub Pages</b>. Le direct et les alertes passent par <b>Cloudflare</b>. Les polices de caractères viennent de <b>Google Fonts</b>. Comme pour tout site Web, ces services reçoivent l'adresse IP de ton appareil pour pouvoir t'envoyer les pages. Ils appliquent leurs propres politiques de confidentialité. Nous n'utilisons aucun outil de publicité ni de statistiques de visites qui te suit d'un site à l'autre.</p>
@@ -1163,7 +1163,7 @@ function ouvrirAPropos() {
     <p class="petit-gris">Si cette politique change, la date en haut de cette section sera mise à jour.</p>
   </div>`);
   $("effacer-donnees").onclick = async () => {
-    if (!confirm("Effacer tes favoris et tes réglages sur cet appareil? Les alertes de buts seront aussi désactivées.")) return;
+    if (!confirm("Effacer tes favoris et tes réglages sur cet appareil? Les alertes seront aussi désactivées.")) return;
     try { const sub = await abonnementPush(false); if (sub) { await fetch(`${RELAIS}/alertes/desabonner`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ abonnement: sub.toJSON() }) }); await sub.unsubscribe(); } } catch (e) {}
     try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
     try { for (const k of await caches.keys()) await caches.delete(k); } catch (e) {}
