@@ -227,11 +227,13 @@ async function principal() {
   }
   if (rattrapage) console.log(`Déroulements de match : ${rattrapage} ajoutés.`);
 
-  const traites = new Set(await lireJson("data/traites-v2.json", []));
+  const traites = new Set(await lireJson("data/traites-v3.json", []));
   const points = {};
   for (const eq of Object.keys(EQUIPES)) points[eq] = traites.size ? await lireJson(`data/points/${eq}.json`, {}) : {};
   for (const m of calendrier) {
-    if (m.etat === "avenir" || traites.has(m.id)) continue;
+    // Les matchs des 3 derniers jours sont relus : la LNH corrige parfois un but ou une passe après coup
+    const recent = Date.now() - new Date(m.debut || m.date) < 3 * 86400e3;
+    if (m.etat === "avenir" || (traites.has(m.id) && !recent)) continue;
     try {
       const box = await lire(`/gamecenter/${m.id}/boxscore`);
       for (const [cote, eq] of [["homeTeam", m.dom], ["awayTeam", m.ext]]) {
@@ -269,7 +271,7 @@ async function principal() {
   if (classement.length) await ecrire("data/classement.json", classement);
   if (series) await ecrire("data/series.json", series);
   for (const eq of Object.keys(EQUIPES)) await ecrire(`data/points/${eq}.json`, points[eq]);
-  await ecrire("data/traites-v2.json", [...traites].sort());
+  await ecrire("data/traites-v3.json", [...traites].sort());
 
   const ancienJoueurs = await lireJson("data/joueurs.json", null);
   const memesJoueurs = ancienJoueurs && JSON.stringify(ancienJoueurs.joueurs) === JSON.stringify(joueurs) && JSON.stringify(ancienJoueurs.records ?? null) === JSON.stringify(records);

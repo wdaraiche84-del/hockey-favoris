@@ -148,11 +148,13 @@ async function uneLigue(lig, conf) {
 
   // 7. Stats de chaque joueur, match par match (seulement les matchs pas encore traités)
   //    Même format que la LNH : patineur [B, A, +/-, tirs, PUN, ""] ; gardien ["G", arrêts, tirs, BC, décision, ""]
-  const traites = new Set(await lireJson(`${dossier}/traites-v2.json`, []));
+  const traites = new Set(await lireJson(`${dossier}/traites-v3.json`, []));
   const points = {};
   for (const cle of Object.keys(equipes)) points[cle] = traites.size ? await lireJson(`${dossier}/points/${cle}.json`, {}) : {};
   for (const m of calendrier) {
-    if (m.etat === "avenir" || traites.has(m.id)) continue;
+    // Les matchs des 2 derniers jours sont relus (corrections de buts ou de passes après coup)
+    const recent = Date.now() - new Date(m.debut || m.date) < 2 * 86400e3;
+    if (m.etat === "avenir" || (traites.has(m.id) && !recent)) continue;
     try {
       const gs = (await lire({ feed: "gc", tab: "gamesummary", game_id: m.id.split("-")[1], key: conf.cle, client_code: lig })).GC?.Gamesummary;
       if (!gs) continue;
@@ -187,7 +189,7 @@ async function uneLigue(lig, conf) {
   for (const e of Object.values(equipes)) delete e.id;
   await ecrire(`${dossier}/calendrier.json`, calendrier);
   for (const cle of Object.keys(equipes)) await ecrire(`${dossier}/points/${cle}.json`, points[cle]);
-  await ecrire(`${dossier}/traites-v2.json`, [...traites].sort());
+  await ecrire(`${dossier}/traites-v3.json`, [...traites].sort());
   const ancien = await lireJson(`${dossier}/infos.json`, null);
   const contenu = { saison: saison.season_name, equipes, joueurs, classement };
   if (change || !ancien || JSON.stringify({ ...ancien, misAJour: undefined }) !== JSON.stringify({ ...contenu, misAJour: undefined })) {
