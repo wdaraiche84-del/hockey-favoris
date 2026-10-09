@@ -50,7 +50,8 @@ Adresse actuelle : https://wdaraiche84-del.github.io/hockey-favoris/ (GitHub Pag
 - **Discord** : serveur de support. Le relais fait aussi le bot (résultats LNH dans #résultats, /score, /joueur, /classement, bouton 🔔 Annonces ; secrets Cloudflare `DISCORD_TOKEN` et `DISCORD_PUBLIC_KEY`). `.github/workflows/discord.yml` (secret GitHub `DISCORD_TOKEN`) installe #résultats, le bouton et les commandes, et publie les nouvelles entrées de `data/annonces.json` dans #annonces : **ajouter une entrée à chaque grosse nouveauté**. Outil de création du serveur : `outils/discord/`.
 - **Avec Will** : une seule méthode, une étape à la fois, des liens directs ; tester avant d'envoyer ; un seul fichier au même nom (pas de versions multiples).
 - **Menu** : 5 onglets (Accueil, Scores, Favoris, Classement, Stats). « Stats » regroupe les pages Meneurs et Joueurs (petits onglets en haut de ces pages). Sur l'accueil, un seul bloc Meneurs avec 3 onglets : Saison, En feu, Semaine.
-- **Mes équipes** : équipes favorites choisies directement (clé `mes-equipes-hockey` dans le navigateur, variable `mesEquipes`) ; `equipesFavorites()` = mes équipes + équipes des joueurs favoris.
+- **Mes équipes** : équipes favorites choisies directement (clé `mes-equipes-hockey` dans le navigateur, variable `mesEquipes`) ; `equipesFavorites()` = mes équipes + équipes des joueurs favoris (pour l'affichage).
+- **Alertes (choix de Will)** : un joueur favori → seulement ses buts et ses passes ; une équipe de « Mes équipes » → rappel 30 min avant, chaque but, résultat final. Jamais toute l'équipe d'un joueur favori (`favorisLnh()` dans `plus.js`).
 - **Adresses** :
   - fenêtres : `#/joueur/ID`, `#/equipe/ID`, `#/match/ID`, `#/comparer/A/B`, `#/a-propos`
   - adresses lisibles : `PREFIXE` dans `plus.js` et dans `scripts/maj-partage.mjs`
