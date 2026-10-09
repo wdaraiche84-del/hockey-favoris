@@ -783,7 +783,7 @@ button.score-carte:hover { background: #333; }
 .sem-carte b { font-family: var(--titre); font-size: 1.25rem; line-height: 1.1; }
 .sem-carte span { font-size: .78rem; color: var(--texte-doux); }
 .sem-titre { margin-top: 14px; }
-@media (max-width: 640px) { .sem-cartes { grid-template-columns: 1fr; } }
+@media (max-width: 340px) { .sem-cartes { grid-template-columns: 1fr; } }
 
 /* ---- Les récits de la soirée (accueil) ---- */
 .recits { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
@@ -916,3 +916,25 @@ button.score-carte:hover { background: #333; }
 .gp-col:hover::after, .gp-col:focus-visible::after { opacity: 1; }
 .gp-col.gauche::after { left: 0; transform: none; } /* l'info s'ouvre vers l'intérieur du graphique, jamais hors de l'écran */
 .gp-col.droite::after { left: auto; right: 0; transform: none; }
+
+/* ---- Épuration : bloc Meneurs à onglets, récits raccourcis, onglets Stats ---- */
+.bloc-meneurs .onglets { margin: 10px 0 4px; }
+.bloc-meneurs .petit-gris { margin-top: 6px; }
+.recit-carte p { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; } /* le récit complet est dans le sommaire du match */
+.onglets-stats { max-width: 420px; }
+.onglets-stats .onglet { text-align: center; text-decoration: none; }
+@media (max-width: 960px) {
+  [data-page="accueil"] .bloc-meneurs { order: 1; }
+  [data-page="accueil"] .pile > section:has(#semaine) { order: 2; }
+  .manchettes li:nth-child(n+5) { display: none; } /* 4 performances sur téléphone */
+}
+/* ---- Photo du joueur (Wikimedia Commons) ---- */
+.fiche-photo { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; object-position: 50% 20%; flex-shrink: 0; border: 3px solid var(--accent); background: #262626; }
+.credit-photo { font-size: .72rem; margin-top: 6px !important; opacity: .75 !important; }
+.credit-photo a { color: inherit; }
+.plus-stats { margin: 12px 0; border: 1px solid var(--ligne); border-radius: 10px; padding: 0 12px; }
+.plus-stats summary { cursor: pointer; padding: 10px 0; font-weight: 600; color: var(--accent); list-style: none; }
+.plus-stats summary::-webkit-details-marker { display: none; }
+.plus-stats summary::after { content: " ▾"; }
+.plus-stats[open] summary::after { content: " ▴"; }
+.plus-stats[open] { padding-bottom: 12px; }

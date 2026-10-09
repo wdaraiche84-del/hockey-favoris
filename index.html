@@ -39,7 +39,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <!-- Le « ?v=… » oblige les navigateurs à prendre la nouvelle version après chaque changement -->
-  <link rel="stylesheet" href="style.css?v=37">
+  <link rel="stylesheet" href="style.css?v=38">
   <!-- Pour installer MonTrioHockey comme une application sur le téléphone -->
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#111111">
@@ -63,8 +63,7 @@
         <a href="#/scores" data-lien="scores">Scores</a>
         <a href="#/favoris" data-lien="favoris">Mes favoris</a>
         <a href="#/classement" data-lien="classement">Classement</a>
-        <a href="#/meneurs" data-lien="meneurs">Meneurs</a>
-        <a href="#/joueurs" data-lien="joueurs">Joueurs</a>
+        <a href="#/meneurs" data-lien="meneurs joueurs">Stats</a>
       </nav>
       <div class="entete-droite">
         <button id="ouvrir-recherche" class="btn-recherche" aria-label="Chercher un joueur"><span aria-hidden="true">🔍</span><span class="btn-recherche-texte">Chercher un joueur</span></button>
@@ -161,13 +160,18 @@
             <div class="titre-section"><h2>📊 Le chiffre du jour <span class="tag-ligue">LNH</span></h2></div>
             <div id="chiffre-du-jour"></div>
           </section>
-          <section class="bloc">
+          <!-- Un seul bloc pour les meneurs : la saison, les 5 derniers matchs ou les 7 derniers jours -->
+          <section class="bloc bloc-meneurs">
             <div class="titre-section"><h2>Meneurs <span class="tag-ligue" data-nom-ligue></span></h2><a class="lien-plus" href="#/meneurs">Voir tout ›</a></div>
+            <div class="onglets petits" role="tablist" aria-label="Période">
+              <button class="onglet actif" data-mm="mini-meneurs" data-note="Toute la saison">Saison</button>
+              <button class="onglet" data-mm="mini-chauds" data-note="5 derniers matchs">🔥 En feu</button>
+              <button class="onglet" data-mm="mini-semaine" data-note="7 derniers jours">Semaine</button>
+            </div>
             <ol id="mini-meneurs" class="meneurs"></ol>
-          </section>
-          <section class="bloc">
-            <div class="titre-section"><h2>🔥 En feu <span class="tag-ligue" data-nom-ligue></span></h2><span class="sur-titre">5 derniers matchs</span></div>
-            <ol id="mini-chauds" class="meneurs"></ol>
+            <ol id="mini-chauds" class="meneurs" hidden></ol>
+            <ol id="mini-semaine" class="meneurs" hidden><li class="vide">Aucun match dans les 7 derniers jours.</li></ol>
+            <p id="mm-note" class="petit-gris">Toute la saison</p>
           </section>
           <div id="mini-records" class="seulement-grand"></div>
         </div>
@@ -235,11 +239,13 @@
 
     <!-- ========== PAGE 5 : Meneurs ========== -->
     <div class="page" data-page="meneurs">
+      <nav class="onglets onglets-stats" aria-label="Stats"><a class="onglet actif" href="#/meneurs">Meneurs</a><a class="onglet" href="#/joueurs">Joueurs par équipe</a></nav>
       <div id="grille-meneurs" class="grille-meneurs"></div>
     </div>
 
     <!-- ========== PAGE 6 : Joueurs ========== -->
     <div class="page" data-page="joueurs">
+      <nav class="onglets onglets-stats" aria-label="Stats"><a class="onglet" href="#/meneurs">Meneurs</a><a class="onglet actif" href="#/joueurs">Joueurs par équipe</a></nav>
       <section class="bloc">
         <div class="titre-section"><h2>Joueurs <span class="tag-ligue" data-nom-ligue></span></h2>
           <button class="btn accent" data-ouvrir-recherche>🔍 Chercher par nom</button></div>
@@ -264,8 +270,7 @@
     <a href="#/scores" data-lien="scores"><span>🏒</span>Scores</a>
     <a href="#/favoris" data-lien="favoris"><span>⭐</span>Favoris</a>
     <a href="#/classement" data-lien="classement"><span>🏆</span>Classement</a>
-    <a href="#/meneurs" data-lien="meneurs"><span>📊</span>Meneurs</a>
-    <a href="#/joueurs" data-lien="joueurs"><span>🔍</span>Joueurs</a>
+    <a href="#/meneurs" data-lien="meneurs joueurs"><span>📊</span>Stats</a>
   </nav>
 
   <!-- ===== Recherche (s'ouvre par-dessus la page) ===== -->
@@ -285,10 +290,10 @@
     <article id="fiche" class="fiche" role="dialog" aria-modal="true"></article>
   </div>
 
-  <script src="config.js?v=37"></script>
-  <script src="donnees.js?v=37"></script>
-  <script src="app.js?v=37"></script>
-  <script src="plus.js?v=37"></script>
+  <script src="config.js?v=38"></script>
+  <script src="donnees.js?v=38"></script>
+  <script src="app.js?v=38"></script>
+  <script src="plus.js?v=38"></script>
   <div id="toasts" class="toasts" aria-live="polite"></div>
 </body>
 </html>

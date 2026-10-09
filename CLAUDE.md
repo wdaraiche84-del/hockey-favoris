@@ -13,6 +13,7 @@ Adresse actuelle : https://wdaraiche84-del.github.io/hockey-favoris/ (GitHub Pag
   - pas de liste de coéquipiers, pas d'agenda .ics ;
   - pas de favoris imposés au premier passage.
 - Images : seulement neutres et non trompeuses. Aucune photo de joueur ou d'équipe qui pourrait induire en erreur.
+  - Photos de joueurs (fiche) : seulement des photos libres de Wikimedia Commons, la plus récente, avec la date, l'auteur et la licence écrits dessous (choix de Will). Jamais de photo officielle de la LNH (droits d'auteur), de bagarre, de mise en échec ou d'objet.
 - Couleurs : orange (`--accent:#EA580C`) sur fond charbon, en mode clair et en mode sombre. Le site ne doit être associé à aucune équipe.
 - Lancement public : seulement quand Will dira que l'app est « 100 % fonctionnelle ».
 - Montrer un aperçu à Will avant les gros changements visuels.
@@ -34,7 +35,7 @@ Adresse actuelle : https://wdaraiche84-del.github.io/hockey-favoris/ (GitHub Pag
   - Sinon les téléphones gardent l'ancienne version.
 - **Robot** (`.github/workflows/maj-donnees.yml`) : il tourne aux 30 minutes et lance dans l'ordre :
   1. `scripts/maj-donnees.mjs` (LNH)
-  2. `maj-bios.mjs`
+  2. `maj-bios.mjs`, puis `maj-photos.mjs` (photos libres de Wikimedia Commons pour la LNH, trouvées par le numéro LNH dans Wikidata ; 250 joueurs par passage, chacun revérifié aux 14 jours ; `data/photos.json`)
   3. `maj-autres-ligues.mjs` (LAH et ligues juniors, via HockeyTech)
   4. `maj-europe.mjs` (KHL, SHL, Liiga, NL)
   5. `maj-ncaa.mjs` (NCAA, Division 1 masculine : pages de College Hockey News ; stats et alignements relus seulement quand l'équipe vient de jouer ; état dans `data/ligues/ncaa/etat.json`)
@@ -48,6 +49,7 @@ Adresse actuelle : https://wdaraiche84-del.github.io/hockey-favoris/ (GitHub Pag
 - **Relais Cloudflare** (`relais/worker.js`) : le direct pendant les matchs et les alertes (rappel 30 min avant le match, buts, résultat final). Voir `relais/LISEZMOI.md`.
 - **Discord** : serveur de support. Le relais fait aussi le bot (résultats LNH dans #résultats, /score, /joueur, /classement, bouton 🔔 Annonces ; secrets Cloudflare `DISCORD_TOKEN` et `DISCORD_PUBLIC_KEY`). `.github/workflows/discord.yml` (secret GitHub `DISCORD_TOKEN`) installe #résultats, le bouton et les commandes, et publie les nouvelles entrées de `data/annonces.json` dans #annonces : **ajouter une entrée à chaque grosse nouveauté**. Outil de création du serveur : `outils/discord/`.
 - **Avec Will** : une seule méthode, une étape à la fois, des liens directs ; tester avant d'envoyer ; un seul fichier au même nom (pas de versions multiples).
+- **Menu** : 5 onglets (Accueil, Scores, Favoris, Classement, Stats). « Stats » regroupe les pages Meneurs et Joueurs (petits onglets en haut de ces pages). Sur l'accueil, un seul bloc Meneurs avec 3 onglets : Saison, En feu, Semaine.
 - **Mes équipes** : équipes favorites choisies directement (clé `mes-equipes-hockey` dans le navigateur, variable `mesEquipes`) ; `equipesFavorites()` = mes équipes + équipes des joueurs favoris.
 - **Adresses** :
   - fenêtres : `#/joueur/ID`, `#/equipe/ID`, `#/match/ID`, `#/comparer/A/B`, `#/a-propos`

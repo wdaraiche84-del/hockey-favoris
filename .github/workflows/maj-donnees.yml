@@ -44,6 +44,11 @@ jobs:
         run: node scripts/maj-bios.mjs
         continue-on-error: true
 
+      - name: Photos des joueurs LNH (libres de droits, Wikimedia Commons)
+        id: photos
+        run: node scripts/maj-photos.mjs
+        continue-on-error: true
+
       - name: Aller chercher les stats de la LAH et des juniors
         id: autres
         run: node scripts/maj-autres-ligues.mjs
@@ -81,7 +86,7 @@ jobs:
         continue-on-error: true
         env:
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
-          ETAPES: '{"lnh":"${{ steps.lnh.outcome }}","bios":"${{ steps.bios.outcome }}","autres":"${{ steps.autres.outcome }}","europe":"${{ steps.europe.outcome }}","ncaa":"${{ steps.ncaa.outcome }}","images":"${{ steps.images.outcome }}","partage":"${{ steps.partage.outcome }}","chiffre":"${{ steps.chiffre.outcome }}"}'
+          ETAPES: '{"lnh":"${{ steps.lnh.outcome }}","bios":"${{ steps.bios.outcome }}","photos":"${{ steps.photos.outcome }}","autres":"${{ steps.autres.outcome }}","europe":"${{ steps.europe.outcome }}","ncaa":"${{ steps.ncaa.outcome }}","images":"${{ steps.images.outcome }}","partage":"${{ steps.partage.outcome }}","chiffre":"${{ steps.chiffre.outcome }}"}'
           LIEN_EXECUTION: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: node scripts/surveillance.mjs
 

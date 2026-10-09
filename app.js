@@ -914,7 +914,7 @@ function allerA(page) {
     // (une page qui réapparaît rejoue son animation d'elle-même : pas besoin de forcer le navigateur à tout recalculer)
     if (active && avant >= 0 && avant !== apres) p.classList.add(apres > avant ? "vers-gauche" : "vers-droite");
   });
-  document.querySelectorAll("[data-lien]").forEach((a) => a.classList.toggle("actif", a.dataset.lien === page));
+  document.querySelectorAll("[data-lien]").forEach((a) => a.classList.toggle("actif", a.dataset.lien.split(" ").includes(page)));
   // Le choix de ligue ne concerne pas la page « Mes favoris »
   document.body.classList.toggle("page-favoris", page === "favoris");
   document.body.classList.toggle("page-scores", page === "scores");
