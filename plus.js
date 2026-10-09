@@ -911,9 +911,12 @@ async function synchroniserPush() {
     const sub = await abonnementPush(false);
     if (!sub) return;
     const corps = JSON.stringify({ abonnement: sub.toJSON(), ...favorisLnh() });
-    if (memoire("push-envoye") === corps) return; // rien de changé depuis la dernière fois
+    // On renvoie la liste si elle a changé, et au moins une fois par jour : le relais garde ainsi
+    // toujours la vraie liste de cet appareil (aucune alerte pour une équipe retirée)
+    const note = `${AUJ}|${corps}`;
+    if (memoire("push-envoye-jour") === note) return;
     const r = await fetch(`${RELAIS}/alertes/abonner`, { method: "POST", headers: { "Content-Type": "application/json" }, body: corps });
-    if (r.ok) memoire("push-envoye", corps);
+    if (r.ok) memoire("push-envoye-jour", note);
   } catch (e) {}
 }
 function rendreBoutonAlertes() {
