@@ -890,9 +890,10 @@ async function verifierPush() {
 }
 const b64uVersOctets = (s) => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4)), (c) => c.charCodeAt(0));
 function favorisLnh() {
+  // Joueur favori : seulement ses buts et ses passes. Équipe de « Mes équipes » : rappel, chaque but, résultat final.
   const fav = favorisObjets().filter((j) => j.lig === "lnh");
-  const equipes = [...fav.map((j) => j.eq), ...mesEquipes.filter((e) => ligDeId(e) === "lnh")];
-  return { joueurs: fav.map((j) => j.id).filter((id) => /^\d+$/.test(id)), equipes: [...new Set(equipes)].filter((e) => /^[A-Z]{3}$/.test(e)) };
+  return { joueurs: fav.map((j) => j.id).filter((id) => /^\d+$/.test(id)),
+    equipes: [...new Set(mesEquipes)].filter((e) => ligDeId(e) === "lnh" && /^[A-Z]{3}$/.test(e)) };
 }
 async function abonnementPush(creer) {
   // On n'attend jamais plus de 4 secondes (ex. navigation privée sans « service worker »)
@@ -911,9 +912,12 @@ async function synchroniserPush() {
     const sub = await abonnementPush(false);
     if (!sub) return;
     const corps = JSON.stringify({ abonnement: sub.toJSON(), ...favorisLnh() });
-    if (memoire("push-envoye") === corps) return; // rien de changé depuis la dernière fois
+    // On renvoie la liste si elle a changé, et au moins une fois par jour : le relais garde ainsi
+    // toujours la vraie liste de cet appareil (aucune alerte pour une équipe retirée)
+    const note = `${AUJ}|${corps}`;
+    if (memoire("push-envoye-jour") === note) return;
     const r = await fetch(`${RELAIS}/alertes/abonner`, { method: "POST", headers: { "Content-Type": "application/json" }, body: corps });
-    if (r.ok) memoire("push-envoye", corps);
+    if (r.ok) memoire("push-envoye-jour", note);
   } catch (e) {}
 }
 function rendreBoutonAlertes() {
@@ -971,7 +975,7 @@ async function verifierAlertes() {
   const actifs = D.cal.filter((m) => (estDirect(m) || (estFini(m) && m.date >= decaler(AUJ, -1))) && (eqs.includes(m.dom) || eqs.includes(m.ext)));
   for (const m of actifs) {
     const cle = `s${m.id}`, avant = vus.get(cle), score = `${m.se}-${m.sd}`;
-    if (alertesOn && avant && avant !== score && estDirect(m)) avertir("🚨 But!", `${abr(m.ext)} ${m.se} – ${m.sd} ${abr(m.dom)}`);
+    if (alertesOn && avant && avant !== score && estDirect(m) && (mesEquipes.includes(m.dom) || mesEquipes.includes(m.ext))) avertir("🚨 But!", `${abr(m.ext)} ${m.se} – ${m.sd} ${abr(m.dom)}`);
     vus.set(cle, score);
     for (const j of favs.filter((x) => x.eq === m.dom || x.eq === m.ext)) {
       const l = (await points(j.eq))[m.id]?.[j.id];
@@ -1195,7 +1199,7 @@ function ouvrirAPropos() {
     <h4 class="mini-titre">Ce qui reste sur ton appareil</h4>
     <p>Pour que le site se souvienne de tes choix, ton navigateur garde quelques réglages <b>sur ton appareil seulement</b> : tes favoris, la ligue choisie, le mode clair ou sombre et tes préférences d'affichage. Ces informations ne nous sont jamais envoyées. Tu peux les effacer en tout temps avec le bouton ci-dessous ou dans les réglages de ton navigateur.</p>
     <h4 class="mini-titre">Les alertes (si tu les actives)</h4>
-    <p>Si tu actives les alertes, ton navigateur crée une adresse de notification anonyme. Nous la gardons avec la liste de tes joueurs favoris de la LNH (et de leurs équipes), seulement pour t'envoyer les alertes. Aucun nom ni courriel n'y est rattaché. Quand tu désactives les alertes, ces informations sont supprimées.</p>
+    <p>Si tu actives les alertes, ton navigateur crée une adresse de notification anonyme. Nous la gardons avec la liste de tes joueurs favoris et de tes équipes de la LNH, seulement pour t'envoyer les alertes. Aucun nom ni courriel n'y est rattaché. Quand tu désactives les alertes, ces informations sont supprimées.</p>
     ${ANALYTIQUE ? `<h4 class="mini-titre">Le compteur de visites</h4>
     <p>Pour savoir combien de personnes visitent le site, nous utilisons <b>Cloudflare Web Analytics</b>. Il ne dépose aucun témoin (cookie), ne crée aucun profil et ne te suit pas d'un site à l'autre. Nous voyons seulement des totaux : nombre de visites, pages vues, pays et type d'appareil.</p>` : ""}
     <h4 class="mini-titre">Les services utilisés</h4>
